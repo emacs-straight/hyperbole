@@ -75,7 +75,6 @@ kotl/EXAMPLE.kotl   - Sample Koutline document explaining Koutliner features
 hgnus.el            - GNU Hyperbole buttons in news reader/poster: GNUS
 
 --- HYPERBOLE INTERNALS ---
-file-newer          - Perl script which returns 1 if file 1 is newer than file 2
 hactypes.el         - Default action types for GNU Hyperbole
 hbdata.el           - GNU Hyperbole button attribute accessor functions
 hibtypes.el         - GNU Hyperbole default implicit button types
@@ -85,7 +84,6 @@ hib-kbd.el          - Implicit button type for key sequences delimited with {}
 hib-social.el       - Implicit button type for social media/git hashtag and username references
 hinit.el            - Standard initializations for GNU Hyperbole
 hload-path.el       - GNU Hyperbole load-path setup
-hlvar.el            - GNU Hyperbole variables in local variable lists
 hsettings.el        - Hyperbole settings which may require customization
 hvar.el             - Variable manipulation routines for GNU Hyperbole
 hyperbole-banner.png- Graphic of GNU Hyperbole for display with About Hyperbole

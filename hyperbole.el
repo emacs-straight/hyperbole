@@ -1,12 +1,12 @@
 ;;; hyperbole.el --- GNU Hyperbole: The Everyday Hypertextual Information Manager
 
-;; Copyright (C) 1992-2017  Free Software Foundation, Inc.
+;; Copyright (C) 1992-2019  Free Software Foundation, Inc.
 
 ;; Author:           Bob Weiner
 ;; Maintainer:       Bob Weiner <rsw@gnu.org> and Mats Lidell <matsl@gnu.org>
 ;; Created:          06-Oct-92 at 11:52:51
-;; Released:         23-Nov-17
-;; Version:          7.0.2
+;; Released:         21-Jan-19
+;; Version:          7.0.3
 ;; Keywords:         comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:          hyperbole
 ;; Package-Requires: ((emacs "24.4"))
@@ -109,7 +109,7 @@
 	  features (delq 'hversion features)))
 
   ;; Defines hyperb:path-being-loaded, hyperb:stack-frame,
-  ;; (hyperb:window-system), and hyperb:dir, which are used later in
+  ;; (hyperb:window-system) and hyperb:dir, which are used later in
   ;; this file.  Also adds Hyperbole to the load-path if need be.
   ;;
   ;; This handles the case when the Hyperbole package directory is not yet in load-path.
@@ -176,24 +176,6 @@ context (wherever point is).  {C-u \\[hkey-help]} shows what the Assist Key will
   "*If set together with `hkey-init', remove any local key bindings that hide the Hyperbole Smart Keys."
   :type 'boolean
   :group 'hyperbole-keys)
-
-(defcustom inhibit-hyperbole-messaging t
-  "*Determines whether Hyperbole supports explicit buttons in mail and news buffers.
-The default of t means disable such support (work remains to
-modernize these features).  When t, Hyperbole will not alter
-messaging mode hooks nor overload functions from these packages,
-preventing potential incompatibilities.
-
-If you want to use Hyperbole buttons in mail and news buffers, set
-this variable to nil by adding (hyperbole-toggle-messaging t)
-to your personal Emacs initialization file, prior to loading
-Hyperbole, and then restart Emacs."
-  :type 'boolean
-  :initialize (lambda (symbol value) (set symbol value))
-  :set (lambda (symbol value) 
-	 (set symbol (not value))
-	 (hyperbole-toggle-messaging nil))
-  :group 'hyperbole-buttons)
 
 ;;; ************************************************************************
 ;;; Public key bindings
@@ -353,6 +335,16 @@ bindings after load)."
 ;;; Load Hyperbole mouse bindings
 ;;; ************************************************************************
 
+;; From mouse-position.c in Emacs:
+;;    f = SELECTED_FRAME ();
+;;    XSETFRAME (lispy_dummy, f);
+;;
+;;  It seems like the XSETFRAME macro is not properly copying the value of f on initial frame selection under the macOS window system.
+;;  The problem occurs on other systems as well, e.g. Emacs 25.2 under Windows 7.
+;;
+;;  Hyperbole resolves this problem by setting the
+;;  `mouse-position-function' variable below to properly set the
+;;  newly selected frame.
 (if (boundp 'mouse-position-function)
     (setq mouse-position-function
 	  (lambda (frame-x-dot-y)
@@ -362,7 +354,8 @@ frame, those functions by default still return the prior frame."
 	    (if (consp frame-x-dot-y) (setcar frame-x-dot-y (selected-frame)))
 	    frame-x-dot-y)))
 
-(require 'hmouse-key)
+;; hmouse-drv will load hui-mouse and hmouse-key
+(mapc #'require '(hsettings hmouse-drv hmouse-sh))
 
 ;;; ************************************************************************
 ;;; You shouldn't need to modify anything below here.
@@ -451,8 +444,8 @@ With optional ARG, override them iff ARG is positive."
 ;; help buffer.  (Help buffer names end with "Help*".)  Only one of
 ;; these two settings is used, dependent on emacs version.
 ;;
-(setq temp-buffer-show-hook #'hkey-help-show
-      temp-buffer-show-function temp-buffer-show-hook)
+(add-hook 'temp-buffer-show-hook #'hkey-help-show)
+(setq temp-buffer-show-function #'hkey-help-show)
 
 ;;; ************************************************************************
 ;;; Autoloads
@@ -661,8 +654,6 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
 ;;; Load Site-specific Configurations and Initialize Hyperbole Package
 ;;; ************************************************************************
 
-(require 'hsettings)
-
 (defun hyperb:init ()
   "Standard configuration routine for Hyperbole."
   (interactive)
@@ -679,6 +670,14 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
   ;;
   ;; Conditionally initialize Hyperbole key bindings (when hkey-init is t)
   (hkey-initialize)
+  ;;
+  ;; Abbreviate MSWindows mount point paths.
+  (when (or (file-exists-p "/mnt/c")
+	    (file-exists-p "/cygdrive"))
+    (add-to-list 'directory-abbrev-alist '("\\`\\(/mnt\\|/cygdrive\\)/" . "/")))
+  ;; When running under a POSIX system with possible access to MSWindows servers,
+  ;; cache valid MSWindows mount points.
+  (hpath:cache-mswindows-mount-points)
   ;;
   ;; Save button attribute file whenever same dir file is saved and
   ;; `ebut:hattr-save' is non-nil.

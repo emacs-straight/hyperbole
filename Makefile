@@ -54,7 +54,7 @@
 
 # This ver setup won't work under any make except GNU make, so set it manually.
 #HYPB_VERSION = "`head -3 hversion.el | tail -1 | sed -e 's/.*|\(.*\)|.*/\1/'`"
-HYPB_VERSION = 7.0.2
+HYPB_VERSION = 7.0.3
 
 # Emacs executable used to byte-compile .el files into .elc's.
 # Possibilities include: emacs, infodock, xemacs, etc.
@@ -146,7 +146,7 @@ EL_SRC = hui-em-but.el hui-xe-but.el
 EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hgnus.el hhist.el hib-debbugs.el hib-doc-id.el hib-kbd.el \
 	     hib-social.el hibtypes.el \
-	     hinit.el hload-path.el hlvar.el hmail.el hmh.el hmoccur.el hmouse-info.el \
+	     hinit.el hload-path.el hmail.el hmh.el hmoccur.el hmouse-info.el \
 	     hmouse-drv.el hmouse-key.el hmouse-mod.el hmouse-sh.el hmouse-tag.el \
 	     hpath.el hrmail.el hsettings.el hsmail.el hsys-org.el hsys-www.el htz.el \
 	     hycontrol.el hui-jmenu.el hui-menu.el hui-mini.el hui-mouse.el hui-select.el \
@@ -161,7 +161,7 @@ EL_KOTL = kotl/kexport.el kotl/kfile.el kotl/kfill.el kotl/kimport.el kotl/klabe
 ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.elc \
 	     hib-social.elc hact.elc \
 	     hargs.elc hbdata.elc hbmap.elc hbut.elc hgnus.elc hhist.elc \
-	     hinit.elc hload-path.elc hlvar.elc hmail.elc hmh.elc hmoccur.elc hmouse-info.elc \
+	     hinit.elc hload-path.elc hmail.elc hmh.elc hmoccur.elc hmouse-info.elc \
 	     hmouse-drv.elc hmouse-key.elc hmouse-mod.elc hmouse-sh.elc hmouse-tag.elc \
 	     hpath.elc hrmail.elc hsettings.elc hsmail.elc hsys-org.elc hsys-www.elc htz.elc \
 	     hycontrol.elc hui-jmenu.elc hui-menu.elc hui-mini.elc hui-mouse.elc hui-select.elc \
@@ -175,7 +175,7 @@ ELC_KOTL = kotl/kexport.elc kotl/kfile.elc kotl/kfill.elc kotl/kimport.elc kotl/
 
 HYPERBOLE_FILES = dir hyperbole-pkg.el info html $(EL_SRC) $(EL_COMPILE) $(EL_KOTL) \
 	$(ELC_COMPILE) Changes COPYING Makefile HY-ABOUT HY-ANNOUNCE HY-NEWS \
-	HY-WHY.kotl INSTALL DEMO DEMO-ROLO.otl MANIFEST README _hypb .hypb file-newer smart-clib-sym \
+	HY-WHY.kotl INSTALL DEMO DEMO-ROLO.otl MANIFEST README _hypb .hypb smart-clib-sym \
 	topwin.py hyperbole-banner.png $(man_dir)/hkey-help.txt \
 	$(man_dir)/hyperbole.texi $(man_dir)/hyperbole.css $(man_dir)/version.texi
 
@@ -256,16 +256,18 @@ version: doc
 # Build the Info, HTML and Postscript versions of the user manual and README.md.html.
 doc: info html pdf README.md.html
 
+TEXINFO_SRC = $(man_dir)/hyperbole.texi $(man_dir)/version.texi $(man_dir)/hkey-help.txt $(man_dir)/im/*.png
+
 info: $(man_dir)/hyperbole.info
-$(man_dir)/hyperbole.info: $(man_dir)/hyperbole.texi $(man_dir)/version.texi $(man_dir)/hkey-help.txt
+$(man_dir)/hyperbole.info: $(TEXINFO_SRC)
 	cd $(man_dir) && $(TEXI2INFO) hyperbole.texi
 
 html: $(man_dir)/hyperbole.html
-$(man_dir)/hyperbole.html: $(man_dir)/hyperbole.texi $(man_dir)/version.texi $(man_dir)/hkey-help.txt $(man_dir)/hyperbole.css
+$(man_dir)/hyperbole.html: $(TEXINFO_SRC) $(man_dir)/hyperbole.css
 	cd ${man_dir} && $(TEXI2HTML) hyperbole.texi
 
 pdf: $(man_dir)/hyperbole.pdf
-$(man_dir)/hyperbole.pdf: $(man_dir)/hyperbole.texi $(man_dir)/version.texi $(man_dir)/hkey-help.txt
+$(man_dir)/hyperbole.pdf: $(TEXINFO_SRC)
 	cd $(man_dir) && $(TEXI2PDF) hyperbole.texi
 
 # github-markdown is an npm, installed with: npm install markdown-to-html -g

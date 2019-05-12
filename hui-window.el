@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:    21-Sep-92
 ;;
-;; Copyright (C) 1992-2018  Free Software Foundation, Inc.
+;; Copyright (C) 1992-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -173,7 +173,7 @@ drag release window.")
 ;;; Add window handling to hmouse-alist dispatch table.
 
 (defvar hmouse-alist)
-(defun hui-window--register ()
+(defun hmouse-alist-add-window-handlers ()
   (unless (assoc #'(hmouse-inactive-minibuffer-p) hmouse-alist)
     (setq hmouse-alist
 	  (append
@@ -241,7 +241,7 @@ drag release window.")
 	     ;;
 	     )
 	   hmouse-alist))))
-(with-eval-after-load 'hui-mouse (hui-window--register))
+(with-eval-after-load 'hui-mouse (hmouse-alist-add-window-handlers))
 
 ;;; ************************************************************************
 ;;; Public functions
@@ -250,7 +250,7 @@ drag release window.")
 (defun hmouse-at-item-p ()
   "Return t if point is on an item draggable by Hyperbole, otherwise nil."
   (let* ((buf (and (window-live-p action-key-depress-window) (window-buffer action-key-depress-window)))
-	 (mode (and buf (cdr (assq 'major-mode (buffer-local-variables buf))))))
+	 (mode (and buf (buffer-local-value 'major-mode buf))))
     (and buf (with-current-buffer buf
 	       ;; Point must be on an item, not after one
 	       (not (looking-at "\\s-*$")))
@@ -419,7 +419,8 @@ Signals an error if either depress or release buffer is read-only."
       ;; the kill; also, before the kill, restore the point to where it
       ;; was when the region was set.
       (hmouse-goto-release-point)
-      (let ((release-point (point-marker)))
+      (let ((release-point (point-marker))
+	    (release-window (if assist-flag assist-key-release-window action-key-release-window)))
 	(if buffer-read-only
 	    ;; In this case, we want an error that will terminate execution so that
 	    ;; hkey-region is not reset to nil.  This allows the user to fix the
@@ -431,7 +432,8 @@ Signals an error if either depress or release buffer is read-only."
 	  ;; Now kill and yank the region into the Smart Key release buffer.
 	  (kill-region (or hkey-value (point)) (mark))
 	  ;; Permanently return to release point
-	  (select-window (if assist-flag assist-key-release-window action-key-release-window))
+	  (select-frame-set-input-focus (window-frame release-window))
+	  (select-window release-window)
 	  (goto-char release-point)
 	  ;; Protect from indentation errors
 	  (condition-case ()
@@ -454,7 +456,9 @@ Signals an error if the buffer is read-only."
 	(error "(hmouse-yank-region): Use {%s} to enable yanking into this buffer."
 	       (hmouse-read-only-toggle-key))
       ;; Permanently return to release point
-      (select-window (if assist-flag assist-key-release-window action-key-release-window))
+      (let ((release-window (if assist-flag assist-key-release-window action-key-release-window)))
+	(select-frame-set-input-focus (window-frame release-window))
+	(select-window release-window))
       ;; Protect from indentation errors
       (condition-case ()
 	  (hmouse-insert-region)
@@ -720,7 +724,8 @@ Ignores minibuffer window."
 (defun smart-window-of-coords (coords)
   "Returns window in which COORDS fall or nil if none.
 Ignores minibuffer window."
-  (cond ((markerp coords)
+  (cond ((null coords) nil)
+        ((markerp coords)
 	 (get-buffer-window (marker-buffer coords)))
 	((and (not (featurep 'xemacs)) (eventp coords))
 	 (let ((w-or-f (posn-window (event-start coords))))
@@ -853,7 +858,7 @@ item, this moves the menu buffer itself to the release location."
 		   ;; Otherwise, move the current menu item to the release window.
 		   (setq w1-ref (eval (cadr (assq major-mode hmouse-drag-item-mode-forms))))
 		   (when w1-ref (hmouse-pulse-line) (sit-for 0.05))))
-	(select-window w2)
+	(hypb:select-window-frame w2)
 	(when (and new-window action-key-release-window)
 	  (hmouse-split-window))))
     (unwind-protect

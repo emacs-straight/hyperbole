@@ -99,9 +99,9 @@ It provides the following keys:
 				       minor-mode-alist)
 	  minor-mode-alist (set:remove '(selective-display " Otl")
 				       minor-mode-alist)
-	;; Remove indication that buffer is narrowed.
-	mode-line-format (copy-sequence mode-line-format)
-	mode-line-format (set:remove "%n" mode-line-format)))
+	  ;; Remove indication that buffer is narrowed.
+	  mode-line-format (copy-sequence mode-line-format)
+	  mode-line-format (set:remove "%n" mode-line-format)))
   ;;
   (if (fboundp 'add-to-invisibility-spec)
       (add-to-invisibility-spec '(outline . t)))
@@ -113,11 +113,11 @@ It provides the following keys:
 	;; These par* settings must be anchored to the bol since
 	;; kfill.el and `kotl-mode:fill-paragraph' use them in regexp
 	;; searches.
-	paragraph-separate "^[ \t]*$\\|^\^L")
+	paragraph-separate "^[ \t]*$\\|^\^L"
 	paragraph-start "^[ \t]*$\\|^\^L"
 	selective-display nil
 	selective-display-ellipses t
-	track-eol t
+	track-eol t)
   ;;
   ;; This major-mode setting must come after the local variable settings but
   ;; before the koutline is formatted.
@@ -1967,7 +1967,7 @@ If key is pressed:
      otherwise hide it;
  (3) between cells or within the read-only indentation region to the left of
      a cell, then move point to prior location and begin creation of a
-     klink to some other outline cell; hit the Action Key twice to select the
+     klink to some other outline cell; press the Action Key twice to select the
      link referent cell;
  (4) anywhere else, invoke `action-key-eol-function', typically to scroll up
      a windowful."
@@ -2002,7 +2002,7 @@ If assist-key is pressed:
      each cell in tree beginning at point;
  (3) between cells or within the read-only indentation region to the left of
      a cell, then move point to prior location and prompt to move one tree to
-     a new location in the outline; hit the Action Key twice to select the
+     a new location in the outline; press the Action Key twice to select the
      tree to move and where to move it;
  (4) anywhere else, invoke `assist-key-eol-function', typically to scroll down
      a windowful."

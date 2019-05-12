@@ -1,18 +1,18 @@
 ;;; hibtypes.el --- GNU Hyperbole default implicit button types
 ;;
-;; Author:       Bob Weiner
+;; Author: Bob Weiner
 ;;
-;; Orig-Date:    19-Sep-91 at 20:45:31
+;; Orig-Date: 19-Sep-91 at 20:45:31
 ;;
-;; Copyright (C) 1991-2017  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
-;;
 ;;; Commentary:
 ;;
-;;   Implicit button types in this file are defined in increasing order
-;;   of priority within this file (last one is highest priority).
+;;   Implicit button types in this file are defined in increasing
+;;   order of priority within this file (last one is highest
+;;   priority).
 
 ;;; Code:
 ;;; ************************************************************************
@@ -60,7 +60,7 @@
 ;;; ************************************************************************
 ;;; Public implicit button types
 ;;; ************************************************************************
-  
+
 (run-hooks 'hibtypes-begin-load-hook)
 
 ;;; ========================================================================
@@ -74,9 +74,10 @@
 ;;; ========================================================================
 
 (defvar mail-address-mode-list
-  '(emacs-lisp-mode lisp-interaction-mode lisp-mode scheme-mode c-mode
-    c++-mode html-mode java-mode js2-mode objc-mode python-mode
-    smalltalk-mode fundamental-mode text-mode indented-text-mode web-mode) 
+  '(emacs-lisp-mode lisp-interaction-mode lisp-mode scheme-mode
+    c-mode c++-mode html-mode java-mode js2-mode objc-mode
+    python-mode smalltalk-mode fundamental-mode text-mode
+    indented-text-mode web-mode)
   "List of major modes in which mail address implicit buttons are active.")
 
 (defun mail-address-at-p ()
@@ -125,20 +126,24 @@ any buffer attached to a file in `hyrolo-file-list', or any buffer with
 
 (defib pathname ()
   "Makes a valid pathname display the path entry.
-Also works for delimited and non-delimited remote pathnames, Texinfo @file{}
-entries, and hash-style link references to HTML, Markdown or Emacs outline
-headings.  Emacs Lisp library files (filenames without any directory component
-that end in .el and .elc) are looked up using the `load-path' directory list.
+Also works for delimited and non-delimited remote pathnames,
+Texinfo @file{} entries, and hash-style link references to HTML,
+Markdown or Emacs outline headings, and MSWindows paths (see
+\"${hyperb:dir}/DEMO#POSIX and MSWindows Paths\" for details).
+Emacs Lisp library files (filenames without any directory
+component that end in .el and .elc) are looked up using the
+`load-path' directory list.
 
 See `hpath:at-p' function documentation for possible delimiters.
-See `hpath:suffixes' variable documentation for suffixes that are added to or
-removed from pathname when searching for a valid match.
-See `hpath:find' function documentation for special file display options."
+See `hpath:suffixes' variable documentation for suffixes that are
+added to or removed from pathname when searching for a valid
+match.  See `hpath:find' function documentation for special file
+display options."
   ;;
   ;; Ignore paths in Buffer menu, dired and helm modes.
   (unless (or (eq major-mode 'helm-major-mode)
-	      (delq nil (mapcar (lambda (substring) (string-match
-						     substring (format-mode-line mode-name)))
+	      (delq nil (mapcar (lambda (substring)
+				  (string-match substring (format-mode-line mode-name)))
 				'("Buffer Menu" "IBuffer" "Dired"))))
     (let ((path (hpath:at-p))
 	  full-path)
@@ -174,8 +179,15 @@ See `hpath:find' function documentation for special file display options."
 		  ))))))
 
 ;;; ========================================================================
-;;; Displays files at specific lines and optional column number locations.
+;;; Displays files at specific lines and optional column number
+;;; locations.
 ;;; ========================================================================
+
+(defconst hibtypes-path-line-and-col-regexp
+  (if hyperb:microsoft-os-p
+      ;; Allow for 'c:' single letter drive prefixes on MSWindows
+      "\\([^ \t\n\r:][^ \t\n\r]+\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?"
+    "\\([^ \t\n\r:]+\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?"))
 
 (defib pathname-line-and-column ()
   "Makes a valid pathname:line-num[:column-num] pattern display the path at line-num and optional column-num.
@@ -187,8 +199,7 @@ removed from pathname when searching for a valid match.
 See `hpath:find' function documentation for special file display options."
   (let ((path-line-and-col (hpath:delimited-possible-path)))
     (if (and (stringp path-line-and-col)
-	     (string-match "\\([^ \t\n\r:]+\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?"
-			   path-line-and-col))
+	     (string-match hibtypes-path-line-and-col-regexp path-line-and-col))
 	(let ((file (expand-file-name (match-string-no-properties 1 path-line-and-col)))
 	      (line-num (string-to-number (match-string-no-properties 2 path-line-and-col)))
 	      (col-num (if (match-end 3) (string-to-number (match-string-no-properties
@@ -241,29 +252,6 @@ current major mode is one handled by func-menu."
 		(hact 'function-in-buffer function-name function-pos)))))))
 
 ;;; ========================================================================
-;;; Use the Emacs imenu library to jump to definition of an identifier
-;;; defined in the same file in which it is referenced.  Identifier
-;;; references across files are handled separately by clauses within
-;;; the `hkey-alist' variable.
-;;; ========================================================================
-
-;;; This implicit button type is not needed because hkey-alist handles imenu items.
-;; (defib imenu-item ()
-;;   "Displays the in-buffer definition of an identifier that point is within or after, else nil.
-;; This triggers only when imenu has already been used to generate an in-buffer item index."
-;;   (when (and (featurep 'imenu) imenu--index-alist)
-;;     (save-excursion
-;;       (skip-syntax-backward "w_")
-;;       (if (looking-at "\\(\\sw\\|\\s_\\)+")
-;; 	  (let* ((item-name (buffer-substring-no-properties (point) (match-end 0)))
-;; 		 (start (point))
-;; 		 (end (match-end 0))
-;; 		 (item-pos (imenu-item-p item-name)))
-;; 	    (when item-pos
-;; 	      (ibut:label-set item-name start end)
-;; 	      (hact 'imenu-display-item-where item-name item-pos)))))))
-
-;;; ========================================================================
 ;;; Handles internal references within an annotated bibliography, delimiters=[]
 ;;; ========================================================================
 
@@ -278,7 +266,7 @@ must have an attached file."
        (let ((chr (aref (buffer-name) 0)))
 	 (not (or (eq chr ?\ ) (eq chr ?*))))
        (not (or (derived-mode-p 'prog-mode)
-		(memq major-mode '(c-mode objc-mode c++-mode java-mode markdown-mode))))
+		(apply #'derived-mode-p '(c-mode objc-mode c++-mode java-mode markdown-mode org-mode))))
        (let* ((ref-and-pos (hbut:label-p t "[" "]" t))
 	      (ref (car ref-and-pos)))
 	 (and ref (eq ?w (char-syntax (aref ref 0)))
@@ -302,6 +290,46 @@ must have an attached file."
 ;;; Displays in-file Markdown link referents.
 ;;; ========================================================================
 
+(defun markdown-follow-link-p ()
+    "Jumps between reference links and definitions; between footnote markers and footnote text.
+Returns t if jumps and nil otherwise."
+    (cond
+     ;; Footnote definition
+     ((markdown-footnote-text-positions)
+      (markdown-footnote-return)
+      t)
+     ;; Footnote marker
+     ((markdown-footnote-marker-positions)
+      (markdown-footnote-goto-text)
+      t)
+     ;; Reference link
+     ((thing-at-point-looking-at markdown-regex-link-reference)
+      (markdown-reference-goto-definition)
+      t)
+     ;; Reference definition
+     ((thing-at-point-looking-at markdown-regex-reference-definition)
+      (markdown-reference-goto-link (match-string-no-properties 2))
+      t)))
+
+(defun markdown-follow-inline-link-p (opoint)
+  "Test to see if on an inline link, jump to its referent if it is absolute (not relative within the file), otherwise return to OPOINT."
+  (skip-chars-forward "^\]\[()")
+  (if (looking-at "\][\[()]")
+      (progn (if (looking-at "\(")
+		 (skip-chars-backward "^\]\[()")
+	       (skip-chars-forward "\]\[\("))
+	     ;; Leave point on the link even if not activated
+	     ;; here, so that code elsewhere activates it.
+	     (if (and (markdown-link-p)
+		      (save-match-data (not (or (hpath:www-at-p) (hpath:at-p)))))
+		 ;; In-file referents are handled by the 'markdown-internal-link'
+		 ;; implicit button type, not here.
+		 (progn (ibut:label-set (match-string-no-properties 0) (match-beginning 0) (match-end 0))
+			(hpath:display-buffer (current-buffer))
+			(hact 'markdown-follow-link-at-point))))
+    (goto-char opoint)
+    nil))
+
 (defib markdown-internal-link ()
   "Displays any in-file Markdown link referent.  Pathnames and urls are handled elsewhere."
   (when (and (eq major-mode 'markdown-mode)
@@ -310,27 +338,20 @@ must have an attached file."
 	  npoint)
       (cond ((markdown-link-p) 
 	     (condition-case ()
-		 ;; Follows a reference link to its referent.
-		 (progn (markdown-do)
-			(when (/= opoint (point))
-			  (setq npoint (point))
-			  (goto-char opoint)
-			  (hact 'link-to-file buffer-file-name npoint)))
+		 ;; Follows a reference link or footnote to its referent.
+		 (if (markdown-follow-link-p)
+		     (when (/= opoint (point))
+		       (ibut:label-set (match-string-no-properties 0) (match-beginning 0) (match-end 0))
+		       (setq npoint (point))
+		       (goto-char opoint)
+		       (hact 'link-to-file buffer-file-name npoint))
+		   ;; Follows an infile link.
+	           (markdown-follow-inline-link-p opoint))
 	       ;; May be on the name of an inline link, so move to the
 	       ;; link itself and follow that.
-	       (error 
-		(skip-chars-forward "^\]\[()")
-		(if (looking-at "\][\[\(]")
-		    (progn (skip-chars-forward "\]\[\(")
-			   ;; Leave point on the link even if not activated
-			   ;; here, so that code elsewhere activates it.
-			   (if (and (markdown-link-p)
-				    (not (or (hpath:www-at-p) (hpath:at-p))))
-			       (progn (hpath:display-buffer (current-buffer))
-				      (hact 'markdown-follow-link-at-point))))
-		  (goto-char opoint)
-		  nil))))
+	       (error (markdown-follow-inline-link-p opoint))))
 	    ((markdown-wiki-link-p)
+	     (ibut:label-set (match-string-no-properties 0) (match-beginning 0) (match-end 0))
 	     (hpath:display-buffer (current-buffer))
 	     (hact 'markdown-follow-wiki-link-at-point))))))
 	     
@@ -604,19 +625,62 @@ Requires the Emacs builtin Tramp library for ftp file retrievals."
 ;;; Follows links to Hyperbole Koutliner cells.
 ;;; ========================================================================
 
-;; FIXME: Not sure if it's important to avoid loading `klink' during
-;; bytecompilation, but that was the behavior when the condition was more
-;; complex, so I kept the `if' even though it's now trivial.
-(if t (require 'klink))
+(require 'klink)
 
 ;;; ========================================================================
 ;;; Jumps to source line associated with grep or compilation error messages.
+;;; Also supports ripgrep (rg command).
 ;;; With credit to Michael Lipp and Mike Williams for the idea.
 ;;; ========================================================================
 
+(defib ripgrep-msg ()
+  "Jumps to line associated with a ripgrep (rg) line numbered msg.
+Ripgrep outputs each pathname once followed by all matching lines in that pathname.
+Messages are recognized in any buffer (other than a helm completion
+buffer)."
+  ;; Locate and parse ripgrep messages found in any buffer other than a
+  ;; helm completion buffer.
+  ;;
+  ;; Sample ripgrep command output:
+  ;;
+  ;; bash-3.2$ rg -nA2 hkey-throw *.el
+  ;; hmouse-drv.el
+  ;; 405:(defun hkey-throw (release-window)
+  ;; 406-  "Throw either a displayable item at point or the current buffer to RELEASE-WINDOW.
+  ;; 407-The selected window does not change."
+  ;; --
+  ;; 428:    (hkey-throw to-window)))
+  ;; 429-
+  ;; 430-(defun hmouse-click-to-drag ()
+  ;;
+  ;; Use `rg -n --no-heading' for pathname on each line.
+  (unless (eq major-mode 'helm-major-mode)
+    (save-excursion
+      (beginning-of-line)
+      (when (looking-at "\\([1-9][0-9]*\\)[-:]")
+	;; Ripgrep matches and context lines (-A<num> option)
+	(let ((line-num (match-string-no-properties 1))
+	      file)
+	  (while (and (= (forward-line -1) 0)
+		      (looking-at "[1-9][0-9]*[-:]\\|--$")))
+	  (unless (or (looking-at "[1-9][0-9]*[-:]\\|--$")
+		      (and (setq file (buffer-substring-no-properties (point-at-bol) (point-at-eol)))
+			   (string-empty-p (string-trim file))))
+	    (let* ((but-label (concat file ":" line-num))
+		   (source-loc (if (file-name-absolute-p file) nil
+				 (hbut:key-src t))))
+	      (if (stringp source-loc)
+		  (setq file (expand-file-name file (file-name-directory source-loc))))
+	      (when (file-readable-p file)
+		(setq line-num (string-to-number line-num))
+		(ibut:label-set but-label)
+		(hact 'link-to-file-line file line-num)))))))))
+
 (defib grep-msg ()
-  "Jumps to line associated with grep or compilation error msgs.
-Messages are recognized in any buffer."
+  "Jumps to line associated with line numbered grep or compilation error msgs.
+Messages are recognized in any buffer (other than a helm completion
+buffer) except for grep -A<num> context lines which are matched only
+in grep and shell buffers."
   ;; Locate and parse grep messages found in any buffer other than a
   ;; helm completion buffer.
   (unless (eq major-mode 'helm-major-mode)
@@ -653,8 +717,7 @@ Messages are recognized in any buffer."
 		 (source-loc (if (file-name-absolute-p file) nil
 			       (hbut:key-src t))))
 	    (if (stringp source-loc)
-		(setq file (expand-file-name
-			    file (file-name-directory source-loc))))
+		(setq file (expand-file-name file (file-name-directory source-loc))))
 	    (setq line-num (string-to-number line-num))
 	    (ibut:label-set but-label)
 	    (hact 'link-to-file-line file line-num))))))
@@ -670,7 +733,7 @@ This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines
   (save-excursion
     (beginning-of-line)
     (cond
-     ;; Python pdb
+     ;; Python pdb or traceback
      ((looking-at ".+ File \"\\([^\"\n\r]+\\)\", line \\([0-9]+\\)")
       (let* ((file (match-string-no-properties 1))
 	     (line-num (match-string-no-properties 2))

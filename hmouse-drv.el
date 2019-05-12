@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:    04-Feb-90
 ;;
-;; Copyright (C) 1989-2018  Free Software Foundation, Inc.
+;; Copyright (C) 1989-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -190,7 +190,7 @@ EVENT will be passed to 'hmouse-function'."
   (apply #'assist-mouse-key (hmouse-key-release-args-emacs event)))
 
 (defun action-mouse-key (&rest args)
-  "Set point to the current mouse cursor position and execute `action-key'.
+  "Set point to the current mouse or keyboard cursor position and execute `action-key'.
 Any ARGS will be passed to `hmouse-function'."
   (interactive)
   ;; Make this a no-op if some local mouse key binding overrode the global
@@ -203,7 +203,7 @@ Any ARGS will be passed to `hmouse-function'."
 	     (setq action-key-cancelled nil
 		   assist-key-depressed-flag nil))
 	    (assist-key-depressed-flag
-	     (hmouse-function nil nil args))
+ 	     (hmouse-function nil nil args))
 	    ((hkey-mouse-help nil args))
 	    (t
 	     (run-hooks 'action-key-release-hook)
@@ -214,7 +214,7 @@ Any ARGS will be passed to `hmouse-function'."
 	    hkey-value nil))))
 
 (defun assist-mouse-key (&rest args)
-  "Set point to the current mouse cursor position and execute `assist-key'.
+  "Set point to the current mouse or keyboard cursor position and execute `assist-key'.
 Any ARGS will be passed to `hmouse-function'."
   (interactive)
   ;; Make this a no-op if some local mouse key binding overrode the global
@@ -238,13 +238,8 @@ Any ARGS will be passed to `hmouse-function'."
 	    hkey-value nil))))
 
 ;;; Smart Key Commands
-(defun action-key ()
-  "Use one key to perform functions that vary by context.
-If no matching context is found, the default function set with
-the `action-key-default-function' variable is run.  Return t
-unless the `action-key-default-function' variable is not bound to
-a valid function."
-  (interactive)
+(defun action-key-clear-variables ()
+  "Clear all Action Key variables."
   ;; Clear all these variables so there can be no confusion between
   ;; mouse presses and keyboard presses.
   (setq action-key-depress-prev-point nil
@@ -254,7 +249,29 @@ a valid function."
 	action-key-release-position nil
 	action-key-release-args nil
 	action-key-release-window nil
-	action-key-release-prev-point nil)
+	action-key-release-prev-point nil))
+
+(defun assist-key-clear-variables ()
+  "Clear all Assist Key variables."
+  ;; Clear all these variables so there can be no confusion between
+  ;; mouse presses and keyboard presses.
+  (setq assist-key-depress-prev-point nil
+	assist-key-depress-position nil
+	assist-key-depress-args nil
+	assist-key-depress-window nil
+	assist-key-release-position nil
+	assist-key-release-args nil
+	assist-key-release-window nil
+	assist-key-release-prev-point nil))
+
+(defun action-key ()
+  "Use one key to perform functions that vary by context.
+If no matching context is found, the default function set with
+the `action-key-default-function' variable is run.  Return t
+unless the `action-key-default-function' variable is not bound to
+a valid function."
+  (interactive)
+  (action-key-clear-variables)
   (prog1 (action-key-internal)
     (run-hooks 'action-key-depress-hook 'action-key-release-hook)))
 
@@ -275,16 +292,7 @@ the `assist-key-default-function' variable is run.  Return
 non-nil unless `assist-key-default-function' variable is not
 bound to a valid function."
   (interactive)
-  ;; Clear all these variables so there can be no confusion between
-  ;; mouse presses and keyboard presses.
-  (setq assist-key-depress-prev-point nil
-	assist-key-depress-position nil
-	assist-key-depress-args nil
-	assist-key-depress-window nil
-	assist-key-release-position nil
-	assist-key-release-args nil
-	assist-key-release-window nil
-	assist-key-release-prev-point nil)
+  (assist-key-clear-variables)
   (prog1 (assist-key-internal)
     (run-hooks 'assist-key-depress-hook 'assist-key-release-hook)))
 
@@ -309,86 +317,23 @@ bound to a valid function."
     (unless (listp arg) (setq arg nil)))
   (if arg (assist-key) (action-key)))
 
+
 ;;; ************************************************************************
-;;; Public support functions
+;;; Hyperbole ace-window selection functions
+;;; https://github.com/abo-abo/ace-window
 ;;; ************************************************************************
 
-(defun hkey-debug ()
-  (message (format "(HyDebug) %sContext: %s; %s: %s; Buf: %s; Mode: %s; MinibufDepth: %s"
-		   (cond ((eq pred-value 'hbut:current)
-			  (format "ButType: %s; ButLabel: %s; "
-				  (hattr:get  'hbut:current 'categ)
-				  (hypb:format-quote (hbut:label 'hbut:current))))
-			 ((functionp pred-value)
-			  (format "Selection Func: %s; " pred-value))
-			 (t ""))
-		   pred
-		   (if assist-flag "Assist" "Action")
-		   (hypb:format-quote (format "%s" hkey-action))
-		   (current-buffer) major-mode (minibuffer-depth))))
+;; A call to (hkey-ace-window-setup) or (require 'ace-window) must be
+;; made prior to calling any other function in this section since
+;; Hyperbole does not require ace-window itself.
 
 ;;;###autoload
-(defun hkey-drag (release-window)
-  "Emulate Smart Mouse Key drag from selected window to RELEASE-WINDOW.
-The drag action determines the final selected window.
-
-Optional prefix ARG non-nil means emulate Assist Key rather than the
-Action Key.
-
-Only works when running under a window system, not from a dumb terminal."
-  ;; Cancel any partial drag that may have been recorded.
-  (if current-prefix-arg
-      (setq assist-key-depressed-flag nil)
-    (setq action-key-depressed-flag nil))
-  (hkey-operate current-prefix-arg)
-  (when (window-live-p release-window)
-    (select-window release-window))
-  (hkey-operate current-prefix-arg))
-
-;;;###autoload
-(defun hkey-drag-to (release-window)
-  "Emulate Smart Mouse Key drag from selected window to RELEASE-WINDOW.
-If an item is dragged to RELEASE-WINDOW, then RELEASE-WINDOW is selected;
-otherwise, the drag action determines the selected window.
-
-Optional prefix ARG non-nil means emulate Assist Key rather than the
-Action Key.
-
-Only works when running under a window system, not from a dumb terminal."
-  (if (and (hmouse-drag-item-to-display) (window-live-p release-window))
-      (progn (hkey-drag release-window)
-	     ;; Leave release window selected
-	     (when (window-live-p release-window)
-	       (select-window release-window)))
-    ;; Leave hkey-drag to choose selected window
-    (hkey-drag release-window)))
-
-;;;###autoload
-(defun hkey-throw (release-window)
-  "Emulate Smart Mouse Key drag from selected window to RELEASE-WINDOW.
-After the drag, the selected window remains the same as it was before
-the drag.
-
-Optional prefix ARG non-nil means emulate Assist Key rather than the
-Action Key.
-
-Only works when running under a window system, not from a dumb terminal."
-  (let ((start-win (selected-window)))
-    (condition-case nil
-	;; This may trigger a No Action error if start-win and
-	;; release-win are the same.
-	(hkey-drag release-window)
-      (error (when (eq start-win release-window)
-	       (hmouse-drag-item-to-displ
-		ay))))
-    (when (window-live-p start-win) (select-window start-win))))
-
 (defun hkey-ace-window-setup (&optional key)
   "Bind optional keyboard KEY and setup display of items in windows specified by short ids.
 
 The ace-window package, (see \"https://elpa.gnu.org/packages/ace-window.html\"),
 assigns short ids to each Emacs window and lets you jump to or
-operate upon a specific window by giving its letter.  Hyperbole
+operate upqon a specific window by giving its letter.  Hyperbole
 can insert an operation into ace-window that allows you to
 display items such as dired or buffer menu items in a specific
 window.
@@ -409,12 +354,395 @@ window, use {M-o i <id-of-window-to-display-item-in>} and watch the
 magic happen."
   (require 'ace-window)
   (when key (global-set-key key 'ace-window))
-  (push '(?i hkey-drag-to "Hyperbole Drag To") aw-dispatch-alist)
-  (push '(?t hkey-throw   "Hyperbole Throw") aw-dispatch-alist)
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
 	;; allows {i} operation to work when only 2 windows exist
 	aw-dispatch-always t)
+  ;; New ace-window frames (window id = z) inherit the size of the
+  ;; prior selected frame; same as HyWindow.
+  (setq aw-frame-size '(0 . 0)
+	aw-dispatch-alist (delq (assq ?t aw-dispatch-alist)
+				(delq (assq ?r aw-dispatch-alist)
+				      (delq (assq ?i aw-dispatch-alist) aw-dispatch-alist))))
+  (push '(?i hkey-drag-item "Hyperbole: Drag Item") aw-dispatch-alist)
+  ;; Ace-window includes ?m as the swap windows key, so it is not added here.
+  (push '(?r hkey-replace "Hyperbole: Replace Here") aw-dispatch-alist)
+  (push '(?t hkey-throw   "Hyperbole: Throw To") aw-dispatch-alist)
   (ace-window-display-mode 1))
+
+;;;###autoload
+(defun hkey-drag (release-window)
+  "Emulate Smart Mouse Key drag from the selected window to RELEASE-WINDOW, interactively chosen via ace-window.
+The drag action determines the final selected window.
+
+Optional prefix arg non-nil means emulate Assist Key rather than the
+Action Key.
+
+Works only when running under a window system, not from a dumb terminal."
+  ;; Note: Cannot add start-window as first parameter to this function
+  ;; because it is called like many other functions herein with a
+  ;; single release-window argument by 'hmouse-choose-windows'.
+
+  ;; Cancel any partial drag that may have been recorded.
+  (interactive (list (aw-select " Ace - Hyperbole: Drag")))
+  (condition-case nil
+      ;; This may trigger a No Action error if starting window
+      ;; (window of depress) and release-window are the same; in that
+      ;; case: use the error handler to emulate dragging an item if on
+      ;; one.
+      (progn (if current-prefix-arg
+		 (setq assist-key-depressed-flag nil)
+	       (setq action-key-depressed-flag nil))
+	     (hkey-operate current-prefix-arg)
+	     (when (window-live-p release-window)
+	       (hypb:select-window-frame release-window))
+	     (hkey-operate current-prefix-arg))
+    (error (when (eq start-window release-window)
+	     (hmouse-drag-item-to-display)))))
+
+;;;###autoload
+(defun hkey-drag-stay (release-window)
+  "Emulate Smart Mouse Key drag from selected window to RELEASE-WINDOW, interactively chosen via ace-window.
+After the drag, the selected window remains the same as it was before
+the drag.
+
+Optional prefix arg non-nil means emulate Assist Key rather than the
+Action Key.
+
+Works only when running under a window system, not from a dumb terminal."
+  (let ((start-window (selected-window)))
+    (unwind-protect
+	(hkey-drag release-window)
+      ;; Leave start-window selected
+      (when (window-live-p start-window)
+	(hypb:select-window-frame start-window)))))
+
+;;;###autoload
+(defun hkey-drag-item (release-window)
+  "Emulate Smart Mouse Key drag from an item in a selected window to RELEASE-WINDOW, interactively chosen via ace-window.
+RELEASE-WINDOW is left selected unless point is not on an item, in
+which case, an error is signalled.
+
+Optional prefix arg non-nil means emulate Assist Key rather than the
+Action Key.
+
+Works only when running under a window system, not from a dumb terminal."
+  (interactive
+   (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?i aw-dispatch-alist)))))
+	   (aw-select mode-line-text))))
+  (let ((start-window (if (and (boundp 'start-window) (window-live-p start-window))
+			  start-window
+			(if current-prefix-arg
+			    assist-key-depress-window
+			  action-key-depress-window)))
+	at-item-flag)
+    (unless (window-live-p start-window)
+      (setq start-window (selected-window)))
+    (cond ((and (setq at-item-flag (hmouse-at-item-p))
+		(window-live-p release-window))
+	   (hkey-drag release-window)
+	   ;; Leave release-window selected
+	   (when (window-live-p release-window)
+	     (hypb:select-window-frame release-window)))
+	  (at-item-flag
+	   (error "(hkey-drag-item): No listing item at point"))
+	  (t ;; No item at point or selected release is invalid
+	   (error "(hkey-drag-item): Invalid final window, %s" release-window)))))
+
+;;;###autoload
+(defun hkey-drag-to (release-window)
+  "Emulate Smart Mouse Key drag from a selected window to RELEASE-WINDOW, interactively chosen via ace-window.
+If an item is dragged to RELEASE-WINDOW, then RELEASE-WINDOW is selected;
+otherwise, the drag action determines the selected window.  If no drag
+has taken place, then the selected window's buffer is displayed in
+RELEASE-WINDOW and that becomes the selected window.
+
+Optional prefix arg non-nil means emulate Assist Key rather than the
+Action Key.
+
+Works only when running under a window system, not from a dumb terminal."
+  (interactive
+   (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?i aw-dispatch-alist)))))
+	   (aw-select mode-line-text))))
+  (let ((start-window (if (and (boundp 'start-window) (window-live-p start-window))
+			  start-window
+			(if current-prefix-arg
+			    assist-key-depress-window
+			  action-key-depress-window))))
+    (unless (window-live-p start-window)
+      (setq start-window (selected-window)))
+    (if (and (hmouse-at-item-p) (window-live-p release-window))
+	(progn (hkey-drag release-window)
+	       ;; Leave release-window selected
+	       (when (window-live-p release-window)
+		 (hypb:select-window-frame release-window)))
+      ;; Leave hkey-drag to choose final selected window
+      (hkey-drag release-window)
+      ;; (if (eq start-window release-window)
+      ;; 	  ;; Leave hkey-drag to choose final selected window
+      ;; 	  (hkey-drag release-window)
+      ;; 	;; Replace release window's buffer with selected
+      ;; 	;; window's buffer.
+      ;; 	(hkey-buffer-to start-window release-window)
+      ;; 	(when (window-live-p release-window)
+      ;; 	  (hypb:select-window-frame release-window)))
+      )))
+
+;;;###autoload
+(defun hkey-replace (release-window)
+  "Grab the buffer from RELEASE-WINDOW, interactively chosen via ace-window, and place it into the current window.
+The selected window does not change."
+  (interactive
+   (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?r aw-dispatch-alist)))))
+	   (aw-select mode-line-text))))
+  (set-window-buffer (selected-window) (window-buffer release-window)))
+
+;;;###autoload
+(defun hkey-swap (to-window)
+  "Swap the buffer from the selected window with that of TO-WINDOW, interactively chosen via ace-window.
+Leave TO-WINDOW as the selected window."
+  (interactive
+   (list (let ((mode-line-text (concat " Ace - Hyperbole: " (nth 2 (assq ?m aw-dispatch-alist)))))
+	   (aw-select mode-line-text))))
+  (hkey-swap-buffers (selected-window) to-window))
+
+;; Once the "display-until.el" library is added to Emacs, hkey-throw can be simplified to the following:
+;;
+;; (defun hkey-throw (release-window)
+;;   "Throw either a displayable item at point or the current buffer for display in RELEASE-WINDOW.
+;; The selected window does not change."
+;;   (interactive
+;;    (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?t aw-dispatch-alist)))))
+;;            (aw-select mode-line-text))))
+;;   (if (cadr (assq major-mode hmouse-drag-item-mode-forms))
+;;       ;; Throw the item at point
+;;       (let ((action-key-depress-window (selected-window))
+;;             (action-key-release-window release-window)
+;;             (action-key-depress-args))
+;;         (hmouse-item-to-window)
+;;         (select-window action-key-depress-window)
+;;         (display-window-until release-window))
+;;     ;; Throw the current buffer
+;;     (display-window-until release-window (current-buffer))))
+
+;;;###autoload
+(defun hkey-throw (release-window)
+  "Throw either a displayable item at point or the current buffer for display in RELEASE-WINDOW.
+The selected window does not change."
+  (interactive
+   (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?t aw-dispatch-alist)))))
+	   (aw-select mode-line-text))))
+  (let ((depress-frame (selected-frame))
+	(display-delay (if (boundp 'temp-display-delay)
+			   temp-display-delay
+			 0.5)))
+    (if (cadr (assq major-mode hmouse-drag-item-mode-forms))
+	;; Throw the item at point
+	(let ((action-key-depress-window (selected-window))
+	      (action-key-release-window release-window)
+	      (action-key-depress-args))
+	  (hypb:save-selected-window-and-input-focus
+	   (hmouse-item-to-window)
+	   (unless (eq depress-frame (window-frame release-window))
+	     ;; Force redisplay or item buffer won't be displayed here.
+	     (redisplay t)
+	     ;; Show the frame thrown to before it is covered when
+	     ;; input-focus is returned to the depress-frame.
+	     (raise-frame (window-frame release-window))
+	     ;; Don't use sit-for here because it can be interrupted early.
+	     (sleep-for display-delay)
+	     )))
+      ;; Throw the current buffer
+      (set-window-buffer release-window (current-buffer))
+      (unless (eq depress-frame (window-frame release-window))
+	;; Force redisplay or item buffer won't be displayed here.
+	(redisplay t)
+	;; Show the frame thrown to before it is covered when
+	;; input-focus is returned to the depress-frame.
+	(raise-frame (window-frame release-window))
+	;; Don't use sit-for here because it can be interrupted early.
+	(sleep-for display-delay)
+	(select-frame-set-input-focus depress-frame)))))
+
+;;;###autoload
+(defun hkey-buffer-to (from-window to-window)
+  "Use ace-window to choose a FROM-WINDOW whose buffer will also be displayed in the chosen TO-WINDOW.
+The selected window does not change."
+  (interactive
+   (list (aw-select " Ace - Hyperbole: Buffer to Show")
+	 (aw-select " Ace - Hyperbole: Show in Window")))
+  (with-selected-window from-window
+    (set-window-buffer to-window (current-buffer))))
+
+;;;###autoload
+(defun hkey-swap-buffers (from-window to-window)
+  "Use ace-window to choose a FROM-WINDOW whose buffer is swapped with the buffer of the chosen TO-WINDOW.
+Leave TO-WINDOW as the selected window."
+  (interactive
+   (list (aw-select " Ace - Hyperbole: Swap from Buffer1...")
+	 (aw-select " Ace - Hyperbole: ...to Buffer2")))
+  (let ((from-buf (window-buffer from-window))
+	(to-buf (window-buffer to-window)))
+    (set-window-buffer from-window to-buf)
+    (set-window-buffer to-window from-buf)
+    (hypb:select-window-frame to-window)))
+
+;;; ************************************************************************
+;;; Hyperbole mouse click window selection functions
+;;; ************************************************************************
+
+;;;###autoload
+(defun hmouse-click-to-drag ()
+  "Mouse click on start and end windows for use with `hkey-drag'.
+Emulate Smart Mouse Key drag from start window to end window.
+The drag action determines the final selected window."
+  (interactive)
+  (hmouse-choose-windows #'hkey-drag))
+
+;;;###autoload
+(defun hmouse-click-to-drag-stay ()
+  "Mouse click on start and end windows for use with `hkey-drag-stay'.
+Emulate Smart Mouse Key drag from start window to end window.
+The selected window does not change."
+  (interactive)
+  (hmouse-choose-windows #'hkey-drag-stay))
+
+;;;###autoload
+(defun hmouse-click-to-drag-item ()
+  "Mouse click on start and end windows for use with `hkey-drag-item'.
+Emulate {M-o i} from start window to end window.
+After the drag, the end window is the selected window."
+  (interactive)
+  (hmouse-choose-windows #'hkey-drag-item))
+
+;;;###autoload
+(defun hmouse-click-to-drag-to ()
+  "Mouse click on start and end windows for use with `hkey-drag-to'.
+Emulate Smart Mouse Key drag from start window to end window.
+After the drag, the end window is the selected window."
+  (interactive)
+  (hmouse-choose-windows #'hkey-drag-to))
+
+;;;###autoload
+(defun hmouse-click-to-replace ()
+  "Mouse click on start and end windows for use with `hkey-replace'.
+Replace the buffer in start window with the buffer in end window.
+The selected window does not change."
+  (interactive)
+  (hmouse-choose-windows #'hkey-replace))
+
+;; Test this next command
+;; (global-set-key [C-down-mouse-1] nil)
+;; (global-set-key [C-mouse-1] 'hmouse-click-to-swap)
+;;;###autoload
+(defun hmouse-click-to-swap ()
+  "Mouse click on start and end windows for use with `hkey-swap'.
+Swap the buffer in start window with the buffer in end window.
+Leave the end window selected."
+  (interactive)
+  (hmouse-choose-windows #'hkey-swap))
+
+;;;###autoload
+(defun hmouse-click-to-throw ()
+  "Mouse click on start and end windows for use with `hkey-throw'.
+Throw either a displayable item at start window's point or its current
+buffer to the end window.  The selected window does not change."
+  (interactive)
+  (hmouse-choose-windows #'hkey-throw))
+
+(defun hmouse-choose-windows (func)
+  "Mouse click on start and end windows for FUNC.
+Then with the start window temporarily selected, run FUNC with the
+end window as an argument.
+
+Appropriate FUNCs include: hkey-drag, hkey-drag-to, hkey-replace,
+hkey-swap and hkey-throw."
+  (let* (start-event
+	 end-event
+	 start-window
+	 end-window)
+    (message "Click on the %s start window..." func)
+    (setq start-window
+	  (cl-loop do (setq start-event (read-event))
+		   until (and (mouse-event-p start-event)
+			      (not (string-match "\\`down-" (symbol-name (car start-event)))))
+		   finally return (posn-window (event-start start-event))))
+    (message "Click on the %s start window...Now on the end window..." func)
+    (setq end-window
+	  (cl-loop do (setq end-event (read-event))
+		   until (and (mouse-event-p end-event)
+			      (not (string-match "\\`down-" (symbol-name (car end-event)))))
+		   finally return (posn-window (event-start end-event))))
+    (message "Click on the %s start window...Now on the end window...Done" func)
+    (with-selected-window start-window
+      (funcall func end-window))))
+
+;;; ************************************************************************
+;;; Hyperbole Directional Buffer Movement Commands
+;;; ************************************************************************
+
+;;;###autoload
+(defun hkey-buffer-move-left ()
+  "Swap the current buffer with the one on its left, if any; otherwise, do nothing."
+  (interactive)
+  (hkey-buffer-move 'left))
+
+;;;###autoload
+(defun hkey-buffer-move-right ()
+  "Swap the current buffer with the one on its right, if any; otherwise, do nothing."
+  (interactive)
+  (hkey-buffer-move 'right))
+
+;;;###autoload
+(defun hkey-buffer-move-down ()
+  "Swap the current buffer with the one below it, if any; otherwise, do nothing."
+  (interactive)
+  (hkey-buffer-move 'down))
+
+;;;###autoload
+(defun hkey-buffer-move-up ()
+  "Swap the current buffer with the one on above it, if any; otherwise, do nothing."
+  (interactive)
+  (hkey-buffer-move 'up))
+
+(defun hkey-buffer-move (direction &optional arg)
+  "Move the current buffer to the next window in DIRECTION, a symbol, one of: up, down, left or right.
+
+When the window-jump package is available and `wj-jump-frames' is
+non-nil, the buffer may be moved across non-overlapping frames in
+the given direction."
+  (interactive "SDirection to move buffer (up, down, left or right): \nP")
+  ;; Prefer the window-jump package ...
+  (if (require 'window-jump nil t)
+      (let ((w1 (selected-window)))
+	(window-jump
+	 (pcase direction
+	   ('left wj-vec-left)
+	   ('right wj-vec-right)
+	   ('down wj-vec-down)
+	   ('up wj-vec-up)
+	   (_ (error "(hkey-buffer-move): Invalid movement direction, '%s'" direction))))
+	(hkey-swap-buffers w1 (selected-window)))
+    ;; ... but if not available, use the Emacs builtin windmove package.
+    (require 'windmove)
+    (windmove-do-window-select direction arg)))
+
+;;; ************************************************************************
+;;; Public support functions
+;;; ************************************************************************
+
+(defun hkey-debug ()
+  (message (format "(HyDebug) %sContext: %s; %s: %s; Buf: %s; Mode: %s; MinibufDepth: %s"
+		   (cond ((eq pred-value 'hbut:current)
+			  (format "ButType: %s; ButLabel: %s; "
+				  (hattr:get  'hbut:current 'categ)
+				  (hypb:format-quote (hbut:label 'hbut:current))))
+			 ((functionp pred-value)
+			  (format "Selection Func: %s; " pred-value))
+			 (t ""))
+		   pred
+		   (if assist-flag "Assist" "Action")
+		   (hypb:format-quote (format "%s" hkey-action))
+		   (current-buffer) major-mode (minibuffer-depth))))
 
 (defun hkey-execute (assist-flag)
   "Evaluate Action Key form (or Assist Key form with ASSIST-FLAG non-nil) for first non-nil predicate from `hkey-alist'.
@@ -439,6 +767,10 @@ Return non-nil iff a non-nil predicate is found."
 With optional ASSIST-FLAG non-nil, display help for the Assist Key command.
 Return non-nil iff associated help documentation is found."
   (interactive "P")
+  (unless (or action-key-depressed-flag action-key-help-flag)
+    (action-key-clear-variables))
+  (unless (or assist-key-depressed-flag assist-key-help-flag)
+    (assist-key-clear-variables))
   (let ((hkey-forms hmouse-alist)
 	hkey-form pred-value call calls cmd-sym doc)
     (while (and (null pred-value) (setq hkey-form (car hkey-forms)))
@@ -565,41 +897,46 @@ the current window.  By default, it is displayed according to the setting of
 `hpath:display-where'."
   (if (bufferp buffer) (setq buffer (buffer-name buffer)))
   (if (null buffer) (setq buffer (buffer-name (current-buffer))))
-  (and (stringp buffer)
-       (string-match "^\\*Help\\|Help\\*$" buffer)
-       (not (memq t (mapcar (lambda (wind)
-			      (string-match
-			       "^\\*Help\\|Help\\*$"
-			       (buffer-name (window-buffer wind))))
-			    (hypb:window-list 'no-mini))))
-       (setq hkey--wconfig (current-window-configuration)))
-  (unwind-protect
-      (let* ((buf (get-buffer-create buffer))
-	     ;; Help-mode calls with-temp-buffer which invokes one of these hooks
-	     ;; which calls hkey-help-show again, so nullify them before
-	     ;; displaying the buffer.
-	     (temp-buffer-show-hook)
-	     (temp-buffer-show-function)
-	     (wind (cond (current-window
-			  (switch-to-buffer buf)
-			  (selected-window))
-			 (t (hpath:display-buffer buf)))))
-	(when wind
-	  (setq minibuffer-scroll-window wind)
-	  ;; Don't use help-mode in buffers already set up with a
-	  ;; quit-key to bury the buffer, e.g. minibuffer completions,
-	  ;; as this will sometimes disable default left mouse key item
-	  ;; selection.
-	  (unless (or (where-is-internal 'quit-window (current-local-map))
-		      (where-is-internal 'hkey-help-hide (current-local-map)))
-	    (when (string-match "^\\*Help\\|Help\\*$" (buffer-name))
-	      (help-mode))
-	    (when (derived-mode-p 'help-mode)
-	      (local-set-key "q" #'hkey-help-hide)))))
-    ;; If in a *Completions* buffer, re-select the window that
-    ;; generated the completions.
-    (if (buffer-live-p completion-reference-buffer)
-	(select-window (get-buffer-window completion-reference-buffer t)))))
+  (let ((org-help (and (stringp buffer) (string-match "\\`\\*Org Help\\*" buffer)))
+	(owind (selected-window)))
+    (and (stringp buffer)
+	 (string-match "^\\*Help\\|Help\\*$" buffer)
+	 (not (memq t (mapcar (lambda (wind)
+				(string-match
+				 "^\\*Help\\|Help\\*$"
+				 (buffer-name (window-buffer wind))))
+			      (hypb:window-list 'no-mini))))
+	 (setq hkey--wconfig (current-window-configuration)))
+    (unwind-protect
+	(let* ((buf (get-buffer-create buffer))
+	       ;; Help-mode calls with-temp-buffer which invokes one of these hooks
+	       ;; which calls hkey-help-show again, so nullify them before
+	       ;; displaying the buffer.
+	       (temp-buffer-show-hook)
+	       (temp-buffer-show-function)
+	       (wind (cond (current-window
+			    (switch-to-buffer buf)
+			    (selected-window))
+			   (t (hpath:display-buffer buf)))))
+	  ;; Ignore org-mode's temp help buffers which it handles on its own.
+	  (when (and wind (not org-help))
+	    (setq minibuffer-scroll-window wind)
+	    ;; Don't use help-mode in buffers already set up with a
+	    ;; quit-key to bury the buffer, e.g. minibuffer completions,
+	    ;; as this will sometimes disable default left mouse key item
+	    ;; selection.
+	    (unless (or (where-is-internal 'quit-window (current-local-map))
+			(where-is-internal 'hkey-help-hide (current-local-map)))
+	      (when (string-match "^\\*Help\\|Help\\*$" (buffer-name))
+		(help-mode))
+	      (when (derived-mode-p 'help-mode)
+		(local-set-key "q" #'hkey-help-hide)))))
+      ;; If in an *Org Help* buffer, reselect the Org buffer.
+      (if org-help (select-window owind))
+      ;; If in a *Completions* buffer, re-select the window that
+      ;; generated the completions.
+      (if (buffer-live-p completion-reference-buffer)
+	  (select-window (get-buffer-window completion-reference-buffer t))))))
 
 (defun hkey-mouse-help (assist-flag args)
   "If a Smart Key help flag is set and the other Smart Key is not down, show help.
@@ -621,7 +958,7 @@ Return t if help is displayed, nil otherwise."
 		     (hmouse-function #'hkey-assist-help assist-flag args)
 		     t)))
       (when help-shown
-	  ;; Then both Smart Keys have been released. 
+	;; Then both Smart Keys have been released. 
 	(setq action-key-cancelled nil
 	      assist-key-cancelled nil)
 	t))))
@@ -644,7 +981,7 @@ Only works when running under a window system, not from a dumb terminal."
 	(assist-key-depress)
 	(when (called-interactively-p 'interactive)
 	  (message
-	   "Assist Key depressed; go to release point and hit {%s %s}."
+	   "Assist Key depressed; go to release point and press {%s %s}."
 	   (substitute-command-keys "\\[universal-argument]")
 	   (substitute-command-keys "\\[hkey-operate]"))))
     (if action-key-depressed-flag
@@ -653,7 +990,7 @@ Only works when running under a window system, not from a dumb terminal."
 		 (message "Action Key released.")))
       (action-key-depress)
       (when (called-interactively-p 'interactive)
-	(message "Action Key depressed; go to release point and hit {%s}."
+	(message "Action Key depressed; go to release point and press {%s}."
 		 (substitute-command-keys "\\[hkey-operate]"))))))
 
 (defun hkey-summarize (&optional current-window)
@@ -1061,5 +1398,4 @@ not."
     rtn))
 
 (provide 'hmouse-drv)
-
 ;;; hmouse-drv.el ends here

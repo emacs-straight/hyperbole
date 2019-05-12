@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:    15-Apr-91 at 00:48:49
 ;;
-;; Copyright (C) 1991-2017  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -34,7 +34,7 @@
 ;; The following section applies only to MS-DOS and MS-Windows OSs.
 ;; Users of other OSs may simply ignore this section.
 
-;; Some versions of Microcruft OSs don't automatically set the
+;; Some versions of Microsoft OSs don't automatically set the
 ;; timezone so that Hyperbole can read it.  Nor do they include a
 ;; UNIX-style date program.  So follow the commented instructions in
 ;; the code below here.
@@ -43,7 +43,7 @@
 ;; timezone properly and you need not do anything.  If you receive a
 ;; timezone error, simply follow the instructions below to set the
 ;; timezone manually and then reload Hyperbole.
-(if (and hyperb:microcruft-os-p
+(if (and hyperb:microsoft-os-p
 	 (require 'htz)
 	 (not (stringp htz:local)))
     (progn
@@ -123,6 +123,19 @@ down a windowful."
   (hyperbole-menubar-menu)
   (hyperbole-minibuffer-menu))
 
+(defcustom hyperbole-default-web-search-term-max-lines 2
+  "Provide a default search term using the selected text if the
+active region contains less than or equal to this number of
+lines"
+  :type 'integer
+  :group 'hyperbole-commands)
+
+(defun hyperbole-default-web-search-term ()
+  "Return a default search term if region is active and not too large."
+  (and (region-active-p)
+       (<= (count-lines (region-beginning) (region-end)) hyperbole-default-web-search-term-max-lines)
+       (buffer-substring-no-properties (region-beginning) (region-end))))
+
 (defun hyperbole-read-web-search-arguments (&optional service-name search-term)
   "Read from the keyboard a list of (web-search-service-string search-term-string) if not given as arguments."
   (let ((completion-ignore-case t))
@@ -130,7 +143,8 @@ down a windowful."
       (setq service-name (completing-read "Search service: " hyperbole-web-search-alist
 					  nil t)))
     (while (or (not (stringp search-term)) (equal search-term ""))
-     (setq search-term (read-string (format "Search %s for: " service-name))))
+      (setq search-term (read-string (format "Search %s for: " service-name)
+				     (hyperbole-default-web-search-term))))
     (list service-name search-term)))
 
 (defun hyperbole-web-search (&optional service-name search-term)
@@ -148,6 +162,24 @@ package to display search results."
 	  (browse-url (format (cdr (assoc service-name hyperbole-web-search-alist))
 			      search-term)))
       (user-error "(Hyperbole): Invalid web search service `%s'" service-name))))
+
+(defcustom inhibit-hyperbole-messaging t
+  "*Determines whether Hyperbole supports explicit buttons in mail and news buffers.
+The default of t means disable such support (work remains to
+modernize these features).  When t, Hyperbole will not alter
+messaging mode hooks nor overload functions from these packages,
+preventing potential incompatibilities.
+
+If you want to use Hyperbole buttons in mail and news buffers, set
+this variable to nil by adding (hyperbole-toggle-messaging 1)
+to your personal Emacs initialization file, prior to loading
+Hyperbole, and then restart Emacs."
+  :type 'boolean
+  :initialize 'custom-initialize-set
+  :set (lambda (symbol value) 
+	 ;; Invert value to produce ARG for hyperbole-toggle-messaging.
+	 (hyperbole-toggle-messaging (if value 0 1)))
+  :group 'hyperbole-buttons)
 
 (defcustom hyperbole-web-search-browser-function browse-url-browser-function
   "*Function of one url argument called by any Hyperbole Find/Web search."
@@ -216,6 +248,7 @@ obtained search string."
       ((and (featurep 'xemacs) (not noninteractive))
        (require 'hui-xe-but)
        ;;
+       ;; Highlight explicit buttons when files are read in.
        (add-hook 'find-file-hook #'hproperty:but-create t)
        (defalias 'hui:but-flash #'hproperty:but-flash)
        ;;
@@ -244,16 +277,6 @@ obtained search string."
 ;;; section in "hib-doc-id.el" for complete installation and use information.
 ;;;
 (add-hook 'hibtypes-end-load-hook (lambda () (require 'hib-doc-id)))
-
-;;; ************************************************************************
-;;; HYPERBOLE LOCAL VARIABLE SUPPORT
-;;; ************************************************************************
-
-;;; Uncomment this if you really need to be able to use Hyperbole variables
-;;; (and others with colons in their names) within file local variable lists.
-;;; See the source file for more details.
-;;;
-;;  (require 'hlvar)
 
 ;;; ************************************************************************
 ;;; SITE-SPECIFIC ADDITIONS - Add your Hyperbole configuration additions here.

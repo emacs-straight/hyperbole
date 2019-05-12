@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:    23-Jan-94
 ;;
-;; Copyright (C) 1994-2016  Free Software Foundation, Inc.
+;; Copyright (C) 1994-2019  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -14,17 +14,12 @@
 
 ;;; Code:
 
-;; Quiet byte compiler warnings for this free variable.
-(eval-when-compile
-  (unless (require 'filladapt nil t)
-    (defvar filladapt-function-table nil)))
-
 ;;; ************************************************************************
 ;;; Public variables
 ;;; ************************************************************************
 
 (defvar kfill:function-table
-  (if (featurep 'filladapt)
+  (if (boundp 'filladapt-function-table)
       filladapt-function-table
     (list (cons 'fill-paragraph (symbol-function 'fill-paragraph))))
   "Table containing the old function definitions that kfill overrides.")
@@ -100,7 +95,7 @@ number of lines that could not be moved, otherwise 0."
     (forward-visible-line n)
     (if (< n 0)
 	nil
-      (skip-chars-forward "[\n\r]"))
+      (skip-chars-forward "\n\r"))
 ;    (- (abs n) (count-matches "\n" opoint (point)))
     0))
 
@@ -232,6 +227,7 @@ fill prefix at the beginning of each line."
 	  (fill-region-as-paragraph from (point) justify-flag)))))
 
 (defun kfill:funcall (function &rest args)
+  "Call the original FUNCTION with rest of ARGS that kfill overloaded."
   (apply (cdr (assq function kfill:function-table)) args))
 
 (defun kfill:hanging-list (paragraph)

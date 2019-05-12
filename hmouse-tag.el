@@ -635,6 +635,15 @@ buffer."
       (beginning-of-line)
       (looking-at "\\(;*[ \t]*\\)?(\\(autoload\\|load\\|require\\)")))
 
+(defun smart-lisp-at-change-log-tag-p ()
+  "When in a change-log mode, match to only bound Elisp identifiers and those with a '-' somewhere in the middle.
+These tight tests help eliminate undesired matches.
+Returns matching ELisp tag name that point is within, else nil."
+  (when (derived-mode-p 'change-log-mode)
+    (let ((identifier (smart-lisp-at-tag-p)))
+      (and identifier (intern-soft identifier)
+	   (string-match "[^-]-[^-]" identifier)))))
+
 (defun smart-lisp-at-tag-p (&optional no-flash)
   "Returns Lisp tag name that point is within, else nil.
 Returns nil when point is on the first line of a non-alias Lisp definition."
@@ -644,7 +653,7 @@ Returns nil when point is on the first line of a non-alias Lisp definition."
       (save-excursion
 	(skip-chars-backward identifier-chars)
 	(if (and (looking-at identifier)
-		 ;; Ignore any all punctuation matches.
+		 ;; Ignore any punctuation matches.
 		 (not (string-match "\\`[-<>*]+\\'" (match-string 0)))
 		 ;; Needed to set match string.
 		 (looking-at identifier))
@@ -761,6 +770,36 @@ If key is pressed:
 	     (buffer-substring-no-properties (match-beginning 2) (match-end 2))
 	     (match-beginning 2) (match-end 2)))))))
 
+(defun smart-jedi-find-file (file line column other-window)
+  "Function that reads a source file for jedi navigation.
+It takes these arguments: (file-to-read other-window-flag line_number column_number)."
+  (hpath:display-buffer (find-file file) other-window)
+  (jedi:goto--line-column line column))
+
+(defun smart-python-jedi-to-definition-p ()
+  "If the Jedi Python identifier server is running, test and use it to jump to the definition.
+See https://tkf.github.io/emacs-jedi/latest/."
+  ;; Use functions from jedi-core.el only, not from jedi.el, since
+  ;; company-jedi.el users will have loaded only jedi-core.el.
+  (when (and (featurep 'jedi-core) jedi-mode)
+    (let* ((servers (jedi:-get-servers-in-use))
+	   (proc (epc:manager-server-process (car servers))))
+      (and servers (processp proc)
+	   (eq 'run (process-status (process-buffer proc)))
+	   ;; The goto is performed asynchronously.
+	   ;; It reports in the minibuffer when a definition is not found.
+	   ;; !! Only works on tag at point, not the tagname passed in as jedi
+	   ;; does not accept a tag parameter.
+	   ;;
+	   ;; jedi:find-file-function is an RSW custom
+	   ;; modification that allows display-where to work;
+	   ;; otherwise, will just display in another window.
+	   (let ((jedi:find-file-function #'smart-jedi-find-file))
+	     (jedi:goto-definition hpath:display-where)
+	     ;; For use as a predicate, always return t if the Jedi server
+	     ;; is running  so other lookup techniques are not tried.
+	     t)))))
+
 ;;;###autoload
 (defun smart-python (&optional identifier next)
   "Jumps to the definition of optional Python IDENTIFIER or the one at point.
@@ -769,6 +808,9 @@ Optional second arg NEXT means jump to next matching Python tag.
 It assumes that its caller has already checked that the key was pressed in an
 appropriate buffer and has moved the cursor to the selected buffer.
 
+See the documentation for `smart-python-jedi-to-definition-p' for the
+behavior when the Jedi python identifier server is in use.
+
 See the documentation for `smart-python-oo-browser' for the behavior of this
 function when the OO-Browser has been loaded.
 
@@ -776,10 +818,11 @@ Otherwise, on a Python identifier, the identifier definition is displayed,
 assuming the identifier is found within an `etags' generated tag file
 in the current directory or any of its ancestor directories."
   (interactive)
-  (cond ((fboundp 'python-to-definition)
+  (cond ((smart-python-jedi-to-definition-p))
+	((fboundp 'python-to-definition)
 	 ;; Only fboundp if the OO-Browser has been loaded.
 	 (smart-python-oo-browser))
-	(identifier
+	(t
 	 (smart-python-tag identifier next))))
 
 ;;;###autoload
@@ -1176,7 +1219,7 @@ Look for packages in `smart-java-package-path'."
 		    dir-list (if (setq found (file-exists-p path))
 				 nil
 			       (cdr dir-list))))
-	    (when (and (not found) subpath hyperb:microcruft-os-p)
+	    (when (and (not found) subpath hyperb:microsoft-os-p)
 		;; Try .jav suffix.
 	      (setq subfile (concat subpath ".jav")
 		    dir-list smart-java-package-path)
@@ -1257,7 +1300,7 @@ See the \"${hyperb:dir}/smart-clib-sym\" script for more information."
 	       (with-no-warnings (find-tag tag))))
       ;; Signals an error if tag is not found which is caught by
       ;; many callers of this function.
-      (with-no-warnings	(find-tag tag)))))
+      (with-no-warnings (find-tag tag)))))
 
 ;;;###autoload
 (defun smart-tags-file-path (file)

@@ -1,3 +1,382 @@
+2019-05-11  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (External Viewers): Commented out reference to mailcap use
+    since it is presently not used (commented out in the code).
+
+* hpath.el (hpath:find): Fixed filename and path ordering error when
+    path contains a variable and a hash anchor.
+
+* DEMO (POSIX and MSWindows Paths): Added this section.
+* HY-WHY.kotl: Added a reference to that section.
+
+2019-05-09  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-drag-item):
+                (hmouse-click-to-drag-item): Added and thereby changed
+    {M-o i} to trigger an error if not on an item to drag.  This also prevent
+    Hyperbole explicit button creation from being invoked which can be
+    confusing to users.
+* DEMO (Displaying File and Buffer Items and Moving Buffers): Updated with
+    {M-o i} change.
+
+2019-05-07  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:directory-expand-alist: Added to store the reverse of
+    each WSL mount-point for when converting from mswindows-to-posix.  Set
+    in hpath:cache-mswindows-mount-points.
+           (hpath:cache-mswindows-mount-points): Downcase all mounted Windows paths.
+           (hpath:mswindows-path-posix-mount-alist): Added.
+
+2019-05-05  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-jedi-find-file): Added.
+		(smart-python-jedi-to-definition-p): Improved to use
+    hpath:display-where to display target when possible, i.e. when the
+    emacs-jedi project accepts our pull-request that adds this feature.
+
+2019-04-22  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el: Pushed BW changes for 7.0.2c test update.
+
+* hargs.el (hargs:delimited): Added exclude-regexp argument.
+* hpath.el (hpath:delimited-possible-path): Used above new argument
+   to prevent matching to strings that include string quotes.
+
+2019-04-21  Bob Weiner  <rsw@gnu.org>
+
+* man/hkey-help.txt: Added Company-mode and Treemacs entries.
+
+* hui-window.el (hmouse-alist-add-window-handlers): Renamed from hui-window--register.
+
+* man/hyperbole.texi (Smart Key - Company Mode): Added.
+
+2019-03-11  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Implicit Buttons, gitlab-reference):
+  DEMO (Gitlab (Remote) References): Added these sections.
+
+2019-02-16  Bob Weiner  <rsw@gnu.org>
+
+* hui-window.el (smart-window-of-coords): Handled null coords parameter.
+
+2019-02-10  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-drag-to): Fixed to match documentation that says will
+    create an explicit file link button if called anywhere other than on
+    a listing item.
+
+* hui-treemacs.el (smart-treemacs-modeline): Replaced old call of
+    treemacs-buffer-exists? with new calls to treemacs-current-visibility
+    and treemacs-get-local-buffer for Treemacs V2.
+
+2019-02-06  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (ripgrep-msg): Tightened match to ignore empty potential filenames
+    that matched when they were expanded to the current directory.
+
+2019-02-05  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-lisp-mode-p): Removed change-log-mode.
+    (smart-lisp-at-change-log-tag-p): Added so can match
+      only to bound Elisp entities in change-log-mode with '-' in
+      the middle of their names to prevent false positives.
+  hui-mouse.el (hkey-alist): Added tightened change-log-mode handling.
+   man/hyperbole.texi (Smart Key - Lisp Source Code): Documented change.
+
+* hargs.el (hargs:delimited): Fixed that strings on lines with an odd number
+    of delimiters might fail to match.  Since strings can span lines but this
+    function matches only strings that start on the current line, when
+    start-delim and end-delim are the same and there are an odd number of
+    delimiters in the search range, assume point is within a
+    string and not between two other strings.
+    For example, with the following text and point within "DEMO", its path
+    previously was not found:
+      For each site, the links are properly maintained.  See "DEMO#Path
+      suffixes and Variables" and "DEMO#Path Prefixes".  "DEMO"
+
+* hui-treemacs.el: Deleted treemacs-mode from aw-ignored-buffers so can select
+    a Treemacs window via ace-window.
+
+2019-02-04  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (smart-dired-assist): Prevented any region selection from
+    causing multiple files to be marked for deletion; we want to mark
+    only one.
+
+* hibtypes.el (annot-bib): Stopped this from activating when in org-mode to avert false positives.
+              (markdown-follow-inline-link-p, markdown-internal-link): Added ibut:label-set
+    to show a decent approximation of the button label when displaying help.
+
+2019-02-03  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el: Pushed BW changes for 7.0.2b test update.
+
+* hui-treemacs.el (treemacs-quit): Defined if treemacs doesn't and used.
+
+2019-02-03  Mats Lidell  <matsl@gnu.org>
+
+* hui-treemacs.el (treemacs-version): Require v2 or higher.
+
+* hsettings.el (hyperbole-default-web-search-term-max-lines):
+               (hyperbole-default-web-search-term): Added.
+
+* hpath.el (hpath:tramp-file-name-regexp): Added and used in hpath:remote-at-p.
+
+2019-02-02  Bob Weiner  <rsw@gnu.org>
+
+* hsys-org.el (org-mode): Support derived modes too.
+
+2019-01-31  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Keyboard Drags): Added doc of {M-o r <window-id>},
+    replace selected window's buffer with that of another window.
+
+* man/hyperbole.texi (Keyboard Drags): 
+  DEMO (Displaying File and Buffer Items and Moving Buffers):
+    Added doc of {M-o m <window-id>}, swap selected window's buffer with
+    that of <window-id>'s.
+
+2019-01-30  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-drag-to): Fixed to handle the case where it is
+    called but no drag has taken place, i.e. when invoked from the keyboard
+    via Ace Window.
+
+2019-01-29  Bob Weiner  <rsw@gnu.org>
+
+* hargs.el (hargs:buffer-substring): Added and used in hargs:delimited to
+    replace null char in colored grep output lines with a colon, so they are
+    handled properly by the implicit buttons.
+
+2019-01-27  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el (hyperb:microsoft-os-p): Renamed to this.
+
+* hpath.el (hpath:cache-mswindows-mount-points):
+    Added and called when Hyperbole is initialized, mainly to allow access to
+    MSWindows network shares which would otherwise not be accessible as links
+    under POSIX systems.
+           (hypb:map-plist): Added to map over property lists.
+    Called in hpath:cache-mswindows-mount-points.
+
+2019-01-26  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el (hyperb:wsl-os-p): Added to test for use of Microsoft WSL.
+
+* hpath.el (hpath:delimited-possible-path): Added optional include-positions parameter.
+
+2019-01-21  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:mswindows-mount-prefix, hpath:mswindows-drive-regexp, hpath:mswindows-path-regexp,
+    hpath:mswindows-to-posix, hpath:mswindows-to-posix-separators, hpath:posix-to-mswindows)
+    hpath:posix-to-mswindows-separators, hpath:posix-path-p,
+    hpath:substitute-posix-or-mswindows-at-point, hpath:substitute-posix-or-mswindows):
+      Added to handle MSWindows paths under POSIX OSes, e.g. Windows Subsystem for Linux.
+    (hpath:find-program): Commented out call to hpath:find-file-mailcap to prevent use of
+      MIME external viewers on text files.
+  hargs.el (hargs:delimited): Added call to hpath:mswindows-to-posix-path.
+  hyperbole.el (hyperb:init): Abbreviated MSWindows mount point paths.
+
+2017-12-29  Bob Weiner  <rsw@gnu.org>
+
+* hsettings.el (inhibit-hyperbole-messaging): Moved this from hyperbole.el to here to prevent
+    it being reset when hyperbole-toggle-messaging reloads the hyperbole library.
+
+2017-12-20  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kexport.el (kexport:html-file-klink)
+                  (kexport:html):
+                  (kexport:html-replacement-alist): Added 'k' to precede klink HTML HREF
+    references since these must start with a letter.
+
+* hui-select.el (hui-select-get-region): Added this to be used in other libraries.
+                (hui-select-get-region-boundaries): Added and used in hui-select-thing.
+
+2017-12-19  Bob Weiner  <rsw@gnu.org>
+
+* hib-social.el (github-reference, gitlab-reference): Added "people" reference support
+    to list people who are part of a formal organization as well as a "staff" alias.
+    Added "contributors" reference support to list project contributors as well.
+
+2017-12-19  Bob Weiner  <rsw@gnu.org>
+
+* hib-social.el (github-reference): Added =item-id syntax.
+                (gitlab-reference): Added to support Gitlab references.
+
+2017-12-18  Bob Weiner  <rsw@gnu.org>
+
+* hib-social.el (github-reference): Fixed resolution of these formats of issue reference:
+    gh#gh-34 and gh#issue/34 (needed to be plural).
+
+2017-12-17  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kfill.el: Eliminated use of filladapt.el since it causes kotl-mode filling errors.
+
+* kotl/kfill.el (kfill:forward-line): Removed improperly used [] in skip-chars-forward.
+
+2017-12-16  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:key-dir):
+  hui-window.el (hmouse-at-item-p):
+  hui-jmenu.el (hui-menu-buffer-mode-name): Simplified using buffer-local-value.
+
+2017-12-15  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-throw): Fully resolved temporary display of newly created frames
+    with a (redisplay t) to force display of any window updates during the temporary
+    display.
+
+2017-12-13  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-throw): Partially solved temporary display of newly created frames
+    (when not given focus initially with a '(no-focus-on-map . t) property), so hkey-throw
+    to a new target frame now temporarily displays the target frame and then makes the start
+    frame the uppermost frame.  When on an item though, the item is not visible during the
+    temporary display yet.
+
+* Makefile (texinfo): Added texinfo dependency target and added additional image dependencies
+    in man/im.
+
+* hyperbole.el (require 'hmouse-drv): Changed from hmouse-key to prevent a require cycle
+    during macro expansion.
+  hmouse-key.el: Changed requires to just be during compile since hyperbole.el now includes
+    these requires and will load hmouse-key.
+
+2017-12-12  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el: Pushed 7.0.2a test update.
+
+* hmouse-drv.el (hkey-throw): Modified to show a message if the frame of release is
+    different than the frame of depress, since this frame is typically hidden by
+    the depress frame.
+
+* hmouse-tag.el (smart-lisp-mode-p): Added change-log-mode since such files often contain
+    Lisp references.
+
+* hypb.el (hypb:select-window-frame): Added and used in hmouse-item-to-window.
+          (hypb:save-selected-window-and-input-focus): Added and used in hkey-throw.
+
+* kotl/kotl-mode.el (kotl-mode): Fixed setq close paren error that skipped 4 settings of
+    paragraph-start, selective-display, selective-display-ellipses and track-eol.
+
+2017-12-10  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Menu Commands, HyRolo Menu): Documented how to invoke the Koutliner and
+    HyRolo popup menus in Emacs.
+
+* hyrolo-menu.el (hyrolo-menubar-menu):
+  kotl/kmenu.el (kotl-menubar-menu): For GNU Emacs, use standard binding of C-mouse-3 to popup
+    mode-specific menu instead of mouse-3.
+
+2017-12-08  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-ace-window-setup): Autoloaded since might be added to an init file
+    before Hyperbole is loaded.
+
+* hycontrol.el (hycontrol-quit-frames-mode, hycontrol-quit-windows-mode): Added conditionals
+    to allow for quitting from help buffers with {q} while remaining in HyControl, e.g. if
+    display a key binding help window.  Added {Q} binding to unconditionally quit from HyControl.
+
+* hmouse-drv.el (hkey-buffer-move): Added directional movement commands that call this function.
+    hkey-buffer-move-left, hkey-buffer-move-right, hkey-buffer-move-down and hkey-buffer-move-up.
+
+2017-12-07  Bob Weiner  <rsw@gnu.org>
+
+* hload-path.el (hyperb:emacs-p): Removed Emacs19 test.
+                (hyperb:kotl-p): Removed since all versions of Emacs in use now support the Koutliner.
+
+* hlvar.el - Removed this since colons are now handled by Emacs 26 in local variable names.
+
+* hypb.el (hypb:rgrep): Added support for ripgrep.
+  hibtypes.el (ripgrep-msg): Added implicit button support for ripgrep (rg) messages where
+    the associated pathname is output once before all matching lines.
+    See "https://github.com/BurntSushi/ripgrep".
+
+2017-12-04  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hmouse-alist): Reload the def of this variable if its value is null.
+    (hmouse-choose-windows): Added to perform cross-window drags, replacements and throws with 3 mouse
+       clicks.
+
+2017-12-03  Bob Weiner  <rsw@gnu.org>
+
+* hui-treemacs.el: Removed replacements for treemacs functions; as of Treemacs 1.14, all needed changes are
+    included.
+
+2017-12-01  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-drag-stay, hkey-replace): Added for use as ace-window commands.
+                (hkey-throw): Rewrote so if not on an item, then throws the current buffer.
+    hkey-replace is the inverse, it grabs the specified buffer and places it into the selected
+    window ({r} command key for ace-window).  hkey-drag-stay does a drag but leaves point
+    in the originally selected window.
+                (hmouse-click-to-drag, hmouse-click-to-drag-stay, hmouse-click-to-drag-to)
+                 hmouse-click-to-replace, hmouse-click-to-swap, hmouse-click-to-throw): Added to click
+    with the mouse twice on two different windows to select the windows using hmouse-choose-windows.
+                (hkey-drag, hkey-drag-stay, hkey-drag-to, hkey-replace, hkey-swap, hkey-throw): Added and
+    made interactive with ace-window window parameter selection.
+                (hkey-buffer-to): Added to copy a buffer from-window to-window, using ace-window
+    to select the windows.
+                (hkey-swap-buffers): Added to swap buffers between from-window and to-window, using ace-window
+    to select the windows.
+
+* hui-treemacs.el (smart-treemacs): Added standard Hyperbole end-of-line scrolling support.
+
+* hui-mouse.el (smart-company-to-definition, smart-company-help): Added to support company completion mode.
+  hmouse-sh.el (hmouse-shifted-setup, hmouse-unshifted-setup): Added Action and Assist Key local bindings
+    for company-mode for GNU Emacs.
+
+2017-11-30  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Glossary): Added Jedi item with link to its home page.  Added link to the OO-Browser
+    home page in its item.
+
+* hmouse-tag.el (smart-python-jedi-to-definition-p): Added and called in smart-python to use the Jedi
+    package when its server is running.  It jumps to the proper definition of multi-level module
+    references definitions, e.g. a.b.c.  Also fixed error where the default action was not jumping to
+    a tag definition at point because it was testing that the identifier parameter was non-nil (no
+    identifier is sent in such usage).
+
+* hui-mouse.el (hkey-alist): Moved smart-python prior to Imenu for more advanced definition lookups
+
+* hyperbole.el (temp-buffer-show-hook, temp-buffer-show-function): Added Hyperbole hkey-help-show
+    function rather than replacing any existing hook values.
+
+2017-11-29  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (markdown-internal-link): Rewrote (and added support functions) to handle markdown
+    infile links properly.  Previous use of markdown-do was removed because that now does things
+    other than following links.
+
+2017-11-28  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-help-show): Added conditionals to support org-mode org-goto *Org Help* buffer
+    properly.
+
+2017-11-27  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-ace-window-setup): Made new ace-window frames (window id = z) inherit the size
+    of the prior selected frame; same as HyControl.
+
+* hui-window.el (hmouse-kill-and-yank-region, hmouse-yank-region): Added select-frame-set-input-focus
+    in case released in a different frame.
+
+2017-11-26  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-throw): Restored input focus to start-win rather than just making it
+    the selected window.
+                (hkey-drag-to): Fixed predicate test to call hmouse-at-item-p instead of
+    hmouse-drag-item-to-display and set input focus to release-window if dragging an item.
+
+* hmouse-drv.el (hkey-ace-window-setup): Added deletion of i and t command bindings before
+    adding them to aw-dispatch-alist.
+                (hkey-throw): Fixed split line code typo here.
+  hycontrol.el (hycontrol-frame-offset): Fixed typo.
+
+==============================================================================
+V7.0.3 changes ^^^^:
+==============================================================================
+
 2017-11-23  Bob Weiner  <rsw@gnu.org>
 
 * hversion.el: Released 7.0.2.
@@ -110,6 +489,9 @@ V7.0.1 changes ^^^^:
 
 * hversion.el: Updated to 7.0.0 for major release.
 
+* smart-clib-sym: Removed file-newer Perl script dependency.
+  file-newer: Removed.
+
 * Makefile (help): Removed misplaced double quote characters.
 
 * hui-window.el (hmouse-drag-window-side): Fixed coordinate error when drag release is outside of Emacs.
@@ -162,7 +544,7 @@ V7.0.1 changes ^^^^:
     location.  Also fixed edge cases where want to copy or move thing to the beginning or end of the thing region.
                 (hmouse-goto-region-point): Renamed to hmouse-goto-region-prev-point, for clarity.
                 (hmouse-kill-and-yank-region, hmouse-kill-region): Used value of point saved in hkey-value to determine
-    the region if non-nil. 
+    the region if non-nil.
 
 * hui-select.el (hui-select-delimited-thing, hui-select-thing): Changed to use use-region-p.
   hmouse-drv.el (hmouse-use-region-p): Added and used to improve hmouse-drag-thing.
@@ -1873,7 +2255,7 @@ V6.0.0 changes ^^^^:
 
 * hmouse-drv.el (hkey-help-hide): Changed to utilize quit-window function if *hkey-wconfig* is
     not set and made it interactive and an autoload so can replace quit-window in help buffers.
-                (quit-window): Overloaded this function form "window.el" to utilize *hkey-wconfig*
+                (quit-window): Overloaded this function from "window.el" to utilize *hkey-wconfig*
     when set.
   hui-mini.el (hui:menu-help): This fixed an issue where Hyperbole minibuffer menu item help window
     quit did not properly restore prior window configuration.

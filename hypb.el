@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:     6-Oct-91 at 03:42:38
 ;;
-;; Copyright (C) 1991-2017  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -27,7 +27,7 @@
 This should end with a space.")
 
 (defcustom hypb:rgrep-command
-  (format "%sgrep -insIHr " (if (executable-find "zgrep") "z" ""))
+  (format "%sgrep -insIHr" (if (executable-find "zgrep") "z" ""))
   "*Grep command string and initial arguments to send to `hypb:rgrep' command.
 It must end with a space."
   :type 'string
@@ -242,17 +242,6 @@ FILE is temporarily read into a buffer to determine the major mode if necessary.
 		   nil t)
        nil t)))
 
-;;;###autoload
-(defun hypb:functionp (obj)
-"Returns t if OBJ is a function, nil otherwise."
-  (cond
-    ((symbolp obj) (fboundp obj))
-    ((subrp obj))
-    ((hypb:emacs-byte-code-p obj))
-    ((consp obj)
-     (if (eq (car obj) 'lambda) (listp (car (cdr obj)))))
-    (t nil)))
-
 (defun hypb:function-copy (func-symbol)
   "Copies FUNC-SYMBOL's body for overloading.  Returns copy of body."
   (if (fboundp func-symbol)
@@ -463,6 +452,13 @@ INACTIVE-P is unused, it is for compatibility with XEmacs' version of
 mark-marker."
     (mark-marker)))
 
+;;;###autoload
+(defun hypb:map-plist (func plist)
+  "Returns result of applying FUNC of two args, key and value, to key-value pairs in PLIST, a property list."
+  (cl-loop for (k v) on plist by #'cddr
+	   collect (funcall func k v) into result
+	   finally return result))
+
 (defun hypb:map-sublists (func list)
   "Applies FUNC to every atom found at any level of LIST.
 FUNC must take two arguments, an atom and a list in which the atom is found.
@@ -512,7 +508,7 @@ NEWTEXT may instead be a function of one argument (the string to replace in)
 that returns a replacement string."
   (unless (stringp str)
     (error "(hypb:replace-match-string): 2nd arg must be a string: %s" str))
-  (unless (or (stringp newtext) (hypb:functionp newtext))
+  (unless (or (stringp newtext) (functionp newtext))
     (error "(hypb:replace-match-string): 3rd arg must be a string or function: %s"
 	   newtext))
   (let ((rtn-str "")
@@ -526,7 +522,7 @@ that returns a replacement string."
 	    (concat
 	      rtn-str
 	      (substring str prev-start match)
-	      (cond ((hypb:functionp newtext)
+	      (cond ((functionp newtext)
 		     (hypb:replace-match-string
 		      regexp (substring str match start)
 		      (funcall newtext str) literal))
@@ -599,12 +595,16 @@ If in an Emacs Lisp mode buffer and no PREFIX-ARG is given, limit search to only
 	 (grep-cmd
 	  (if (and (not current-prefix-arg) (equal (buffer-name) "*Locate*"))
 	      (format "%s -e \%c%s\%c %s" hypb:rgrep-command delim pattern delim (hypb:locate-pathnames))
-	    (format "%s%s -e \%c%s\%c ."
+	    (format "%s %s -e \%c%s\%c ."
 		    hypb:rgrep-command
 		    (if (and (memq major-mode '(emacs-lisp-mode lisp-interaction-mode))
 			     (not prefix-arg))
-			"--include=\"*.el\" --include=\"*.el.gz\""
-		      "--exclude=\"*~\" --exclude=\"#*\" --exclude=\"TAGS\"")
+			(if (string-match "\\`rg " hypb:rgrep-command)
+			    "-g \"*.el\" -g \"*.el.gz\""
+			  "--include=\"*.el\" --include=\"*.el.gz\"")
+		      (if (string-match "\\`rg " hypb:rgrep-command)
+			  "-g \"!*~\" -g \"!#*\" -g \"!TAGS\""
+			"--exclude=\"*~\" --exclude=\"#*\" --exclude=\"TAGS\""))
 		    delim pattern delim))))
     (setq this-command `(grep ,grep-cmd))
     (push this-command command-history)
@@ -614,6 +614,20 @@ If in an Emacs Lisp mode buffer and no PREFIX-ARG is given, limit search to only
  "Save only lines containing matches for REGEXP within the active region or to the end of buffer."
     (interactive "sSave lines with match for regexp: ")
     (keep-lines regexp nil nil t))
+
+(defmacro hypb:save-selected-window-and-input-focus (&rest body)
+  "Execute BODY, then restore the selected window in each frame and the previously selected frame with input focus.
+The value returned is the value of the last form in BODY."
+  `(let ((frame (selected-frame)))
+     (prog1 (save-selected-window ,@body)
+       (select-frame-set-input-focus frame))))
+
+(defun hypb:select-window-frame (window)
+  "Select WINDOW and its frame (set input focus there)."
+  (if (window-live-p window)
+      (progn (select-window window)
+	     (select-frame-set-input-focus (window-frame window)))
+    (error "(hypb:select-window-frame): Argument must be a live window, not '%s'" window)))
 
 (defun hypb:supercite-p ()
   "Returns non-nil iff the Emacs add-on supercite package is in use."
@@ -749,6 +763,7 @@ Without file, the banner is prepended to the current buffer."
 	(setq button (make-button (- (point) 3) (- (point) 2) :type 'hyperbole-banner))
 	(button-put button 'help-echo (concat "Click to visit " hypb:home-page))
 	(button-put button 'action #'hypb:browse-home-page)
+	(button-put button 'face 'default)
 	(button-put button 'keymap hypb:hyperbole-banner-keymap)))))
 
 (defun hypb:display-file-with-logo-xemacs (&optional file)

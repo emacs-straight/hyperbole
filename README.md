@@ -1,11 +1,13 @@
-# GNU Hyperbole 7.0.2 - The Everyday Hypertextual Information Manager
+# GNU Hyperbole 7.0.3 - The Everyday Hypertextual Information Manager
+
+[Say thanks if you like Hyperbole.(https://saythanks.io/to/rswgnu)]
 
 <!-- START doctoc generated TOC -->
 **Table of Contents**
 
 - [Summary](#summary)
 - [Mailing Lists](#mailing-lists)
-- [Ftp and Git Repository Downloads](#ftp-and-git)
+- [Ftp and Git Repository Downloads](#ftp-and-git-repository-downloads)
 - [Installation](#installation)
 - [Invocation](#invocation)
 - [Hyperbole Components](#hyperbole-components)
@@ -400,7 +402,7 @@ Typical Hyperbole applications include:
 
 See the [HY-ABOUT](HY-ABOUT) file for a description and overview of Hyperbole.
 
-See the [HY-NEWS](HY-ABOUT) file for a summary of new features in this release.
+See the [HY-NEWS](HY-NEWS) file for a summary of new features in this release.
 
 See the [INSTALL](INSTALL) file for installation and invocation instructions.
 
@@ -497,8 +499,16 @@ Keys).
   products I have ever come across.  It is certainly the one which has made
   the biggest improvement in my personal productivity.
 
+  My Hyperbole button file is my start page in Emacs.  It's a quickly
+  searchable index with links to countless resources.  We also have a
+  library of implicit buttons that enable rapid navigation from references
+  in our code to our issue tracking system, so clicking a reference like
+  Client6502 opens the relevant conversation.  Hyperbole provides a really
+  useful set of power tools.  If Emacs is your preferred productivity
+  environment, it's definitely worth getting familiar with it.
+
                         -- Chris Nuzum  
-                           Co-founder, Traction Software, Inc.
+                           Co-founder, Traction Softwarea, Inc.
 
 -------
 

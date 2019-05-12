@@ -1,4 +1,4 @@
-;;; hui.el ---  GNU Hyperbole button and hyperlink user interface
+;;; hui.el --- GNU Hyperbole button and hyperlink user interface
 ;;
 ;; Author:       Bob Weiner
 ;;
@@ -220,19 +220,17 @@ Signals an error if any problem occurs."
        (list curr-label new-label))))
 
   (save-excursion
-    (if (called-interactively-p 'interactive)
-	nil
+    (unless (called-interactively-p 'interactive)
       (hui:buf-writable-err (current-buffer) "ebut-rename")
       (if (or (not (stringp curr-label)) (string= curr-label ""))
 	  (hypb:error "(ebut-rename): 'curr-label' must be a non-empty string: %s"
-		 curr-label))
+		      curr-label))
       (and (stringp new-label) (string= new-label "")
 	   (hypb:error "(ebut-rename): 'new-label' must be a non-empty string: %s"
-		  new-label)))
+		       new-label)))
     (or (ebut:get (ebut:label-to-key curr-label))
 	(hypb:error "(ebut-rename): Can't rename %s since no button data."
-	       curr-label))
-    )
+	       curr-label)))
   (cond (new-label
 	 (ebut:operate curr-label new-label)
 	 (setq hui:ebut-label-prev nil)
@@ -823,7 +821,7 @@ Optional NO-SORT means display in decreasing priority order (natural order)."
       (let ((file (buffer-file-name but-buf)))
 	(if file
 	    (file-name-directory (hpath:symlink-referent file))
-	  (cdr (assq 'default-directory (buffer-local-variables but-buf)))))
+	  (buffer-local-value 'default-directory but-buf)))
     (hypb:error "(hui:key-dir): '%s' is not a valid buffer.")))
 
 (defun hui:key-src (but-buf)
