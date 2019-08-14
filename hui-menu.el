@@ -186,10 +186,7 @@ Return t if cutoff, else nil."
 		    ;; setting.  Invoking this item should then make it
 		    ;; visible.
 		    (hyperb:init-menubar))
-		   ((cond ((not (featurep 'xemacs))
-			   (global-key-binding [menu-bar Hyperbole]))
-			  ((boundp 'current-menubar)
-			   (car (find-menu-item current-menubar '("Hyperbole")))))
+		   ((global-key-binding [menu-bar Hyperbole])
 		    ;; Already on the menubar, remove it.
 		    (hui-menu-remove Hyperbole))
 		   (t;; Add it.
@@ -198,10 +195,8 @@ Return t if cutoff, else nil."
 	     :selected
 	      (cond ((boundp 'menubar-configuration)
 		     (memq 'Hyperbole menubar-configuration))
-		    ((not (featurep 'xemacs))
-		     (and (global-key-binding [menu-bar Hyperbole]) t))
-		    ((boundp 'current-menubar)
-		     (car (find-menu-item current-menubar '("Hyperbole")))))]
+		    (t
+		     (and (global-key-binding [menu-bar Hyperbole]) t)))]
 	    "----"
 	    ["Find-File-Accepts-URLs"
 	     hpath:find-file-urls-mode
@@ -302,7 +297,7 @@ REBUILD-FLAG is non-nil, in which case the menu is rebuilt."
     (setq infodock-hyperbole-menu
 	  (delq nil
 		(list
-		 (if (featurep 'xemacs) "%_Hyperbole" "Hyperbole")
+		 "Hyperbole"
 		 :config 'Hyperbole
 		 hui-menu-about
 		 ["Demonstration"  (hypb:display-file-with-logo
@@ -363,7 +358,7 @@ REBUILD-FLAG is non-nil, in which case the menu is rebuilt."
 		    ))
 		 '("Explicit-Button"
 		   :filter hui-menu-explicit-buttons
-		   ["Activate" hui:hbut-act t]
+		   ["Activate" hui:ebut-act t]
 		   ["Create" hui:ebut-create t]
 		   ["Delete" hui:ebut-delete t]
 		   ["Edit"   hui:ebut-modify t]
@@ -413,6 +408,8 @@ REBUILD-FLAG is non-nil, in which case the menu is rebuilt."
 		   ["Activate-at-Point"    hui:hbut-current-act t]
 		   ["Delete-Type"         (hui:htype-delete 'ibtypes) t]
 		   ["Help"   hui:hbut-help t]
+		   ["Label"  hui:ibut-label-create t]
+		   ["Rename" hui:ibut-rename t]
 		   ["Types"  (hui:htype-help 'ibtypes 'no-sort) t]
 		   )
 		 '("Koutliner"

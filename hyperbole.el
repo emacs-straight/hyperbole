@@ -3,7 +3,7 @@
 ;; Copyright (C) 1992-2019  Free Software Foundation, Inc.
 
 ;; Author:           Bob Weiner
-;; Maintainer:       Bob Weiner <rsw@gnu.org> and Mats Lidell <matsl@gnu.org>
+;; Maintainer:       Bob Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:          06-Oct-92 at 11:52:51
 ;; Released:         21-Jan-19
 ;; Version:          7.0.3
@@ -300,7 +300,7 @@ With third argument NO-ADD non-nil, skip storage of prior KEY binding
 which prevents automatic removal of any local bindings to the same key."
   (or (global-key-binding key)
       (where-is-internal command)
-      (hkey-global-set-key key command)))
+      (hkey-global-set-key key command no-add)))
 
 (defun hkey-set-bindings (key-binding-list)
   "Set keys bound by Hyperbole to those in KEY-BINDING-LIST.
@@ -516,7 +516,7 @@ With optional ARG, override them iff ARG is positive."
 ;;   "Creates implicit button TYPE (unquoted sym) with PARAMS, described by DOC."
 ;;   nil 'macro)
 
-;; (autoload 'ebut:map          "hyperbole"      "Map over Hyperbole buffer buttons." nil)
+;; (autoload 'ebut:map          "hyperbole"      "Map over the Hyperbole explicit buttons in a buffer." nil)
 ;; (autoload 'hbut:key-src      "hyperbole"      "Called by {e} command in rolo match buffer.")
 ;; (autoload 'hui:ebut-rename   "hyperbole"      "Rename a Hyperbole button."     t)
 ;; (autoload 'hyperbole         "hyperbole"      "Hyperbole info manager menus."  t)

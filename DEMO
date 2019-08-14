@@ -45,7 +45,7 @@ terms used here are unfamiliar to you.
 * Smart Keys 
 
 Hyperbole provides two context-sensitive keys, the Action Key and the Assist
-Key, jointly referred to as Smart Keys that each do dozens of things,
+Key, jointly referred to as Smart Keys.  Each do dozens of things,
 essentially whatever is most helpful in any given textual context where they
 are pressed.  The Action Key is {M-RET} (ESC RETURN if you are unsure) on the
 keyboard and the shift-middle mouse button on a 3-button mouse or the
@@ -55,7 +55,7 @@ To distinguish the mouse buttons from the keyboard keys, we will often refer
 to the Action Mouse Key or Assist Mouse Key.  (It is possible to rebind these
 keys to the unshifted middle and right mouse buttons, if desired.  See the
 Smart Key Bindings section of the Hyperbole Manual, "(hyperbole)Smart Key
-Bindings").
+Bindings") simply by pressing the Action Key on that reference.
 
 The Action Key selects entities, creates links and activates buttons.  The
 Assist Key provides help, such as reporting on a button's attributes, or
@@ -96,9 +96,10 @@ following button and then practice scrolling: <(toggle-scroll-proportional)>.
 If you prefer the default proportional scrolling, click on the previous
 button again to restore it.
 
-If you always want windowful (non-proportional) scrolling, you'll have to
-add a setting of smart-scroll-proportional to your "~/.emacs" file after the
-point at which you load Hyperbole or else set it as part of
+If you always want windowful (non-proportional) scrolling, use the Emacs
+customize system to set it permanently.  Otherwise, you can set it manually
+by adding a setting of smart-scroll-proportional to your "~/.emacs" file
+after the point at which you load Hyperbole or else set it as part of
 hyperbole-init-hook, which executes whenever Hyperbole is loaded, e.g.:
 
    (add-to-list 'hyperbole-init-hook
@@ -254,7 +255,7 @@ the argument is used to adjust one dimension of the frame.
 The {@} command splits a frame into a grid of up to 9 rows by 9 columns of
 windows, showing a different buffer in each window, if available.  First
 let's expand our frame to full screen with the {.1 %} command and then show
-a 2 x 3 grid.  We can do multiple commands in one key sequence.  Press the
+a 2 x 3 grid.  We can do multiple commands in one 'key series'.  Press the
 action key here: {.1 % .23 @}.
 
 You can even write something like this to do the whole thing in one sequence.
@@ -263,7 +264,7 @@ window with {C-x 1}.  Now we can execute a single sequence from any buffer
 that creates our 2x3 window grid: {C-h h s f .1 % .23 @ q}.  Pretty amazing,
 right?  You can separate each command by any number of spaces or even jam
 them all together: {C-hhsf.1%.23@q}.  Use SPC (separated by spaces) to
-include a space as part of the key sequence.
+include a space as part of the key series.
 
 A zero argument to the {@} command is special.  It means you want to display
 buffers with a particular major mode first, e.g. c-mode.  You will be
@@ -350,7 +351,7 @@ Action Key click on {C-x4r work RET} to search for all entries from Work
 Industries; then type {q} to quit from the HyRolo search results buffer.
 {C-x4r manager RET} finds all managers plus their staff across companies.
 {C-x4r Dunn,\ J RET} finds just that staffer.  Notice that you must quote the
-space with a backslash when including it in a key sequence search string or
+space with a backslash when including it in a key series search string or
 else the space will be removed; when just typing the same string
 interactively, don't add the backslash.
 
@@ -374,9 +375,9 @@ not             one                    Match entries without the arg
 =====================================================================
 
 So for example, {C-x4r (or smith dunn) RET} finds both the Smith and Dunn
-entries.  (Note that you do not need to backslash quote spaces within
+entries.  (Note that you do not need to quote spaces with backslashes within
 parentheses, square brackets, angle brackets or double quotes when used in
-key sequences).  To find any Managers and their staffers at HiHo Industries,
+key series).  To find any Managers and their staffers at HiHo Industries,
 use: {C-x4r (and manager hiho) RET}.  To find managers anywhere but at HiHo:
 {C-x4r (and manager (not hiho)) RET}.  Finally, this will find all people who
 are not managers at HiHo: {C-x4r (not (and manager hiho)) RET}.
@@ -401,33 +402,53 @@ command to return to this DEMO later.
 
 * Implicit Buttons
 
-An incredibly powerful feature of Hyperbole is known as implicit buttons,
-i.e. a specific format of text within a buffer that Hyperbole recognizes as a
-button and lets you activate.  Hyperbole recognizes these by context and does
-not require any specialized markup.
+Hyperbole can automatically turn your existing, unchanged text files into
+hypertexts via its incredibly powerful feature: implicit buttons.  An
+implicit button is a span of text within a buffer that Hyperbole recognizes
+as a button and lets you activate.  Hyperbole recognizes these buttons using
+its predefined implicit button types that specify how to recognize a
+particular type of button and what action such buttons perform.  For example,
+double-quoted pathnames have a type of 'pathname' and an action of: display
+the path in Emacs. (Hyperbole lets you configure where to display it).
+
+Hyperbole has many built-in implicit button types, a number of which you will
+see here.  You may also create your own types.  Once a type is known, you can
+embed an infinite number of buttons of that type within your text documents
+simply by typing them.  Let's look at some of these button types and how you
+can use them.
 
 Note that you must press a Smart Key on the first line of an implicit button
 to utilize it if it spans multiple lines and always press on a regular
 character, not a delimiter like ( or ) since these are treated specially and
 used to select groups of text.
 
-Hyperbole has many built-in implicit button types, a number of which you will
-see here, and allows you to create your own.  Once a type is known, you can
-embed an infinite number of buttons of that type within your text simply by
-typing them.  Let's look at some of these button types and how you can use
-them.
+Individual implicit buttons may be labeled so that they may be activated
+by name or linked to by other buttons.  Here is a pathname button with a label
+of 'My Emacs Files':
 
-** Key Sequence Buttons
+<[My Emacs Files]>: "~/.emacs.d"
 
-Any Emacs key sequence (or multiple sequences) delimited by curly braces is
-an implicit button.  Press the Action Key with {C-u C-p} for example and the
-point should move four lines upward.  An Assist Key press on the key sequence
-displays the documentation for its command binding, i.e. what it does.  Key
-sequences together with the arguments their commands prompt for also may be
-given, e.g. {M-x apropos RET hyperbole RET}.  Click in the braces to try it
-out.
+You see that the label is delimited by <[ and ]> and can be followed
+by any number of :, - or = characters, including none, and then a
+whitespace character.  You can activate the button either from its
+label or its pattern text.  With point on an implicit button, you can
+label it by using {C-h h i l}.
 
-Hyperbole minibuffer menu items may also be activated as key sequences.  For
+Now let's explore some implicit button types.
+
+** Key Series Buttons
+
+Any series of Emacs key sequences (or 'key series') delimited by curly
+braces is an implicit button.  Press the Action Key within {C-u C-p C-n C-e}
+for example and the point should move three lines upward and to the end of
+line.  An Assist Key press on the key series either displays the documentation
+for its command binding (if a single key sequence) or displays help for the
+implicit button, i.e. what it does.  Key series together with the
+arguments their commands prompt for, may also be given, e.g. {M-x apropos
+RET hyperbole RET}.  Click with the Action Mouse Key within the first line
+of this button to try it out.
+
+Hyperbole minibuffer menu items may also be activated as key series.  For
 example, {C-h h d i} displays the online browsable Info version of the
 Hyperbole Manual.  Press your Action Key between the braces to see it.  Once
 in the Info browser, use {s} to search for any topic throughout the manual.
@@ -439,14 +460,27 @@ demonstrations and tours with this and other implicit button types.
 
 ** Org Mode
 
-For users of Emacs Org mode, Hyperbole does a few things.  First, the
-Action Key will follow and execute links in Org mode files.  Second, when
-point is on an outline heading in Org mode, the Action Key cycles the view
-of the subtree at point and the Assist Key cycles the view of all headings
-in the buffer.  The Assist Key will also display help when pressed on an Org
-mode link.
+For users of Emacs Org mode, Hyperbole does quite a few things.
 
-In any other context besides the end of a line, the Action Key will invoke
+First, the Action Key follows internal links in Org mode files.  When
+pressed on a link referent/target, the link definition is displayed,
+allowing two-way navigation between definitions and targets.
+
+Second, the Action Key follows Org mode external links.  The Assist Key
+displays help when pressed on an Org mode link.
+
+Third, within a radio target definition, the Action Key jumps to the first
+occurrence of an associated radio target.
+
+Fourth, when point is on an outline heading in Org mode, the Action Key
+cycles the view of the subtree at point and the Assist Key cycles the view
+of all headings in the buffer.
+
+Fifth, with point on the first line of a code block definition, the Action
+Key executes the code block via the Org mode standard binding of {C-c C-c},
+(org-ctrl-c-ctrl-c).
+
+In any other context besides the end of a line, the Action Key invokes
 the Org mode standard binding of {M-RET}, (org-meta-return).
 
 ** Implicit Path Links
@@ -489,7 +523,7 @@ headings preceded by asterisks rather than hash marks.  So to jump back to
 the Org Mode section in this file, press the Action Key on "#Org-Mode".
 
 HTML hash-links are case-sensitive; other hash-links are not.  Hash links
-typically use dashes in place of the spaces that referents may contain but if
+typically use dashes in place of the spaces that referents may contain, but if
 the link is enclosed in quotes, Hyperbole allows spaces to be used as well.
 In fact, it is best practice to always enclose hash-style links in quotes so
 Hyperbole can distinguish them from other similar looking constructs, such as
@@ -518,7 +552,7 @@ Thus an Action Key press on "simple.el", "hyperbole.info" or even
 
 Some file types require external programs to view them, such as pdf files.
 The function (hpath:get-external-display-alist) determines the file
-suffixes which should be viewed externally together with their associated
+suffixes which should be viewed externally, together with their associated
 viewer programs, on a per-frame, per window-system basis.  See its
 documentation for more details.  The association lists used by this
 function are stored in variables for each available window system:
@@ -816,8 +850,9 @@ displayed.  Test this technique with a {C-x C-f} (find-file) and then a {?}.
 
 ** Hyperbole Source Buttons
 
-If you ask for help with the Assist Key or {C-u C-h A} from within the
-[FSF 19] button, the first line of the help buffer will look like this:
+If you ask for help with the Assist Key or {C-h A} from within this button,
+{M-x dired-other-window RET ~ RET}, the first line of the help buffer will
+look like this:
 
 @loc> "DEMO"
 

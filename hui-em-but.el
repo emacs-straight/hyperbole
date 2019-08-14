@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:    21-Aug-92
 ;;
-;; Copyright (C) 1992-2017  Free Software Foundation, Inc.
+;; Copyright (C) 1992-2019  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -16,7 +16,7 @@
 
 ;;; Code:
 
-(when (or (featurep 'xemacs) noninteractive)
+(when noninteractive
   ;; FIXME: Loading a file should always be harmless!
   (error "(hui-em-but.el): Load only when running GNU Emacs interactively"))
 
@@ -125,7 +125,7 @@ expression which matches an entire button string.
 If REGEXP-MATCH is non-nil, only buttons matching this argument are
 highlighted."
   (when hproperty:but-highlight-flag
-    (ebut:map (lambda (lbl start end)
+    (hbut:map (lambda (lbl start end)
 		(hproperty:but-add start end hproperty:but-face))
 	      start-delim end-delim regexp-match 'include-delims)))
 

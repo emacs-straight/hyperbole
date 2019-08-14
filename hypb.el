@@ -27,7 +27,11 @@
 This should end with a space.")
 
 (defcustom hypb:rgrep-command
-  (format "%sgrep -insIHr" (if (executable-find "zgrep") "z" ""))
+  ;; Only the FreeBSD version of zgrep supports all of the grep
+  ;; options that Hyperbole needs: -r, --include, and --exclude
+  (format "%sgrep -insIHr" (if (and (executable-find "zgrep")
+                                    (string-match-p "bsd" (shell-command-to-string "zgrep --version | head -1")))
+                               "z" ""))
   "*Grep command string and initial arguments to send to `hypb:rgrep' command.
 It must end with a space."
   :type 'string
@@ -220,7 +224,10 @@ Global keymap is used unless optional KEYMAP is given."
 
 (defun hypb:error (&rest args)
   "Signals an error typically to be caught by `hyperbole'."
-  (let ((msg (if (< (length args) 2) (car args) (apply 'format args))))
+  (let ((msg (if (< (length args) 2)
+		 (car args)
+	       (apply 'format (cons (car args)
+				    (mapcar #'hypb:format-quote (cdr args)))))))
     (put 'error 'error-message msg)
     (error msg)))
 
@@ -233,14 +240,16 @@ FILE is temporarily read into a buffer to determine the major mode if necessary.
       (unless (or existing-flag (null buf))
 	(kill-buffer buf)))))
 
-(defun hypb:format-quote (string)
-  "Replace all single % with %% in STRING so a call to `format' or `message' ignores them."
-  (if (stringp string)
+(defun hypb:format-quote (arg)
+  "Replace all single % with %% in any string ARG so that a call to `format' or `message' ignores them.
+Return either the modified string or the original ARG."
+  (if (stringp arg)
       (replace-regexp-in-string
        "@@@" "%%" (replace-regexp-in-string
-		   "%" "%%" (replace-regexp-in-string "%%" "@@@" string nil t)
+		   "%" "%%" (replace-regexp-in-string "%%" "@@@" arg nil t)
 		   nil t)
-       nil t)))
+       nil t)
+    arg))
 
 (defun hypb:function-copy (func-symbol)
   "Copies FUNC-SYMBOL's body for overloading.  Returns copy of body."
@@ -444,13 +453,11 @@ then `locate-post-command-hook'."
 
 (defalias 'hypb:mark #'mark)
 
-(if (featurep 'xemacs)
-    (defalias 'hypb:mark-marker 'mark-marker)
-  (defun hypb:mark-marker (inactive-p)
-    "Return this buffer's mark as a marker object, or nil if no mark.
+(defun hypb:mark-marker (inactive-p)
+  "Return this buffer's mark as a marker object, or nil if no mark.
 INACTIVE-P is unused, it is for compatibility with XEmacs' version of
 mark-marker."
-    (mark-marker)))
+  (mark-marker))
 
 ;;;###autoload
 (defun hypb:map-plist (func plist)
@@ -684,14 +691,9 @@ nor nil it means to not count the minibuffer window even if it is active."
 
 (defvar hypb:hyperbole-banner-keymap
   (let ((map (make-sparse-keymap)))
-    (cond ((not (featurep 'xemacs))
-	   (define-key map [mouse-1]  'hypb:browse-home-page)
-	   (define-key map [mouse-2]  'hypb:browse-home-page)
-	   (define-key map "\C-m"     'hypb:browse-home-page))
-	  ((featurep 'xemacs)
-	   (define-key map 'button1  'hypb:browse-home-page)
-	   (define-key map 'button2  'hypb:browse-home-page)
-	   (define-key map '(return) 'hypb:browse-home-page)))
+    (define-key map [mouse-1]  'hypb:browse-home-page)
+    (define-key map [mouse-2]  'hypb:browse-home-page)
+    (define-key map "\C-m"     'hypb:browse-home-page)
     map)
   "Keymap used when on the Hyperbole banner glyph.")
 
@@ -702,9 +704,7 @@ Without file, the banner is prepended to the current buffer."
   (if file
       ;; A stub for this function is defined in hversion.el when not running in InfoDock.
       (id-browse-file file))
-  (if (not (featurep 'xemacs))
-      (hypb:display-file-with-logo-emacs file)
-    (hypb:display-file-with-logo-xemacs file))
+  (hypb:display-file-with-logo-emacs file)
   (goto-char (point-min))
   (skip-syntax-forward "-")
   (set-window-start (selected-window) 1)
@@ -766,37 +766,6 @@ Without file, the banner is prepended to the current buffer."
 	(button-put button 'face 'default)
 	(button-put button 'keymap hypb:hyperbole-banner-keymap)))))
 
-(defun hypb:display-file-with-logo-xemacs (&optional file)
-  "Display an optional text FILE with the Hyperbole banner prepended.
-Without file, the banner is prepended to the current buffer."
-  (let ((hyperbole-banner-path (expand-file-name "hyperbole-banner.png" hyperb:dir)))
-    (if (not (file-readable-p hyperbole-banner-path))
-	(setq hyperbole-banner-path (if (fboundp 'locate-data-file)
-					(locate-data-file "hyperbole-banner.png")
-				      (expand-file-name "hyperbole-banner.png"
-							data-directory))))
-    (if (or (not (fboundp 'make-glyph))
-	    (let ((extent (next-extent (current-buffer))))
-	      (and extent (extent-property extent 'hyperbole-banner)))
-	    (not hyperbole-banner-path)
-	    (not (file-readable-p hyperbole-banner-path)))
-	;; Either image support is unavailable, the file cannot be read
-	;; or the image has already been inserted, so don't reinsert it.
-	nil
-      (let ((hyperbole-banner (make-glyph hyperbole-banner-path))
-	     (buffer-read-only)
-	     extent)
-	(goto-char (point-min))
-	(insert "\n")
-	(indent-to (startup-center-spaces hyperbole-banner))
-	(insert "\n\n")
-	(setq extent (make-extent (- (point) 3) (- (point) 2)))
-	(set-extent-end-glyph extent hyperbole-banner)
-	(set-extent-property extent 'hyperbole-banner t)
-	(set-extent-property extent 'help-echo
-			     (concat "Click to visit " hypb:home-page))
-	(set-extent-property extent 'keymap hypb:hyperbole-banner-keymap)))))
-
 (defun hypb:locate-pathnames ()
   (save-excursion
     (goto-char (point-min))
@@ -821,7 +790,7 @@ Without file, the banner is prepended to the current buffer."
 ;;; Private variables
 ;;; ************************************************************************
 
-(if (not (featurep 'xemacs)) (define-button-type 'hyperbole-banner))
+(define-button-type 'hyperbole-banner)
 
 (provide 'hypb)
 
