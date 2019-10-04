@@ -19,6 +19,7 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
+(require 'subr-x) ;; For string-trim
 (require 'hactypes)
 
 ;;; ************************************************************************
@@ -51,7 +52,7 @@
 	     "uy" "uz" "va" "vc" "ve" "vg" "vi" "vn" "vu" "wf" "ws" "ye" "yt" "yu"
 	     "za" "zm" "zw")
 	   t))
-  "Regular expression of most common Internet top-level domain names.")
+  "Regular expression of most common Internet top level domain names.")
 
 (defconst mail-address-regexp
   "\\([_a-zA-Z][-_a-zA-Z0-9.!@+%]*@[-_a-zA-Z0-9.!@+%]+\\.[a-zA-Z0-9][-_a-zA-Z0-9]+\\)\\($\\|[^a-zA-Z0-9@%]\\)"
@@ -125,7 +126,7 @@ any buffer attached to a file in `hyrolo-file-list', or any buffer with
 ;;; ========================================================================
 
 (defib pathname ()
-  "Makes a valid pathname display the path entry.
+  "Make a valid pathname display the path entry.
 Also works for delimited and non-delimited remote pathnames,
 Texinfo @file{} entries, and hash-style link references to HTML,
 Markdown or Emacs outline headings, and MSWindows paths (see
@@ -148,13 +149,13 @@ display options."
     (let ((path (hpath:at-p))
 	  full-path)
       (if path
-	  (progn (ibut:label-set path)
+	  (progn (apply #'ibut:label-set path (hpath:start-end path))
 		 (hact 'link-to-file path))
 	;;
 	;; Match to Emacs Lisp and Info files without any directory component.
 	(if (setq path (hpath:delimited-possible-path))
 	    (cond ((string-match "\\`[^\\\\/~]+\\.elc?\\(\\.gz\\)?\\'" path)
-		   (ibut:label-set path)
+		   (apply #'ibut:label-set path (hpath:start-end path))
 		   (if (string-match hpath:prefix-regexp path)
 		       (hact 'hpath:find path)
 		     (setq full-path (locate-library path))
@@ -169,45 +170,14 @@ display options."
 			(string-match "\\`(\\([^ \t\n\r\f]+\\))\\'" path)
 			(save-match-data (require 'info))
 			(Info-find-file (match-string 1 path) t))
-		   (ibut:label-set path)
+		   (apply #'ibut:label-set path (hpath:start-end path))
 		   (hact 'link-to-Info-node (format "%sTop" path)))
 		  ((string-match hpath:info-suffix path)
-		   (ibut:label-set path)
+		   (apply #'ibut:label-set path (hpath:start-end path))
 		   (hact 'link-to-Info-node (format "(%s)Top" path)))
 		  ;; Otherwise, fall through and allow other implicit
 		  ;; button types to handle this context.
 		  ))))))
-
-;;; ========================================================================
-;;; Displays files at specific lines and optional column number
-;;; locations.
-;;; ========================================================================
-
-(defconst hibtypes-path-line-and-col-regexp
-  ;; Allow for 'c:' single letter drive prefixes on MSWindows and
-  ;; Elisp vars with colons in them.
-  "\\([^ \t\n\r\f:][^\t\n\r\f:]+\\(:[^0-9\t\n\r\f]*\\)*\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?$")
-
-(defib pathname-line-and-column ()
-  "Makes a valid pathname:line-num[:column-num] pattern display the path at line-num and optional column-num.
-Also works for remote pathnames.
-
-See `hpath:at-p' function documentation for possible delimiters.
-See `hpath:suffixes' variable documentation for suffixes that are added to or
-removed from pathname when searching for a valid match.
-See `hpath:find' function documentation for special file display options."
-  (let ((path-line-and-col (hpath:delimited-possible-path)))
-    (if (and (stringp path-line-and-col)
-	     (string-match hibtypes-path-line-and-col-regexp path-line-and-col))
-	(let ((file (save-match-data (expand-file-name (hpath:substitute-value (match-string-no-properties 1 path-line-and-col)))))
-	      (line-num (string-to-number (match-string-no-properties 3 path-line-and-col)))
-	      (col-num (if (match-end 4) (string-to-number (match-string-no-properties
-							    5 path-line-and-col)))))
-	  (when (save-match-data (setq file (hpath:is-p file)))
-	    (ibut:label-set file (match-beginning 1) (match-end 1))
-	    (if col-num
-		(hact 'link-to-file-line-and-column file line-num col-num)
-	      (hact 'link-to-file-line file line-num)))))))
 
 ;;; ========================================================================
 ;;; Use the XEmacs func-menu library to jump to a function referred to
@@ -217,8 +187,8 @@ See `hpath:find' function documentation for special file display options."
 ;;; ========================================================================
 
 (defib function-in-buffer ()
-  "Displays the in-buffer definition of a function name that point is within or after, else nil.
-This triggers only when the \"func-menu.el\" library has been loaded and the
+  "Display the in-buffer definition of a function name that point is within or after, else nil.
+Trigger only when the \"func-menu.el\" library has been loaded and the
 current major mode is one handled by func-menu."
   (if (and (boundp 'fume-function-name-regexp-alist)
 	   (assq major-mode fume-function-name-regexp-alist)
@@ -255,7 +225,7 @@ current major mode is one handled by func-menu."
 ;;; ========================================================================
 
 (defib annot-bib ()
-  "Displays annotated bibliography entries referenced internally.
+  "Display annotated bibliography entries referenced internally.
 References must be delimited by square brackets, must begin with a word
 constituent character, not contain @ or # characters, must not be
 in buffers whose names begin with a space or asterisk character, and
@@ -290,8 +260,8 @@ must have an attached file."
 ;;; ========================================================================
 
 (defun markdown-follow-link-p ()
-    "Jumps between reference links and definitions; between footnote markers and footnote text.
-Returns t if jumps and nil otherwise."
+    "Jump between reference links and definitions; between footnote markers and footnote text.
+Return t if jump and nil otherwise."
     (cond
      ;; Footnote definition
      ((markdown-footnote-text-positions)
@@ -330,12 +300,13 @@ Returns t if jumps and nil otherwise."
     nil))
 
 (defib markdown-internal-link ()
-  "Displays any in-file Markdown link referent.  Pathnames and urls are handled elsewhere."
+  "Display any in-file Markdown link referent at point.
+Pathnames and urls are handled elsewhere."
   (when (and (eq major-mode 'markdown-mode)
 	     (not (hpath:www-at-p)))
     (let ((opoint (point))
 	  npoint)
-      (cond ((markdown-link-p) 
+      (cond ((markdown-link-p)
 	     (condition-case ()
 		 ;; Follows a reference link or footnote to its referent.
 		 (if (markdown-follow-link-p)
@@ -353,14 +324,13 @@ Returns t if jumps and nil otherwise."
 	     (ibut:label-set (match-string-no-properties 0) (match-beginning 0) (match-end 0))
 	     (hpath:display-buffer (current-buffer))
 	     (hact 'markdown-follow-wiki-link-at-point))))))
-	     
 
 ;;; ========================================================================
 ;;; Summarizes an Internet rfc for random access browsing by section.
 ;;; ========================================================================
 
 (defib rfc-toc ()
-  "Summarizes the contents of an Internet rfc from anywhere within an rfc buffer.
+  "Summarize the contents of an Internet rfc from anywhere within an rfc buffer.
 Each line in the summary may be selected to jump to a section."
   (let ((case-fold-search t)
 	(toc)
@@ -381,8 +351,8 @@ Each line in the summary may be selected to jump to a section."
 ;;; ========================================================================
 
 (defib id-cflow ()
-  "Expands or collapses C call trees and jumps to code definitions.
-Requires cross-reference tables built by the external `cxref' program of Cflow."
+  "Expand or collapse C call trees and jump to code definitions.
+Require cross-reference tables built by the external `cxref' program of Cflow."
   (if (and (eq major-mode 'id-cflow-mode)
 	   (not (eolp)))
       (let ((pnt (point)))
@@ -428,7 +398,7 @@ Requires cross-reference tables built by the external `cxref' program of Cflow."
 ;;; ========================================================================
 
 (defib ctags ()
-  "Jumps to the source line associated with a ctags file entry in any buffer."
+  "Jump to the source line associated with a ctags file entry in any buffer."
   (save-excursion
     (beginning-of-line)
     (cond
@@ -454,9 +424,9 @@ Requires cross-reference tables built by the external `cxref' program of Cflow."
 ;;; ========================================================================
 
 (defib etags ()
-  "Jumps to the source line associated with an etags file entry in a TAGS buffer.
-If on a tag entry line, jumps to the source line for the tag.  If on a
-pathname line or line preceding it, jumps to the associated file."
+  "Jump to the source line associated with an etags file entry in a TAGS buffer.
+If on a tag entry line, jump to the source line for the tag.  If on a
+pathname line or line preceding it, jump to the associated file."
   (if (let (case-fold-search) (string-match "^TAGS" (buffer-name)))
       (save-excursion
 	(beginning-of-line)
@@ -491,10 +461,11 @@ pathname line or line preceding it, jumps to the associated file."
 ;;; ========================================================================
 
 (defib cscope ()
-  "Jumps to C/C++ source line associated with Cscope C analyzer output line.
-Requires pre-loading of the cscope.el Lisp library available from the Emacs
-Lisp archives and the open source cscope program available from
-http://cscope.sf.net.  Otherwise, does nothing."
+  "Jump to C/C++ source line associated with Cscope C analyzer output line.
+The cscope.el Lisp library available from the Emacs package manager
+must be loaded and the open source cscope program available from
+http://cscope.sf.net must be installed for this button type to do
+anything."
   (and (boundp 'cscope:bname-prefix)  ;; (featurep 'cscope)
        (stringp cscope:bname-prefix)
        (string-match (regexp-quote cscope:bname-prefix)
@@ -517,7 +488,7 @@ http://cscope.sf.net.  Otherwise, does nothing."
 ;;; ========================================================================
 
 (defib text-toc ()
-  "Jumps to the text file section referenced by a table of contents entry at point.
+  "Jump to the text file section referenced by a table of contents entry at point.
 File name must contain DEMO, README or TUTORIAL and there must be a `Table
 of Contents' or `Contents' label on a line by itself (it may begin with
 an asterisk), preceding the table of contents.  Each toc entry must begin
@@ -543,8 +514,8 @@ the very beginning of the line."
 ;;; ========================================================================
 
 (defib dir-summary ()
-  "Detects filename buttons in files named \"MANIFEST\" or \"DIR\".
-Displays selected files.  Each file name must be at the beginning of the line
+  "Detect filename buttons in files named \"MANIFEST\" or \"DIR\".
+Display selected files.  Each file name must be at the beginning of the line
 or may be preceded by some semicolons and must be followed by one or more
 spaces and then another non-space, non-parenthesis, non-brace character."
   (if buffer-file-name
@@ -574,7 +545,7 @@ spaces and then another non-space, non-parenthesis, non-brace character."
 ;;; ========================================================================
 
 (defib rfc ()
-  "Retrieves and displays an Internet rfc referenced at point.
+  "Retrieve and display an Internet rfc referenced at point.
 The following formats are recognized: RFC822, rfc-822, and RFC 822.  The
 `hpath:rfc' variable specifies the location from which to retrieve RFCs.
 Requires the Emacs builtin Tramp library for ftp file retrievals."
@@ -606,7 +577,7 @@ Requires the Emacs builtin Tramp library for ftp file retrievals."
 ;;; ========================================================================
 
 (defib man-apropos ()
-  "Makes man apropos entries display associated man pages when selected."
+  "Make man apropos entries display associated man pages when selected."
   (save-excursion
     (beginning-of-line)
     (let ((nm "[^ \t\n\r!@,][^ \t\n\r,]*")
@@ -627,74 +598,96 @@ Requires the Emacs builtin Tramp library for ftp file retrievals."
 (require 'klink)
 
 ;;; ========================================================================
-;;; Links to Hyperbole button types 
+;;; Links to Hyperbole button types
 ;;; ========================================================================
 
+(defun hlink (link-actype label-prefix start-delim end-delim)
+  "Call LINK-ACTYPE as the action type and prefix button with LABEL-PREFIX if point is within an implicit button delimited by START-DELIM and END-DELIM."
+  ;; Used by e/g/ilink implicit buttons."
+  (let* ((label-start-end (hbut:label-p t start-delim end-delim t t))
+	 (label-and-file (nth 0 label-start-end))
+	 (start-pos (nth 1 label-start-end))
+	 (end-pos (nth 2 label-start-end))
+	 lbl but-key lbl-key key-file)
+    (when label-and-file
+      (setq label-and-file (parse-label-and-file label-and-file)
+	    partial-lbl (nth 0 label-and-file)
+	    but-key (hbut:label-to-key partial-lbl)
+	    key-file (nth 1 label-and-file)
+	    lbl-key (when but-key (concat label-prefix but-key)))
+      (ibut:label-set (hbut:key-to-label lbl-key) start-pos end-pos)
+      (hact link-actype but-key key-file))))
+
+(defun  parse-label-and-file (label-and-file)
+  "Parse a colon-separated string of button label and source file path into a list of label and file."
+  ;; Can't use split-string here because file path may contain colons;
+  ;; we want to split only on the first colon.
+  (let ((i 0)
+	(len (length label-and-file))
+	label
+	file)
+    (while (< i len)
+      (when (= ?: (aref label-and-file i))
+	(when (zerop i)
+	  (error "(parse-label-and-file): Missing label: '%s'" label-and-file))
+	(setq label (hpath:trim (substring label-and-file 0 i))
+	      file (hpath:trim (substring label-and-file (1+ i))))
+	(when (string-empty-p label) (setq label nil))
+	(when (string-empty-p file) (setq file nil))
+	(setq i len))
+      (setq i (1+ i)))
+    (unless (or label (string-empty-p label-and-file))
+      (setq label label-and-file))
+    (delq nil (list label file))))
 
 (defconst elink:start "<elink:"
   "String matching the start of a link to a Hyperbole explicit button.")
 (defconst elink:end   ">"
   "String matching the end of a link to a Hyperbole explicit button.")
 
-(defib link-to-ebut ()
-  "At point, activates a link to an explicit button.
-The explicit button's action is executed in the context of the current buffer.
+(defib elink ()
+  "At point, activate a link to an explicit button.
+Execute The explicit button's action in the context of the current buffer.
 
-Recognizes the format '<elink:' <button label> '>', e.g. <elink: project-list>."
-  (let* ((label-key-start-end (hbut:label-p nil elink:start elink:end t t))
-	 (ebut-key (nth 0 label-key-start-end))
-	 (lbl-key (and ebut-key (concat "elink_" (nth 0 label-key-start-end))))
-	 (start-pos (nth 1 label-key-start-end))
-	 (end-pos (nth 2 label-key-start-end)))
-    (when lbl-key
-      (ibut:label-set (ebut:key-to-label lbl-key) start-pos end-pos)
-      (hact 'link-to-ebut ebut-key))))
+Recognizes the format '<elink:' button_label [':' button_file_path] '>',
+where : button_file_path is given only when the link is to another file,
+e.g. <elink: project-list: ~/projs>."
+  (hlink 'link-to-ebut "elink_" elink:start elink:end))
 
 (defconst glink:start "<glink:"
   "String matching the start of a link to a Hyperbole global button.")
 (defconst glink:end   ">"
   "String matching the end of a link to a Hyperbole global button.")
 
-(defib link-to-gbut ()
+(defib glink ()
   "At point, activates a link to a global button.
-The global button's action is executed in the context of the current buffer.
+Execulte the global button's action in the context of the current buffer.
 
-Recognizes the format '<glink:' <button label> '>', e.g. <glink: open todos>."
-  (let* ((label-key-start-end (hbut:label-p nil glink:start glink:end t t))
-	 (gbut-key (nth 0 label-key-start-end))
-	 (lbl-key (and gbut-key (concat "glink_" (nth 0 label-key-start-end))))
-	 (start-pos (nth 1 label-key-start-end))
-	 (end-pos (nth 2 label-key-start-end)))
-    (when lbl-key
-      (ibut:label-set (ebut:key-to-label lbl-key) start-pos end-pos)
-      (hact 'link-to-gbut gbut-key))))
+Recognizes the format '<glink:' button_label '>',
+e.g. <glink: open todos>."
+  (hlink 'link-to-gbut "glink_" glink:start glink:end))
 
 (defconst ilink:start "<ilink:"
   "String matching the start of a link to a Hyperbole implicit button.")
 (defconst ilink:end   ">"
   "String matching the end of a link to a Hyperbole implicit button.")
 
-(defib link-to-ibut ()
-  "At point, activates a link to an implicit button.
-The implicit button's action is executed in the context of the current buffer.
+(defib ilink ()
+  "At point, activates a link to a labeled implicit button.
+Execute the implicit button's action in the context of the current buffer.
 
-Recognizes the format '<ilink:' <button label> '>', e.g. <ilink: my sequence of keys>."
-  (let* ((label-key-start-end (ibut:label-p nil ilink:start ilink:end t t))
-	 (ibut-key (nth 0 label-key-start-end))
-	 (lbl-key (and ibut-key (concat "ilink_" (nth 0 label-key-start-end))))
-	 (start-pos (nth 1 label-key-start-end))
-	 (end-pos (nth 2 label-key-start-end)))
-    (when lbl-key
-      (ibut:label-set (ibut:key-to-label lbl-key) start-pos end-pos)
-      (hact 'link-to-ibut ibut-key))))
+Recognizes the format '<ilink:' button_label [':' button_file_path] '>',
+where button_file_path is given only when the link is to another file,
+e.g. <ilink: my series of keys: ${hyperb:dir}/HYPB>."
+  (hlink 'link-to-ibut "ilink_" ilink:start ilink:end))
 
 ;;; ========================================================================
-;;; Jumps to source line associated with ipython, ripgreb, grep or
-;;; With credit to Michael Lipp and Mike Williams for the idea.
+;;; Jumps to source line associated with ipython, ripgrep, grep or
+;;; compilation errors.
 ;;; ========================================================================
 
 (defib ipython-stack-frame ()
-  "Jumps to line associated with an ipython stack frame line numbered msg.
+  "Jump to line associated with an ipython stack frame line numbered msg.
 ipython outputs each pathname once followed by all matching lines in that pathname.
 Messages are recognized in any buffer (other than a helm completion
 buffer)."
@@ -737,7 +730,7 @@ buffer)."
 		(hact 'link-to-file-line file line-num)))))))))
 
 (defib ripgrep-msg ()
-  "Jumps to line associated with a ripgrep (rg) line numbered msg.
+  "Jump to line associated with a ripgrep (rg) line numbered msg.
 Ripgrep outputs each pathname once followed by all matching lines in that pathname.
 Messages are recognized in any buffer (other than a helm completion
 buffer)."
@@ -780,7 +773,7 @@ buffer)."
 		(hact 'link-to-file-line file line-num)))))))))
 
 (defib grep-msg ()
-  "Jumps to line associated with line numbered grep or compilation error msgs.
+  "Jump to line associated with line numbered grep or compilation error msgs.
 Messages are recognized in any buffer (other than a helm completion
 buffer) except for grep -A<num> context lines which are matched only
 in grep and shell buffers."
@@ -831,7 +824,7 @@ in grep and shell buffers."
 ;;; ========================================================================
 
 (defib debugger-source ()
-  "Jumps to source line associated with stack frame or breakpoint lines.
+  "Jump to source line associated with stack frame or breakpoint lines.
 This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines are recognized in any buffer."
   (save-excursion
     (beginning-of-line)
@@ -918,11 +911,42 @@ This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines
 	(hact 'link-to-file-line file line-num))))))
 
 ;;; ========================================================================
+;;; Displays files at specific lines and optional column number
+;;; locations.
+;;; ========================================================================
+
+(defconst hibtypes-path-line-and-col-regexp
+  ;; Allow for 'c:' single letter drive prefixes on MSWindows and
+  ;; Elisp vars with colons in them.
+  "\\([^ \t\n\r\f:][^\t\n\r\f:]+\\(:[^0-9\t\n\r\f]*\\)*\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?$")
+
+(defib pathname-line-and-column ()
+  "Make a valid pathname:line-num[:column-num] pattern display the path at line-num and optional column-num.
+Also works for remote pathnames.
+
+See `hpath:at-p' function documentation for possible delimiters.
+See `hpath:suffixes' variable documentation for suffixes that are added to or
+removed from pathname when searching for a valid match.
+See `hpath:find' function documentation for special file display options."
+  (let ((path-line-and-col (hpath:delimited-possible-path)))
+    (if (and (stringp path-line-and-col)
+	     (string-match hibtypes-path-line-and-col-regexp path-line-and-col))
+	(let ((file (save-match-data (expand-file-name (hpath:substitute-value (match-string-no-properties 1 path-line-and-col)))))
+	      (line-num (string-to-number (match-string-no-properties 3 path-line-and-col)))
+	      (col-num (when (match-end 4)
+			 (string-to-number (match-string-no-properties 5 path-line-and-col)))))
+	  (when (save-match-data (setq file (hpath:is-p file)))
+	    (ibut:label-set file (match-beginning 1) (match-end 1))
+	    (if col-num
+		(hact 'link-to-file-line-and-column file line-num col-num)
+	      (hact 'link-to-file-line file line-num)))))))
+
+;;; ========================================================================
 ;;; Jumps to source of Emacs Lisp byte-compiler error messages.
 ;;; ========================================================================
 
 (defib elisp-compiler-msg ()
-  "Jumps to source code for definition associated with an Emacs Lisp byte-compiler error message.
+  "Jump to source code for definition associated with an Emacs Lisp byte-compiler error message.
 Works when activated anywhere within an error line."
   (if (or (member (buffer-name) '("*Compile-Log-Show*" "*Compile-Log*"
 				  "*compilation*"))
@@ -976,7 +1000,7 @@ Works when activated anywhere within an error line."
 ;;; ========================================================================
 
 (defib patch-msg ()
-  "Jumps to source code associated with output from the `patch' program.
+  "Jump to source code associated with output from the `patch' program.
 Patch applies diffs to source code."
   (if (save-excursion
 	(beginning-of-line)
@@ -1003,7 +1027,7 @@ Patch applies diffs to source code."
 ;;; ========================================================================
 
 (defib texinfo-ref ()
-  "Displays Texinfo, Info node or help associated with Texinfo node, menu item, @xref, @pxref, @ref, @code, @findex, @var or @vindex at point.
+  "Display Texinfo, Info node or help associated with Texinfo node, menu item, @xref, @pxref, @ref, @code, @findex, @var or @vindex at point.
 If point is within the braces of a cross-reference, the associated
 Info node is shown.  If point is to the left of the braces but after
 the @ symbol and the reference is to a node within the current
@@ -1082,7 +1106,7 @@ For @code, @findex, @var and @vindex references, the associated documentation st
 ;;; ========================================================================
 
 (defib gnus-push-button ()
-  "Activates GNUS-specific article push-buttons, e.g. for hiding signatures.
+  "Activate GNUS-specific article push-buttons, e.g. for hiding signatures.
 GNUS is a news and mail reader."
   (and (fboundp 'get-text-property)
        (get-text-property (point) 'gnus-callback)
@@ -1100,8 +1124,8 @@ GNUS is a news and mail reader."
 ;;; ========================================================================
 
 (defib Info-node ()
-  "Makes a \"(filename)nodename\" button display the associated Info node.
-Also makes a \"(filename)itemname\" button display the associated Info index item.
+  "Make a \"(filename)nodename\" button display the associated Info node.
+Also make a \"(filename)itemname\" button display the associated Info index item.
 Examples are \"(hyperbole)Implicit Buttons\" and ``(hyperbole)C-c /''.
 
 Activates only if point is within the first line of the Info-node name."
@@ -1127,7 +1151,7 @@ Activates only if point is within the first line of the Info-node name."
 ;;; ========================================================================
 
 (defib hyp-address ()
-  "Within a mail or Usenet news composer window, makes a Hyperbole support/discussion e-mail address insert Hyperbole environment and version information.
+  "Within a mail or Usenet news composer window, make a Hyperbole support/discussion e-mail address insert Hyperbole environment and version information.
 See also the documentation for `actypes::hyp-config'.
 
 For example, an Action Mouse Key click on <hyperbole-users@gnu.org> in
@@ -1145,7 +1169,7 @@ a mail composer window would activate this implicit button type."
 ;;; ========================================================================
 
 (defib hyp-source ()
-  "Turns source location entries in Hyperbole reports into buttons that jump to the associated location.
+  "Turn source location entries in Hyperbole reports into buttons that jump to the associated location.
 
 For example, {C-h h d d C-h h e h o} summarizes the properties of
 the explicit buttons in the DEMO file and each button in that
@@ -1153,19 +1177,89 @@ report buffer behaves the same as the corresponding button in the
 original DEMO file."
   (save-excursion
     (beginning-of-line)
-    (if (looking-at hbut:source-prefix)
-	(let ((src (hbut:source)))
-	  (if src
-	      (progn (if (not (stringp src)) (setq src (prin1-to-string src)))
-		     (ibut:label-set src (point) (progn (end-of-line) (point)))
-		     (hact 'hyp-source src)))))))
+    (when (looking-at hbut:source-prefix)
+      (let ((src (hbut:source)))
+	(when src
+	  (unless (stringp src)
+	    (setq src (prin1-to-string src)))
+	  (ibut:label-set src (point) (progn (end-of-line) (point)))
+	  (hact 'hyp-source src))))))
+
+;;; ========================================================================
+;;; Executes an angle bracket delimited Hyperbole action, Elisp
+;;; function call or display of an Elisp variable and its value.
+;;; ========================================================================
+
+;; Allow for parameterized action-types surrounded by angle brackets.
+;; For example, <man-show "grep"> should display grep's man page
+;; (since man-show is an action type).
+
+(defconst action:start "<"
+  "Regexp matching the start of a Hyperbole Emacs Lisp expression to evaluate.")
+
+(defconst action:end ">"
+  "Regexp matching the end of a Hyperbole Emacs Lisp expression to evaluate.")
+
+(defib action ()
+  "At point, activate any of: an Elisp variable, a Hyperbole action-type, or an Elisp function call surrounded by <> rather than ().
+If an Elisp variable, display a message showing its value.
+
+There may not be any <> characters within the expression.  The
+first identifier in the expression must be an Elisp variable,
+action type or a function symbol to call, i.e. '<'actype-or-elisp-symbol
+arg1 ... argN '>'.  For example, <mail user@mybiz.com>."
+  (let* ((label-key-start-end (ibut:label-p nil action:start action:end t t))
+	 (ibut-key (nth 0 label-key-start-end))
+	 (start-pos (nth 1 label-key-start-end))
+	 (end-pos (nth 2 label-key-start-end))
+	 actype action args lbl var-flag)
+    ;; Continue only if start-delim is either:
+    ;;     at the beginning of the buffer
+    ;;     or preceded by a space character or a grouping character
+    ;;   and that character after start-delim is:
+    ;;     not a whitespace character
+    ;;   and end-delim is either:
+    ;;     at the end of the buffer
+    ;;     or is followed by a space, punctuation or grouping character.
+    (when (and ibut-key (or (null (char-before start-pos))
+			    (memq (char-syntax (char-before start-pos)) '(?\  ?\> ?\( ?\))))
+	       (not (memq (char-syntax (char-after (1+ start-pos))) '(?\  ?\>)))
+	       (or (null (char-after end-pos))
+		   (memq (char-syntax (char-after end-pos)) '(?\  ?\> ?. ?\( ?\)))
+		   ;; Some of these characters may have symbol-constituent syntax
+		   ;; rather than punctuation, so check them individually.
+		   (memq (char-after end-pos) '(?. ?, ?\; ?: ?! ?\' ?\"))))
+      (setq lbl (ibut:key-to-label ibut-key))
+      ;; Handle $ preceding var name in cases where same name is
+      ;; bound as a function symbol
+      (when (string-match "\\`\\$" lbl)
+	(setq var-flag t
+	      lbl (substring lbl 1)))
+      (setq actype (if (string-match-p " "  lbl) (car (split-string lbl)) lbl)
+	    actype (or (intern-soft (concat "actype::" actype))
+		       (intern-soft actype)))
+      (when actype
+	(ibut:label-set lbl start-pos end-pos)
+	(setq action (read (concat "(" lbl ")"))
+	      args (cdr action))
+	(when (and (null args) (symbolp actype) (boundp actype)
+		   (or var-flag (not (fboundp actype))))
+	  ;; Is a variable, display its value as the action
+	  (setq args `(',actype)
+		action `(display-variable ',actype)
+		actype 'display-variable))
+	;; Necessary so can return a null value, which actype:act cannot.
+	(let ((hrule:action (if (eq hrule:action #'actype:identity)
+				hrule:action
+			      'actype:eval)))
+	  (apply hrule:action actype (mapcar #'eval args)))))))
 
 ;;; ========================================================================
 ;;; Inserts completion into minibuffer or other window.
 ;;; ========================================================================
 
 (defib completion ()
-  "Inserts completion at point into minibuffer or other window."
+  "Insert completion at point into minibuffer or other window."
   (let ((completion (hargs:completion t)))
     (and completion
 	 (ibut:label-set completion)

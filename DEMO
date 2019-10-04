@@ -12,6 +12,8 @@
     * History
     * Implicit Buttons
     * Explicit Buttons
+    * Button Files
+    * Global Buttons
     * Smart Mouse Keys
     * Epilog
     * References
@@ -40,6 +42,11 @@ This demo illustrates simple usage of the basic Hyperbole button-action types
 and shows how Hyperbole can support a style of self-documenting, interactive
 files.  See the glossary in the Hyperbole Manual, "(hyperbole)Glossary", if
 terms used here are unfamiliar to you.
+
+Once you read the next section on "#Smart Keys", you can then browse any
+other sections individually as you like.  Many people initially use Hyperbole
+for its "#Implicit Buttons" capabilities, so you may want to jump to that
+section.
 
 
 * Smart Keys 
@@ -93,7 +100,7 @@ which line point is on, just as {C-v} and {M-v} do.
 
 Let's try windowful scrolling a bit.  Press the Action Key within the
 following button and then practice scrolling: <(toggle-scroll-proportional)>.
-If you prefer the default proportional scrolling, click on the previous
+If you prefer the default proportional scrolling, press on the previous
 button again to restore it.
 
 If you always want windowful (non-proportional) scrolling, use the Emacs
@@ -216,7 +223,6 @@ Hyperbole minibuffer menu item, Screen/WindowsControl {C-h h s w}, will do
 the same thing.
 
 Once in HyControl, your minibuffer window at the bottom of the selected frame
-
 will display a summary of keys you may use to adjust your windows until you
 press {q} or {Q} to quit from HyControl.  If you don't see it, press {?}, to
 turn on this help display.  The key, {t}, will always switch you between
@@ -256,7 +262,7 @@ The {@} command splits a frame into a grid of up to 9 rows by 9 columns of
 windows, showing a different buffer in each window, if available.  First
 let's expand our frame to full screen with the {.1 %} command and then show
 a 2 x 3 grid.  We can do multiple commands in one 'key series'.  Press the
-action key here: {.1 % .23 @}.
+action key within the braces: {.1 % .23 @}.
 
 You can even write something like this to do the whole thing in one sequence.
 First, let's quit out of HyControl Frames mode with {q}.  Then go back to one
@@ -346,8 +352,8 @@ textual highlighting, each search match is highlighted for quick, visual
 location.
 
 Let's try the HyRolo.  First load the HyRolo demo commands with an Action Key
-click on "-hyrolo-demo.el".  Now {C-x 4 r} will search the DEMO ROLO file.
-Action Key click on {C-x4r work RET} to search for all entries from Work
+press on "-hyrolo-demo.el".  Now {C-x 4 r} will search the DEMO ROLO file.
+Action Key press on {C-x4r work RET} to search for all entries from Work
 Industries; then type {q} to quit from the HyRolo search results buffer.
 {C-x4r manager RET} finds all managers plus their staff across companies.
 {C-x4r Dunn,\ J RET} finds just that staffer.  Notice that you must quote the
@@ -407,9 +413,11 @@ hypertexts via its incredibly powerful feature: implicit buttons.  An
 implicit button is a span of text within a buffer that Hyperbole recognizes
 as a button and lets you activate.  Hyperbole recognizes these buttons using
 its predefined implicit button types that specify how to recognize a
-particular type of button and what action such buttons perform.  For example,
-double-quoted pathnames have a type of 'pathname' and an action of: display
-the path in Emacs. (Hyperbole lets you configure where to display it).
+particular type of button and what action it performs.  For example,
+an Action Key press on a double-quoted pathname displays it.  (This is because
+an implicit button type of 'pathname' is recognized and it has an associated
+action type of 'hpath:find' which displays the path in a window specified by
+the setting of 'hpath:display-where').
 
 Hyperbole has many built-in implicit button types, a number of which you will
 see here.  You may also create your own types.  Once a type is known, you can
@@ -422,17 +430,17 @@ to utilize it if it spans multiple lines and always press on a regular
 character, not a delimiter like ( or ) since these are treated specially and
 used to select groups of text.
 
-Individual implicit buttons may be labeled so that they may be activated
+Individual implicit buttons may be labeled so that they can be activated
 by name or linked to by other buttons.  Here is a pathname button with a label
 of 'My Emacs Files':
 
 <[My Emacs Files]>: "~/.emacs.d"
 
-You see that the label is delimited by <[ and ]> and can be followed
-by any number of :, - or = characters, including none, and then a
-whitespace character.  You can activate the button either from its
-label or its pattern text.  With point on an implicit button, you can
-label it by using {C-h h i l}.
+You see that the label is delimited by <[ and ]>.  It must be at least 2
+characters in length and can be followed by any number of :, - or = characters,
+including none, and then a whitespace character.  You can activate the button
+either from its label or its pattern text.  With point on an implicit button,
+you can label it by using {C-h h i l}.
 
 Now let's explore some implicit button types.
 
@@ -445,8 +453,8 @@ line.  An Assist Key press on the key series either displays the documentation
 for its command binding (if a single key sequence) or displays help for the
 implicit button, i.e. what it does.  Key series together with the
 arguments their commands prompt for, may also be given, e.g. {M-x apropos
-RET hyperbole RET}.  Click with the Action Mouse Key within the first line
-of this button to try it out.
+RET hyperbole RET}.  Click with the Action Mouse Key within the first
+line of this button to try it out.
 
 Hyperbole minibuffer menu items may also be activated as key series.  For
 example, {C-h h d i} displays the online browsable Info version of the
@@ -482,6 +490,48 @@ Key executes the code block via the Org mode standard binding of {C-c C-c},
 
 In any other context besides the end of a line, the Action Key invokes
 the Org mode standard binding of {M-RET}, (org-meta-return).
+
+** Action Buttons
+
+A new feature of Hyperbole is a universal syntax for creating implicit
+buttons known as Action Buttons that execute any existing action types or
+Emacs Lisp functions.  Such buttons are delimited by angle brackets, < >, and
+come in three types:
+
+  1. action type invocations - these begin with an action type name (from the
+     list displayed by {C-h h d t a RET}) and are followed by any needed
+     arguments to form the action, e.g.
+
+          <link-to-file-line "${hyperb:dir}/hact.el" 40>
+
+  2. function calls - these are similar to action type invocations but begin
+     with an Elisp function name rather than an action type name, e.g.
+
+          <find-file-other-window "/tmp">
+
+  3. variable displays - these consist of just an Elisp variable name and
+     display a message with the variable name and value, e.g.
+
+          <fill-column>
+
+     If there is a function binding with the same name as the variable you
+     wish to display, to prevent interpretation as a function call action
+     button, precede the name with a '$', e.g.
+
+          <$fill-column>
+
+Since implicit buttons can be labeled with a name and placed in the global
+button file for invocation by name, you can give short names to any such
+buttons you want to invoke frequently.
+
+An Action Button is recognized only if the first name within the angle
+brackets is an existing action type or Emacs Lisp symbol.  Otherwise, other
+implicit button types will be tested and may activate instead.
+
+With Action Buttons you need not remember any special syntax for each type of
+implicit button.  You can freely embed them in any type of text and use the
+Action and Assist keys on them as you do with any other type of implicit
+button.
 
 ** Implicit Path Links
 
@@ -536,7 +586,7 @@ Hyperbole can also add file name suffixes and resolve Emacs and environment
 variables within path buttons.  If you have the source code for your Emacs
 installation, then there is a Lisp library, simple.el.gz, stored in
 compressed form within a directory listed in the variable, load-path.  An
-Action Key click on "${load-path}/simple.el" will dynamically locate the file
+Action Key press on "${load-path}/simple.el" will dynamically locate the file
 within load-path, uncompress it and display it for editing.  There is no need
 to know whether the file is compressed or not or what values are set for
 load-path at your particular location.  Thus, you can provide path links that
@@ -570,12 +620,12 @@ and jpeg.  Under X or Mac OS, try a press of the Action Key on
 Several prefix characters may be attached to pathnames to indicate that a
 different action should be taken when the button is activated.  An
 exclamation point prefix indicates that the full pathname should be run as a
-non-windowed shell program.  For example, try "!/bin/date" on UNIX.  This
-will run the program in a subshell within Emacs.  An ampersand prefix means
-run the full pathname as a windowed program, outside of Emacs.  Under the X
-window system, try "&/usr/X11/bin/xeyes".  Finally, a hyphen indicates that
-the filename should be executed as an Emacs Lisp library, e.g. "-subr.elc",
-rather than displayed.
+non-windowed shell program.  For example, try "!${PATH}/date" on a POSIX
+system.  This will run the program in a subshell within Emacs.  An ampersand
+prefix means run the full pathname as a windowed program, outside of Emacs.
+Under the X window system, try "&${PATH}/xeyes".  Finally, a hyphen indicates
+that the filename should be executed as an Emacs Lisp library,
+e.g. "-subr.elc", rather than displayed.
 
 *** Info Paths
 
@@ -608,7 +658,7 @@ files and directories, then remote pathnames of the form:
 will be recognized by Hyperbole.
 
 Once you have Tramp configured for loading and are on the Internet, you can
-click on any of the following to jump to the ftp site of Hyperbole tarball
+press on any of the following to jump to the ftp site of Hyperbole tarball
 distributions:
 
         /ftp:anonymous@ftp.gnu.org:/pub/gnu/hyperbole/
@@ -674,15 +724,15 @@ faster way is to note that files named MANIFEST and DIR are used to summarize
 the files in a directory, so we can use each of their entries as an implicit
 button (of type `dir-summary') to take us to the file.
 
-Let's look at "MANIFEST".  Now click anywhere within a line in the MANIFEST
+Let's look at "MANIFEST".  Now press anywhere within a line in the MANIFEST
 file and you see that it is displayed as expected.  (Remember to use the
 Hyperbole history command to return here.)  You can get help on these buttons
 just like any others.
 
 In README files, such as Hyperbole's "README", table of contents entries
-act similarly.  Click on "README" to view that file and then click on a
+act similarly.  Press on "README" to view that file and then press on a
 table of contents entry to jump to the associated section in the "README"
-file.
+file.  Or "README#User Quotes" goes directly to that section.
 
 ** World Wide Web URL Buttons
 
@@ -862,7 +912,7 @@ buffer might look like:
 
 @loc> #<buffer *scratch*>
 
-If you click the Action Key on the buffer name, the buffer will be displayed
+If you press the Action Key on the buffer name, the buffer will be displayed
 just as a file buffer would.  This type of implicit button is called a
 `hyp-source' button.
 
@@ -1064,7 +1114,7 @@ copied into mail replies can work:
     >
     > Hyperbole is better than home baked bread but not as filling.
     > The following sample button displays a message, <(as long as 
-    > you click within its first line)>.
+    > you press within its first line)>.
 
 Please note that support for explicit Hyperbole buttons within mail and
 USENET news messages has not yet been updated for use with Emacs 24 and 25,
@@ -1072,12 +1122,78 @@ so these features are disabled by default.  If you want to try them knowing
 this, {C-h h c m} will toggle this feature on and off.
 
 
+* Button Files
+
+It is often convenient to create files filled with buttons as a means
+of navigating distributed information pools or for other purposes.
+These files can also serve as useful roadmaps that guide you through
+both unfamiliar and highly familiar information spaces.  Files that are
+created specifically for this purpose are called "Hyperbole button
+files".
+
+Hyperbole's ButFile menu provides quick access to two types of these
+button files.  Your personal button file is stored in
+"${hbmap:dir-user}/HYPB" and accessed with {C-h h b p}.  Per-directory
+button files are stored in the respective directories and are also
+named "HYPB".  Access the current one with {C-h h b d}.
+
+If you want group and site-specific button files, simply place links
+to such files at the top of your personal button file and do so for your
+colleagues.  This provides a flexible means of connecting to such
+resources.
+
+
+* Global Buttons
+
+Global buttons are labeled Hyperbole buttons in your personal button
+file, as explained above.  All global buttons are activated by name
+with completion provided, independent of which buffers are displayed.
+Global buttons may be explicit buttons or labeled/named implicit
+buttons.
+
+The Hyperbole Gbut menu creates, modifies and activates global buttons
+by name.  Each button created by this menu is stored as an explicit
+button near the end of your personal button file.  But any buttons you
+create in other ways within this file also become global buttons.
+
+A good strategy for frequently used global buttons is to use short
+names that you can remember.  Then they can be activated quickly.
+
+Let's create a global button that counts the lines in the current
+buffer and displays the count in the minibuffer.  Press the Action Key
+on the first line of this key series to create the global button:
+
+     {C-h h g c line-count RET eval-elisp RET
+      (message "Lines in %s = %s"
+               (buffer-name) (count-lines (point-min) (point-max))) RET}
+
+Then activate it with {C-h h g a}, type its name and try it out in
+different buffers.
+
+To avoid embedding such code in the button itself, just define a
+function in your Emacs initialization file and then activate that:
+
+(defun line-count ()
+  (interactive)
+  (message "Lines in %s = %s"
+           (buffer-name) (count-lines (point-min) (point-max))))
+
+Then button creation would be:
+
+     {C-h h g c line-count RET eval-elisp RET (line-count) RET}
+
+Defining a link to a file section is even easier, say to the section
+below here:
+
+     {C-h h g c smk RET link-to-file RET "DEMO#Smart Mouse Keys" RET}
+
+
 * Smart Mouse Keys
 
-If you use Emacs with mouse support under the macOS window system, the X
-Window System or MS Windows, Hyperbole automatically configures your mouse
-keys for use as Smart Keys and provides additional display-oriented
-operations as demonstrated here.
+If you use Emacs with mouse support under the macOS window system, the
+X Window System or MS Windows, Hyperbole automatically configures your
+mouse keys for use as Smart Keys and provides additional
+display-oriented operations as demonstrated here.
 
 See the Hyperbole menu item, Doc/SmartKeys {C-h h d s}, for a summary of
 all Smart Key operations.  For extensive details on Smart Key operation,

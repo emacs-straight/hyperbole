@@ -4,7 +4,7 @@
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
 #
-# Copyright (C) 1994-2017  Free Software Foundation, Inc.
+# Copyright (C) 1994-2019  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
 #
 # This file is part of GNU Hyperbole.
@@ -15,13 +15,13 @@
 #   READ THIS:
 #   **********
 #
-#   Only Hyperbole developers (those who develop the source code) need
-#   to use this file for building Hyperbole package distributions.  Others
-#   may ignore it.
-#
-#   GNU Hyperbole is now installed for use via the Emacs package system; see
-#   the "INSTALL" file for installation instructions and the Info node,
+#   GNU Hyperbole should be installed for use via the Emacs package system;
+#   see the "INSTALL" file for installation instructions and the Info node,
 #   "(emacs)Packages", if you are unfamiliar with the Emacs package system.
+#
+#   Only Hyperbole developers (those who develop the source code) and testers
+#   need to use this file for building Hyperbole distributions.  Others
+#   may ignore it.
 #
 #   **********
 #
@@ -29,10 +29,10 @@
 #   Make any needed changes now and save the file.  Then select from the
 #   USAGE lines immediately following.
 #
-#   USAGE:	For those installing GNU Hyperbole, use:
+#   USAGE:	For those installing GNU Hyperbole, display your options with:
 #   	             make help
 #
-#               To build only the output formats of the Hyperbole MANUAL:
+#               To build only the output formats of the Hyperbole Manual:
 #		     make doc
 #
 #               To assemble a Hyperbole Emacs package for testing:
@@ -40,6 +40,15 @@
 #
 #               To release a Hyperbole Emacs package to ELPA and ftp.gnu.org:
 #		     make release
+#
+#               To setup Hyperbole to run directly from the latest test source
+#               code, use:
+#                    git clone http://git.savannah.gnu.org/r/hyperbole.git
+#                    cd hyperbole
+#                 Then use either:
+#                    make src     - setup to run directly from .el files
+#                  or
+#                    make bin     - setup to build and run from .elc files
 #
 #               The Hyperbole Manual is included in the package in four forms:
 #                  "man/hyperbole.info"   - GNU browsable version
@@ -54,7 +63,7 @@
 
 # This ver setup won't work under any make except GNU make, so set it manually.
 #HYPB_VERSION = "`head -3 hversion.el | tail -1 | sed -e 's/.*|\(.*\)|.*/\1/'`"
-HYPB_VERSION = 7.0.3b
+HYPB_VERSION = 7.0.6
 
 # Emacs executable used to byte-compile .el files into .elc's.
 # Possibilities include: emacs, infodock, etc.
@@ -170,9 +179,9 @@ ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.
 ELC_KOTL = kotl/kexport.elc kotl/kfile.elc kotl/kfill.elc kotl/kimport.elc kotl/klabel.elc \
 	   kotl/klink.elc kotl/kmenu.elc kotl/knode.elc kotl/kotl-mode.elc \
            kotl/kcell.elc kotl/kproperty.elc \
-	    kotl/kview.el kotl/kvspec.elc
+           kotl/kview.elc kotl/kvspec.elc
 
-HYPERBOLE_FILES = dir hyperbole-pkg.el info html $(EL_SRC) $(EL_COMPILE) $(EL_KOTL) \
+HYPERBOLE_FILES = dir info html $(EL_SRC) $(EL_COMPILE) $(EL_KOTL) \
 	$(ELC_COMPILE) Changes COPYING Makefile HY-ABOUT HY-ANNOUNCE HY-NEWS \
 	HY-WHY.kotl INSTALL DEMO DEMO-ROLO.otl MANIFEST README _hypb .hypb smart-clib-sym \
 	topwin.py hyperbole-banner.png $(man_dir)/hkey-help.txt \
@@ -184,11 +193,21 @@ EL_TAGS = $(EL_SRC) $(EL_COMPILE) $(EL_KOTL)
 .SUFFIXES: .el .elc   # Define the list of file suffixes to match to rules
 
 help: 
-	@ echo "Use the Emacs Package Manager to build and install GNU Hyperbole."
+	@ echo "Use the Emacs Package Manager to build and install the latest release"
+	@ echo "of GNU Hyperbole."
 	@ echo "See \"$(shell pwd)/INSTALL\" for installation instructions."
-	@ echo "For help with Emacs packages, see the GNU Emacs Info Manual section, \"(emacs)Packages\"."
+	@ echo "For help with Emacs packages, see the GNU Emacs Info Manual section,"
+	@ echo "\"(emacs)Packages\"."
 	@ echo ""
-	@ echo "For Hyperbole maintainers, the Hyperbole distribution package is built with:"
+	@ echo "To setup Hyperbole to run directly from the latest test source code, use:"
+	@ echo "     git clone http://git.savannah.gnu.org/r/hyperbole.git"
+	@ echo "     cd hyperbole"
+	@ echo "  Then use either:"
+	@ echo "     make src     - setup to run directly from .el files"
+	@ echo "   or"
+	@ echo "     make bin     - setup to build and run from .elc files"
+	@ echo ""
+	@ echo "For Hyperbole maintainers, build the Hyperbole distribution package with:"
 	@ echo "     make pkg"
 	@ echo "  To build documentation formats only, use:"
 	@ echo "     make doc"
@@ -236,9 +255,12 @@ elc: elc-init $(ELC_KOTL) $(ELC_COMPILE)
 elc-init:
 	@ $(RM) $(ELISP_TO_COMPILE)
 
+# Setup to run Hyperbole from .el source files
+src: autoloads tags
+
 # Remove and then rebuild all byte-compiled .elc files, even those .elc files
-# which do not yet exist.
-all-elc:
+# which do not yet exist, plus built TAGS file.
+bin: src
 	$(RM) *.elc kotl/*.elc
 	$(EMACS) $(BATCHFLAGS) $(PRELOADS) -f batch-byte-compile $(EL_KOTL) $(EL_COMPILE)
 
@@ -246,10 +268,13 @@ tags: TAGS
 TAGS: $(EL_TAGS)
 	$(ETAGS) $(EL_TAGS)
 
+clean:
+	$(RM) hyperbole-autoloads.el kotl/kotl-autoloads.el $(ELC_COMPILE) $(ELC_KOTL) TAGS
+
 version: doc
 	@ echo ""
 	@ echo "Any fgrep output means the version number has not been updated in that file."
-	fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-NEWS README.md hversion.el hyperbole.el hyperbole-pkg.el man/hyperbole.texi man/version.texi
+	fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-NEWS README.md hversion.el hyperbole.el man/hyperbole.texi man/version.texi
 	@ echo ""
 
 # Build the Info, HTML and Postscript versions of the user manual and README.md.html.
@@ -276,7 +301,7 @@ README.md.html: README.md
 
 # Generate a Hyperbole package suitable for distribution via the Emacs package manager.
 pkg: package
-package: git-pull doc kotl/kotl-autoloads.el $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar.sig
+package: git-pull doc autoloads $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar.sig
 
 # Generate and distribute a Hyperbole release to GNU ELPA and ftp.gnu.org.
 # One step in this is to generate an autoloads file for the Koutliner, kotl/kotl-autoloads.el.
@@ -304,9 +329,14 @@ elpa-test: package
 ftp: package
 	cd $(pkg_dir) && $(GNUFTP) hyperbole-$(HYPB_VERSION).tar.gz
 
+# Autoloads
+autoloads: hyperbole-autoloads.el kotl/kotl-autoloads.el
+
+hyperbole-autoloads.el: $(EL_COMPILE)
+	$(EMACS) $(BATCHFLAGS) -eval '(progn (setq generated-autoload-file (expand-file-name "hyperbole-autoloads.el") backup-inhibited t) (update-directory-autoloads "."))'
+
 kotl/kotl-autoloads.el: $(EL_KOTL)
-	$(EMACS) $(BATCHFLAGS) -eval '(progn (let ((generated-autoload-file (expand-file-name "kotl/kotl-autoloads.el"))) (update-directory-autoloads (expand-file-name "kotl/"))))' && $(RM) kotl/kotl-autoloads.el~
-#	$(EMACS) $(BATCHFLAGS) -eval '(progn (let ((generated-autoload-file (expand-file-name "kotl/kotl-autoloads.el"))) (update-directory-autoloads (expand-file-name "kotl/"))))' && sed -i '3 i ;; Copyright (C) 2017  Free Software Foundation, Inc.\n;;' $@ && $(RM) kotl/kotl-autoloads.el~
+	$(EMACS) $(BATCHFLAGS) -eval '(progn (setq generated-autoload-file (expand-file-name "kotl/kotl-autoloads.el") backup-inhibited t) (update-directory-autoloads "kotl/"))'
 
 # Used for ftp.gnu.org tarball distributions.
 $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar.gz:
@@ -322,7 +352,7 @@ $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar: $(HYPERBOLE_FILES)
 	cd $(pkg_dir) && $(RM) -fr $(pkg_hyperbole) $(pkg_hyperbole)-$(HYPB_VERSION)
 	cd .. && COPYFILE_DISABLE=1 $(TAR) -clf $(pkg_dir)/h.tar hyperbole
 	cd $(pkg_dir) && COPYFILE_DISABLE=1 $(TAR) xf h.tar && cd $(pkg_hyperbole) && $(MAKE) packageclean
-	cd $(pkg_hyperbole) && make kotl/kotl-autoloads.el && chmod 755 topwin.py && \
+	cd $(pkg_hyperbole) && make autoloads && chmod 755 topwin.py && \
 	cd $(pkg_dir) && $(RM) h.tar; \
 	  mv $(pkg_hyperbole) $(pkg_hyperbole)-$(HYPB_VERSION) && \
 	  COPYFILE_DISABLE=1 $(TAR) -clf $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar hyperbole-$(HYPB_VERSION)

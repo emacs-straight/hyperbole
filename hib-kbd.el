@@ -21,7 +21,7 @@
 ;;   between each key, may contain any number of individual key sequences
 ;;   and the whole thing should be delimited by braces, e.g. {M-x apropos
 ;;   RET hyperbole RET}.  Forms such as {\C-b}, {\^b}, and {^b} will not be
-;;   recognized. 
+;;   recognized.
 
 ;;; Code:
 ;;; ************************************************************************
@@ -35,19 +35,19 @@
 ;;; ************************************************************************
 
 (defact kbd-key (key-series)
-  "Executes a normalized key sequence without curly braces, {}.
+  "Execute a normalized key sequence without curly braces, {}.
 KEY-SERIES must be a string of one of the following:
   a Hyperbole minibuffer menu item key sequence,
   a HyControl key sequence,
   a M-x extended command,
   or a valid key sequence together with its interactive arguments.
 
-Returns t if the sequence appears to be valid, else nil."
+Return t if the sequence appears to be valid, else nil."
   (interactive "kKey sequence to execute (no {}): ")
   (kbd-key:act key-series))
 
 (defib kbd-key ()
-  "Executes a key sequence found around point, delimited by curly braces, {}, if any.
+  "Execute a key sequence found around point, delimited by curly braces, {}, if any.
 Key sequences should be in human readable form, e.g. {C-x C-b}, or what `key-description' returns.
 Forms such as {\C-b}, {\^b}, and {^b} will not be recognized.
 
@@ -58,7 +58,9 @@ Any key sequence must be a string of one of the following:
   or a valid key sequence together with its interactive arguments."
   (unless (or (br-in-browser)
 	      (and (looking-at "[{}]") (/= ?\\ (preceding-char))))
-    (let* ((seq-and-pos (or (hbut:label-p t "{`" "'}" t)
+    ;; handle long series, e.g. eval-elisp actions
+    (let* ((ebut:max-len (max 3000 ebut:max-len))
+	   (seq-and-pos (or (hbut:label-p t "{`" "'}" t)
 			    (hbut:label-p t "{" "}" t)
 			    ;; Regular dual single quotes (Texinfo smart quotes)
 			    (hbut:label-p t "``" "''" t)
@@ -88,7 +90,7 @@ Any key sequence must be a string of one of the following:
 ;;; ************************************************************************
 
 (defun kbd-key:act (key-series)
-  "Executes the command binding for normalized KEY-SERIES.
+  "Execute the command binding for normalized KEY-SERIES.
 Returns t if KEY-SERIES has a binding, else nil."
   (interactive "kKeyboard key to execute (no {}): ")
   (setq current-prefix-arg nil) ;; Execution of the key-series may set it.
@@ -106,8 +108,8 @@ Returns t if KEY-SERIES has a binding, else nil."
 	  (t (call-interactively binding) t))))
 
 (defun kbd-key:doc (key-series &optional full)
-  "Shows first line of doc for binding of keyboard KEY-SERIES in minibuffer.
-With optional prefix arg FULL, displays full documentation for command."
+  "Show first line of doc for binding of keyboard KEY-SERIES in minibuffer.
+With optional prefix arg FULL, display full documentation for command."
   (interactive "kKey sequence: \nP")
   (let* ((keys (kbd-key:normalize key-series))
 	 (cmd  (let ((cmd (key-binding keys)))
@@ -137,7 +139,7 @@ With optional prefix arg FULL, displays full documentation for command."
     (if kbd-key (kbd-key:doc kbd-key t))))
 
 (defun kbd-key:normalize (key-series)
-  "Returns KEY-SERIES string (without surrounding {}) normalized into a form that can be parsed by commands."
+  "Return KEY-SERIES string (without surrounding {}) normalized into a form that can be parsed by commands."
   (interactive "kKeyboard key sequence to normalize (no {}): ")
   (if (stringp key-series)
       (let ((norm-key-seq (copy-sequence key-series))
@@ -197,11 +199,11 @@ With optional prefix arg FULL, displays full documentation for command."
 ;;; ************************************************************************
 
 (defun kbd-key:extended-command-p (key-series)
-  "Returns non-nil if the string KEY-SERIES is a normalized extended command invocation, i.e. M-x command."
+  "Return non-nil if the string KEY-SERIES is a normalized extended command invocation, i.e. M-x command."
   (and (stringp key-series) (string-match kbd-key:extended-command-prefix key-series)))
   
 (defun kbd-key:hyperbole-hycontrol-key-p (key-series)
-  "Returns t if normalized, non-nil KEY-SERIES is given when in a HyControl mode, else nil.
+  "Return t if normalized, non-nil KEY-SERIES is given when in a HyControl mode, else nil.
 Allows for multiple key sequences strung together."
   (and key-series
        (featurep 'hycontrol)
@@ -212,13 +214,13 @@ Allows for multiple key sequences strung together."
        t))
 
 (defun kbd-key:hyperbole-mini-menu-key-p (key-series)
-  "Returns t if normalized KEY-SERIES appears to invoke a Hyperbole menu item or sequence of keys, else nil."
+  "Return t if normalized KEY-SERIES appears to invoke a Hyperbole menu item or sequence of keys, else nil."
   (when key-series
     (let ((mini-menu-key (kbd-key:normalize (key-description (car (where-is-internal 'hyperbole))))))
       (if (string-match (regexp-quote mini-menu-key) key-series) t))))
 
 (defun kbd-key:key-and-arguments (key-series)
-  "Returns t if normalized KEY-SERIES appears to be a bound key sequence possibly with following interactive arguments, else nil."
+  "Return t if normalized KEY-SERIES appears to be a bound key sequence possibly with following interactive arguments, else nil."
   (let ((prefix-binding (and (stringp key-series) (key-binding (substring key-series 0 1)))))
        ;; Just ensure that 1st character is bound to something that is
        ;; not a self-insert-command or a number.
@@ -247,10 +249,10 @@ Allows for multiple key sequences strung together."
     string))
 
 (defun kbd-key:special-sequence-p (key-series)
-  "Returns non-nil if normalized KEY-SERIES string is one of the following:
-  a Hyperbole minibuffer menu item key sequence,
-  a HyControl key sequence,
-  a M-x extended command,
+  "Return non-nil if normalized KEY-SERIES string is one of the following:
+a Hyperbole minibuffer menu item key sequence,
+a HyControl key sequence,
+a M-x extended command,
   or a valid key sequence together with its interactive arguments."
   (or (kbd-key:hyperbole-mini-menu-key-p key-series)
       (kbd-key:hyperbole-hycontrol-key-p key-series)

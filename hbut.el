@@ -45,13 +45,13 @@ Nil disables saving.")
       (error "(ebut:act): No explicit button labeled: %s" label))))
 
 (defun    ebut:alist (&optional file)
-  "Returns alist of ebuts in FILE or the current buffer.
+  "Return alist of ebuts in FILE or the current buffer.
 Each element is a list of just an explicit button label.  For use
 as a completion table."
   (mapcar 'list (ebut:list file)))
 
 (defun    ebut:at-p (&optional start-delim end-delim)
-  "Returns explicit Hyperbole button at point or nil.
+  "Return explicit Hyperbole button at point or nil.
 Assumes point is within first line of button label, if at all.
 Optional START-DELIM and END-DELIM are strings that override default
 button delimiters."
@@ -60,9 +60,9 @@ button delimiters."
       (ebut:get key))))
 
 (defun    ebut:create (&optional but-sym)
-  "Creates Hyperbole explicit button based on optional BUT-SYM.
+  "Create Hyperbole explicit button based on optional BUT-SYM.
 Default is `hbut:current'.
-Button should hold the following attributes (see `hattr:set'): 
+Button should hold the following attributes (see `hattr:set'):
    lbl-key (normalized button label string),
    loc     (filename or buffer where button is located),
    dir     (directory name where button is located),
@@ -82,19 +82,19 @@ If successful, leaves point in button data buffer, so caller should use
     lbl-instance))
 
 (defun    ebut:delete (&optional but-sym)
-  "Deletes Hyperbole explicit button based on optional BUT-SYM.
+  "Delete Hyperbole explicit button based on optional BUT-SYM.
 Default is `hbut:current'.
-Returns entry deleted (a list of attribute values) or nil."
+Return entry deleted (a list of attribute values) or nil."
   (if (null but-sym) (setq but-sym 'hbut:current))
   (if (ebut:is-p but-sym)
-      (let* ((but-key (hattr:get but-sym 'lbl-key)) 
+      (let* ((but-key (hattr:get but-sym 'lbl-key))
 	     (loc     (hattr:get but-sym 'loc))
 	     (entry   (hbdata:delete-entry but-key loc)))
 	(run-hooks 'ebut-delete-hook)
 	entry)))
 
 (defun    ebut:get (&optional lbl-key buffer key-src)
-  "Returns explicit Hyperbole button symbol given by LBL-KEY and BUFFER.
+  "Return explicit Hyperbole button symbol given by LBL-KEY and BUFFER.
 KEY-SRC is given when retrieving global buttons and is the full source pathname.
 
 Retrieves button data, converts into a button object and returns a symbol
@@ -149,12 +149,12 @@ buffer."
 	  'hbut:current)))))
 
 (defun    ebut:is-p (object)
-  "Returns non-nil if OBJECT denotes an explicit Hyperbole button."
+  "Return non-nil if OBJECT denotes an explicit Hyperbole button."
   (and (symbolp object)
        (eq (hattr:get object 'categ) 'explicit)))
 
 (defun    ebut:key-of-label-p (key label)
-  "Returns t iff KEY matches to LABEL in a case insensitive manner."
+  "Return t iff KEY matches to LABEL in a case insensitive manner."
   (and (stringp key) (stringp label)
        (equal key (downcase (ebut:label-to-key label)))))
 
@@ -164,7 +164,7 @@ buffer."
 (defalias 'ebut:key-to-label       'hbut:key-to-label)
 
 (defun    ebut:label-p (&optional as-label start-delim end-delim pos-flag two-lines-flag)
-  "Returns key for the Hyperbole explicit button label that point is within, else nil.
+  "Return key for the Hyperbole explicit button label that point is within, else nil.
 Assumes point is within the first line of any button label.  All
 following arguments are optional.  If AS-LABEL is non-nil, label
 is returned rather than the key derived from the label.
@@ -179,9 +179,9 @@ label search to two lines."
 	npoint start lbl-key end but-start but-end start-regexp end-regexp)
     (unless start-delim (setq start-delim ebut:start))
     (unless end-delim (setq end-delim ebut:end))
-    (setq start-regexp (regexp-quote start-delim)
-	  end-regexp (regexp-quote end-delim)
-	  npoint (+ opoint (length start-delim)))
+    (setq npoint (+ opoint (length start-delim))
+	  start-regexp (regexp-quote start-delim)
+	  end-regexp (regexp-quote end-delim))
     ;; Ensure label is not blank and point is within matching delimiters
     (save-excursion
       (forward-line 0)
@@ -224,8 +224,8 @@ label search to two lines."
 (defalias 'ebut:label-to-key 'hbut:label-to-key)
 
 (defun    ebut:list (&optional file loc-p)
-  "Returns list of button labels from in FILE or the current buffer.
-Removes duplicate labels if optional LOC-P is omitted.  With LOC-P, returns
+  "Return list of button labels from in FILE or the current buffer.
+Remove duplicate labels if optional LOC-P is omitted.  With LOC-P, return
 list of elements (label start end) where start and end are the buffer
 positions at which the button delimiter begins and ends."
   (interactive)
@@ -246,7 +246,7 @@ positions at which the button delimiter begins and ends."
 (defalias 'map-ebut 'ebut:map)
 
 (defun    ebut:map (but-func &optional regexp-match include-delims)
-  "Applies BUT-FUNC to the explicit buttons in the visible part of the current buffer.
+  "Apply BUT-FUNC to the explicit buttons in the visible part of the current buffer.
 If REGEXP-MATCH is non-nil, only buttons which match this argument are
 considered.
 
@@ -270,9 +270,9 @@ If successful, leaves point in button data buffer, so caller should use
       lbl-instance)))
 
 (defun    ebut:next-occurrence (lbl-key &optional buffer)
-  "Moves point to next occurrence of button with LBL-KEY in optional BUFFER.
+  "Move point to next occurrence of button with LBL-KEY in optional BUFFER.
 BUFFER defaults to current buffer.  It may be a buffer name.
-Returns non-nil iff occurrence is found.
+Return non-nil iff occurrence is found.
 
 Remember to use (goto-char (point-min)) before calling this in order to
 move to the first occurrence of the button."
@@ -285,10 +285,14 @@ move to the first occurrence of the button."
       (goto-char (+ (match-beginning 0) (length ebut:start)))))
 
 (defun    ebut:operate (curr-label new-label)
-  "Operates on and modifies properties of a new or existing explicit button given by CURR-LABEL.
+  "Operate on and modify properties of a new or existing explicit button given by CURR-LABEL.
 When NEW-LABEL is non-nil, this is substituted for CURR-LABEL and the
 associated button is modified.  Otherwise, a new button is created.
-Returns instance string appended to label to form a per-buffer unique
+
+If CURR-LABEL is nil, the text in the active region is used as the
+button label, if any, otherwise, an error is signaled.
+
+Return instance string appended to label to form a per-buffer unique
 label; nil if label is already unique.  Signals an error when no such
 button is found in the current buffer."
   (let* ((lbl-key (ebut:label-to-key curr-label))
@@ -303,7 +307,7 @@ button is found in the current buffer."
 	  (if (hmail:editor-p) (hmail:msg-narrow))))
     (if instance-flag
 	(progn
-	  ;; Rename all occurrences of button - those with same label.
+	  ;; Rename all occurrences of button - those with same label
 	  (if modify
 	      (let* ((but-key-and-pos (ebut:label-p nil nil nil 'pos))
 		     (at-but (equal (car but-key-and-pos)
@@ -322,9 +326,11 @@ button is found in the current buffer."
 			lbl-regexp 'include-delims))
 		      (at-but)
 		      ((hypb:error "(ebut:operate): No button matching: %s" curr-label))))
-	    ;; Add a new button.
+	    ;; Add a new button recording its start and end positions
 	    (let (start end buf-lbl)
-	      (cond ((and (marker-position (hypb:mark-marker t))
+	      (cond ((and (not curr-label)
+			  (hmouse-use-region-p)
+			  (marker-position (hypb:mark-marker t))
 			  (setq start (region-beginning)
 				end (region-end)
 				buf-lbl (buffer-substring start end))
@@ -425,7 +431,7 @@ enables partial matches."
 				  (with-current-buffer out-buf
 				    (if firstmatch
 					(progn
-					  (insert hbut:source-prefix "\"" 
+					  (insert hbut:source-prefix "\""
 						  currfile "\"\n")
 					  (setq firstmatch nil)))
 				    (insert tag lns))))
@@ -435,8 +441,8 @@ enables partial matches."
     total))
 
 (defun    ebut:to (lbl-key)
-  "Finds the nearest explicit button with LBL-KEY (a label or label key) within the visible portion of the current buffer.
-Leaves point inside the button label.  Returns the symbol for the button, else nil."
+  "Find the nearest explicit button with LBL-KEY (a label or label key) within the visible portion of the current buffer.
+Leave point inside the button label.  Return the symbol for the button, else nil."
   ;; Handle a label given rather than a label key
   (if (string-match-p "\\s-" lbl-key)
       (setq lbl-key (ebut:label-to-key lbl-key)))
@@ -487,7 +493,7 @@ Inserts INSTANCE-STR after END, before ending delimiter."
     t))
 
 (defun    ebut:match-regexp (match-keys match-part)
-  "Returns regexp to match to all explicit button keys from MATCH-KEYS."
+  "Return regexp to match to all explicit button keys from MATCH-KEYS."
   (setq match-part (if match-part
 		       (concat "[^" (substring ebut:end -1) "]*")
 		     "[ \t\n\r]*"))
@@ -527,7 +533,7 @@ Inserts INSTANCE-STR after END, before ending delimiter."
 	       (error "(gbut:act): No global button found for label: %s" label))))))
 
 (defun    gbut:get (&optional lbl-key)
-  "Returns global Hyperbole button symbol given by optional LBL-KEY if found in gbut:file.
+  "Return global Hyperbole button symbol given by optional LBL-KEY if found in gbut:file.
 
 Retrieves any button data, converts into a button object and returns a symbol
 which references the button.
@@ -541,22 +547,22 @@ the button that point is within or nil."
   "Displays help for Hyperbole global button with LABEL."
   (interactive (list (hargs:read-match "Report on global button labeled: "
 				       (mapcar 'list (gbut:label-list))
-				       nil t nil 'ebut)))
+				       nil t nil 'hbut)))
   (let* ((lbl-key (hbut:label-to-key label))
-	 (but (ebut:get lbl-key nil gbut:file)))
+	 (but (hbut:get lbl-key nil gbut:file)))
     (if but
 	(hbut:report but)
       (error "(gbut:help): No global button labeled: %s" label))))
 
 (defun    gbut:label-list ()
-  "Returns list of global button labels."
+  "Return list of global button labels."
   (mapcar 'hbut:key-to-label (gbut:key-list)))
 
 
 (defun    gbut:to (lbl-key)
-  "Finds the global button with LBL-KEY (a label or label key) within the visible portion of the global button file.
-Leaves point inside the button label, if it has one.
-Returns the symbol for the button, else nil."
+  "Find the global button with LBL-KEY (a label or label key) within the visible portion of the global button file.
+Leave point inside the button label, if it has one.
+Return the symbol for the button, else nil."
   (when (file-readable-p gbut:file)
     (let ((obuf (current-buffer))
 	  (opoint (point))
@@ -571,11 +577,11 @@ Returns the symbol for the button, else nil."
 
 ;;; ------------------------------------------------------------------------
 (defun    gbut:key-list ()
-  "Returns list of global button label keys."
+  "Return list of global button label keys."
   (nconc (gbut:ebut-key-list) (gbut:ibut-key-list)))
 
 (defun    gbut:ebut-key-list ()
-  "Returns a list of explicit button label keys from the global button file."
+  "Return a list of explicit button label keys from the global button file."
   (save-excursion
     (if (hbdata:to-entry-buf gbut:file)
 	(let (gbuts)
@@ -589,7 +595,7 @@ Returns the symbol for the button, else nil."
 	    gbuts)))))
 
 (defun    gbut:ibut-key-list ()
-  "Returns a list of implicit button label keys from the global button file."
+  "Return a list of implicit button label keys from the global button file."
   (when (file-readable-p gbut:file)
     (save-excursion
       (set-buffer (find-file-noselect gbut:file))
@@ -602,7 +608,7 @@ Returns the symbol for the button, else nil."
 ;;; ========================================================================
 
 (defun    hattr:attributes (obj-symbol)
-  "Returns a list of OBJ-SYMBOL's attributes as symbols."
+  "Return a list of OBJ-SYMBOL's attributes as symbols."
   (if (symbolp obj-symbol)
       (let* ((attr-val-list (symbol-plist obj-symbol))
 	     (i -1))
@@ -612,7 +618,7 @@ Returns the symbol for the button, else nil."
 			  attr-val-list)))))
 
 (defun    hattr:clear (hbut)
-  "Removes all of HBUT's attributes except `variable-documentation'."
+  "Remove all of HBUT's attributes except `variable-documentation'."
   (let (sublist)
     (or (symbolp hbut)
 	(error "(hattr:clear): Argument not a Hyperbole button: %s" hbut))
@@ -624,8 +630,8 @@ Returns the symbol for the button, else nil."
       )))
 
 (defun    hattr:copy (from-hbut to-hbut)
-  "Copies attributes FROM-HBUT TO-HBUT, overwriting TO-HBUT attribute values.
-Returns TO-HBUT."
+  "Copy attributes FROM-HBUT TO-HBUT, overwriting TO-HBUT attribute values.
+Return TO-HBUT."
   (mapc (lambda (hbut)
 	  (or (and hbut (symbolp hbut))
 	      (error "(hattr:clear): Argument not a Hyperbole button: %s" hbut)))
@@ -635,18 +641,18 @@ Returns TO-HBUT."
   to-hbut)
 
 (defun    hattr:get (obj-symbol attr-symbol)
-  "Returns value of OBJ-SYMBOL's attribute ATTR-SYMBOL."
+  "Return value of OBJ-SYMBOL's attribute ATTR-SYMBOL."
   (get obj-symbol attr-symbol))
 
 (defun    hattr:list (obj-symbol)
-  "Returns a property list of OBJ-SYMBOL's attributes.
+  "Return a property list of OBJ-SYMBOL's attributes.
 Each pair of elements is: <attrib-name> <attrib-value>."
   (if (symbolp obj-symbol)
       (symbol-plist obj-symbol)
     (error "(hattr:list): Argument not a symbol: %s" obj-symbol)))
 
 (defun    hattr:memq (attr-symbol obj-symbol)
-  "Returns t if ATTR-SYMBOL is in OBJ-SYMBOL's attribute list, else nil."
+  "Return t if ATTR-SYMBOL is in OBJ-SYMBOL's attribute list, else nil."
   (and (symbolp obj-symbol) (symbolp attr-symbol)
        (let* ((attr-val-list (symbol-plist obj-symbol))
 	      (attr-list (let ((i -1))
@@ -658,8 +664,8 @@ Each pair of elements is: <attrib-name> <attrib-value>."
 	 (if (memq attr-symbol attr-list) t))))
 
 (defun    hattr:report (attrib-list)
-  "Pretty prints to standard-output attribute-value pairs from ATTRIB-LIST.
-Ignores nil valued attributes.  Returns t unless no attributes are printed."
+  "Pretty print to `standard-output' attribute-value pairs from ATTRIB-LIST.
+Ignore nil valued attributes.  Return t unless no attributes are printed."
   (let ((has-attr) attr val len)
     (unless (or (null attrib-list) (not (listp attrib-list))
 		;; odd number of elements?
@@ -681,19 +687,19 @@ Ignores nil valued attributes.  Returns t unless no attributes are printed."
 				 ((and (setq str (if (stringp val) val
 						   (prin1-to-string val)))
 				       (string-match "\\`actypes::" str))
-				  (intern (substring str (match-end 0))))
+				  (make-symbol (substring str (match-end 0))))
 				 (t val)))))))
       has-attr)))
 
 (defun    hattr:save ()
-  "Saves button attribute file for current directory, if modified.
+  "Save button attribute file for current directory, if modified.
 Suitable for use as part of `write-file-functions'."
   (let* ((bd-file (expand-file-name hattr:filename default-directory))
 	 (buf (and (stringp default-directory)
 		   (get-file-buffer bd-file))))
     (if (and ebut:hattr-save buf (not (eq buf (current-buffer))))
 	(let ((ebut:hattr-save));; Prevents `write-file-functions' from looping.
-	  (and (buffer-modified-p buf) 
+	  (and (buffer-modified-p buf)
 	       (with-current-buffer buf (save-buffer)
 		 ;; Unlock button attribute file; kill buffer so user is
 		 ;; never holding a buffer which is out of sync with file,
@@ -705,7 +711,7 @@ Suitable for use as part of `write-file-functions'."
   nil)
 
 (defun    hattr:set (obj-symbol attr-symbol attr-value)
-  "Sets OBJ-SYMBOL's attribute ATTR-SYMBOL to ATTR-VALUE and returns ATR-VALUE."
+  "Set OBJ-SYMBOL's attribute ATTR-SYMBOL to ATTR-VALUE and return ATR-VALUE."
   (put obj-symbol attr-symbol attr-value))
 
 (defalias 'hattr:summarize 'hattr:report)
@@ -721,12 +727,13 @@ others who use a different value!")
 ;;; ========================================================================
 
 (defun    hbut:act (hbut)
-  "Performs action for explicit or implicit Hyperbole button symbol HBUT."
-  (if hbut (apply 'actype:act (hattr:get hbut 'actype)
+  "Perform action for explicit or implicit Hyperbole button symbol HBUT."
+  (if hbut (apply hrule:action
+		  (hattr:get hbut 'actype)
 		  (hattr:get hbut 'args))))
 
 (defun    hbut:action (hbut)
-  "Returns appropriate action for Hyperbole button symbol HBUT."
+  "Return appropriate action for Hyperbole button symbol HBUT."
   (let ((categ (hattr:get hbut 'categ)) (atype) (action))
     (if (eq categ 'explicit)
 	(progn (setq action (hattr:get hbut 'action)
@@ -738,12 +745,12 @@ others who use a different value!")
       (if (fboundp atype) atype))))
 
 (defun    hbut:at-p ()
-  "Returns symbol for explicit or implicit Hyperbole button at point or nil."
+  "Return symbol for explicit or implicit Hyperbole button at point or nil."
   (or (ebut:at-p) (ibut:at-p)))
 
 
 (defun    hbut:comment (start end)
-  "Comments button label spanning region START to END in current buffer.
+  "Comment button label spanning region START to END in current buffer.
 Usees buffer commenting grammar, if any, otherwise doesn't comment.
 Ignores email-related buffers."
   (save-excursion
@@ -805,7 +812,7 @@ Ignores email-related buffers."
   "List of regexps of fill prefixes to remove from the middle of buttons.")
 
 (defun    hbut:fill-prefix-remove (label)
-  "Removes any recognized fill prefix from within LABEL.
+  "Remove any recognized fill prefix from within LABEL.
 `hbut:fill-prefix-regexps' is a list of fill prefixes to recognize."
   (if (string-match "\n" label)
       (mapc (lambda (fill-prefix)
@@ -816,22 +823,22 @@ Ignores email-related buffers."
   label)
 
 (defun    hbut:get (&optional lbl-key buffer key-src)
-  "Returns explicit or labeled implicit Hyperbole button symbol given by LBL-KEY and BUFFER.
+  "Return explicit or labeled implicit Hyperbole button symbol given by LBL-KEY and BUFFER.
 KEY-SRC is given when retrieving global buttons and is the full source pathname.
 
-Returns a symbol which references the button.
+Return a symbol which references the button.
 
-All arguments are optional.  When none are given, returns a
+All arguments are optional.  When none are given, return a
 symbol for the button or button label that point is within or
 nil.  BUFFER defaults to the current buffer."
   (or (ebut:get lbl-key buffer key-src) (ibut:get lbl-key buffer key-src)))
 
 (defun    hbut:is-p (object)
-  "Returns non-nil if object denotes a Hyperbole button."
+  "Return non-nil if OBJECT denotes a Hyperbole button."
  (and (symbolp object) (hattr:get object 'categ)))
 
 (defun    hbut:key-src (&optional full)
-  "Returns key source (usually unqualified) for current Hyperbole button.
+  "Return key source (usually unqualified) for current Hyperbole button.
 Also sets current buffer to key source.
 With optional FULL when source is a pathname, the full pathname is returned."
   (let ((src (cond ((hmail:mode-is-p) (current-buffer))
@@ -865,20 +872,21 @@ With optional FULL when source is a pathname, the full pathname is returned."
 			buffer-file-name
 		      (file-name-nondirectory buffer-file-name)))
 		   ;; Handle any preceding @loc hyp-source implicit button location references.
-		   ;; This is used in report buffers of explicit buttons, i.e. hui:hbut-report.
+		   ;; This is used in report buffers of explicit buttons, i.e. hui:hbut-report
+		   ;; and the *Rolo* output buffer.
 		   ((save-excursion
 		      (save-restriction
 			(widen)
 			(end-of-visible-line)
-			(if (and (search-backward hbut:source-prefix nil t)
-				 (or (memq (preceding-char) '(?\n ?\r))
-				     (= (point) (point-min))))
-			    (hbut:source full)))))
+			(when (and (search-backward hbut:source-prefix nil t)
+				   (or (memq (preceding-char) '(?\n ?\r))
+				       (= (point) (point-min))))
+			  (hbut:source full)))))
 		   (t (current-buffer)))))
     (hbut:key-src-set-buffer src)))
 
 (defun    hbut:key-src-fmt ()
-  "Returns unformatted filename associated with formatted current buffer.
+  "Return unformatted filename associated with formatted current buffer.
 This is used to obtain the source of Hyperbole buttons for buffers that
 represent the output of particular document formatters."
   (and (or (eq major-mode 'Info-mode)
@@ -926,14 +934,14 @@ represent the output of particular document formatters."
 	lbl)))
 
 (defun    hbut:label (hbut)
-  "Returns the label for Hyperbole button symbol HBUT."
+  "Return the label for Hyperbole button symbol HBUT."
   (if (hbut:is-p hbut)
       (hbut:key-to-label (hattr:get hbut 'lbl-key))
     (error "(hbut:label): Argument is not a Hyperbole button symbol, `%s'"
 	   hbut)))
 
 (defun    hbut:label-p (&optional as-label start-delim end-delim pos-flag two-lines-flag)
-  "Returns key for the Hyperbole button label that point is within, else nil.
+  "Return key for the Hyperbole button label that point is within, else nil.
 Assumes point is within the first line of any button label.  All
 following arguments are optional.  If AS-LABEL is non-nil, label
 is returned rather than the key derived from the label.
@@ -946,7 +954,7 @@ label search to two lines."
       (ibut:label-p as-label start-delim end-delim pos-flag two-lines-flag)))
 
 (defun    hbut:label-regexp (lbl-key &optional no-delim start-delim end-delim)
-  "Unnormalizes LBL-KEY.  Returns regular expr matching delimited button label.
+  "Unnormalize LBL-KEY.  Return regular expr matching delimited button label.
 Optional NO-DELIM leaves off delimiters and leading and trailing space.
 Optional START-DELIM and END-DELIM are added around the returned
 label; these default to `ebut:start' and `ebut:end'."
@@ -960,7 +968,7 @@ label; these default to `ebut:start' and `ebut:end'."
 	   (case-fold-search))
       (while (< pos len)
 	(setq c (aref lbl-key pos)
-	      regexp (concat regexp 
+	      regexp (concat regexp
 			     (if (eq c ?_)
 				 (if (or (= (1+ pos) len)
 					 (not (eq (aref lbl-key (1+ pos)) ?_)))
@@ -1032,14 +1040,14 @@ include delimiters when INCLUDE-DELIMS is non-nil)."
     (nreverse rtn)))
 
 (defun    hbut:outside-comment-p ()
-  "Returns t if within a programming language buffer and prior regexp match is outside a comment, else nil."
+  "Return t if within a programming language buffer and prior regexp match is outside a comment, else nil."
   (when (and (derived-mode-p 'prog-mode)
 	     (not (eq major-mode 'lisp-interaction-mode)))
     ;; Match is outside of a programming language comment
     (not (nth 4 (syntax-ppss)))))
 
 (defun    hbut:report (&optional arg)
-  "Pretty prints the attributes of a button or buttons.
+  "Pretty print the attributes of a button or buttons.
 
 Takes an optional ARG interpreted as follows:
   a button symbol - report on that button;
@@ -1047,7 +1055,7 @@ Takes an optional ARG interpreted as follows:
   integer > 0     - report on all explicit buttons in buffer, alphabetize;
   integer < 1     - report on all explicit buttons in occurrence order.
 
-Returns number of buttons reported on or nil if none."
+Return number of buttons reported on or nil if none."
   (setq arg (cond ((or (integerp arg) (symbolp arg)) arg)
 		  ((listp arg)
 		   (if (integerp (setq arg (car arg))) arg 1))
@@ -1106,7 +1114,7 @@ Returns number of buttons reported on or nil if none."
 	  (length lbl-lst)))))
 
 (defun    hbut:source (&optional full)
-  "Returns Hyperbole source buffer or file given at point.
+  "Return Hyperbole source buffer or file given at point.
 If a file, always returns a full path if optional FULL is non-nil."
   (goto-char (match-end 0))
   (cond ((looking-at "#<buffer \"?\\([^\n\"]+\\)\"?>")
@@ -1127,21 +1135,21 @@ If a file, always returns a full path if optional FULL is non-nil."
 
 (defconst hbut:source-prefix moccur-source-prefix
   "String found at start of a buffer containing only a hyper-button menu.
-   This expression should be followed immediately by a file-name indicating the
+This expression should be followed immediately by a file-name indicating the
 source file for the buttons in the menu, if any.")
 
 (defun    hbut:label-list ()
-  "Returns list of current buffer's Hyperbole button labels."
+  "Return list of current buffer's Hyperbole button labels."
   (mapcar 'hbut:key-to-label (hbut:key-list)))
 
 ;;; ------------------------------------------------------------------------
 
 (defun    hbut:key-list ()
-  "Returns list of global button label keys."
+  "Return list of global button label keys."
   (nconc (hbut:ebut-key-list) (hbut:ibut-key-list)))
 
 (defun    hbut:ebut-key-list (&optional key-src)
-  "Returns a list of explicit button label keys from optional KEY-SRC or the current buffer."
+  "Return a list of explicit button label keys from optional KEY-SRC or the current buffer."
   (save-excursion
     (if (hbdata:to-entry-buf (or key-src (buffer-file-name)))
 	(let (hbuts)
@@ -1155,7 +1163,7 @@ source file for the buttons in the menu, if any.")
 	    hbuts)))))
 
 (defun    hbut:ibut-key-list (&optional key-src)
-  "Returns a list of implicit button label keys from optional KEY-SRC or the current buffer."
+  "Return a list of implicit button label keys from optional KEY-SRC or the current buffer."
   (save-excursion
     (when (hbut:key-src-set-buffer (or key-src (current-buffer)))
       (save-restriction
@@ -1167,13 +1175,13 @@ source file for the buttons in the menu, if any.")
 ;;; ========================================================================
 
 (defun    ibut:alist (&optional file)
-  "Returns alist of labeled ibuts in FILE or the current buffer.
+  "Return alist of labeled ibuts in FILE or the current buffer.
 Each element is a list of just an implicit button label.  For use
 as a completion table."
   (mapcar 'list (ibut:list file)))
 
 (defun    ibut:at-p (&optional key-only)
-  "Returns symbol for implicit button at point, else nil.
+  "Return symbol for implicit button at point, else nil.
 Point may be on the implicit button or its optional preceding label.
 With optional KEY-ONLY, returns only the label key for button.
 
@@ -1206,7 +1214,7 @@ excluding delimiters, not just one."
 	      (hattr:clear 'hbut:current))
 	    (while (and (not is-type) types)
 	      (setq itype (car types))
-	      (if (setq args (funcall itype))
+	      (if (and itype (setq args (funcall itype)))
 		  (setq is-type itype)
 		(setq types (cdr types))))
 	    (when is-type
@@ -1223,8 +1231,7 @@ excluding delimiters, not just one."
 		      (hattr:set 'hbut:current 'actype
 				 (or
 				  ;; Hyperbole action type
-				  (intern-soft (concat "actypes::"
-						       (symbol-name (car args))))
+				  (symtable:actype-p (car args))
 				  ;; Regular Emacs Lisp function symbol
 				  (car args)))
 		      (hattr:set 'hbut:current 'args (cdr args))))
@@ -1232,7 +1239,7 @@ excluding delimiters, not just one."
       (goto-char opoint))))
 
 (defun    ibut:at-type-p (ibut-type-symbol)
-  "Returns non-nil if point is on a button of type `ibut-type-symbol`.
+  "Return non-nil if point is on a button of type IBUT-TYPE-SYMBOL.
 Point must be on the button itself and not its label, if any.
 
 The return value is a list of the type's action type symbol and
@@ -1248,10 +1255,10 @@ associated arguments from the button."
 	  (funcall ibut-type-symbol))))))
 
 (defun    ibut:get (&optional lbl-key buffer key-src)
-  "Returns implicit Hyperbole button symbol given by LBL-KEY and BUFFER.
+  "Return implicit Hyperbole button symbol given by LBL-KEY and BUFFER.
 KEY-SRC is given when retrieving global buttons and is the full source pathname.
 
-Returns a symbol which references the button.
+Return a symbol which references the button.
 
 All arguments are optional.  When none are given, returns a
 symbol for the button or button label that point is within or
@@ -1283,19 +1290,19 @@ nil.  BUFFER defaults to the current buffer."
 	(ibut:at-p)))))
 
 (defun    ibut:is-p (object)
-  "Returns non-nil if object denotes an implicit Hyperbole button."
-  (if (symbolp object)
-      (let ((categ (hattr:get object 'categ)))
-	(and categ (string-match "^ibtypes::" (symbol-name categ))))))
+  "Return non-nil if OBJECT denotes an implicit Hyperbole button."
+  (when (symbolp object)
+    (let ((categ (hattr:get object 'categ)))
+      (and categ (string-match "\\`ibtypes::" (symbol-name categ))))))
 
 (defun    ibut:label-map (but-func &optional start-delim end-delim
 				   regexp-match include-delims)
-  "Applies BUT-FUNC to buttons delimited by optional START-DELIM and END-DELIM.
+  "Apply BUT-FUNC to buttons delimited by optional START-DELIM and END-DELIM.
 START-DELIM defaults to ibut:label-start; END-DELIM defaults to ibut:label-end.
 If REGEXP-MATCH is non-nil, only buttons which match this argument are
 considered.
 
-Maps over portion of buffer visible under any current restriction.
+Map over portion of buffer visible under any current restriction.
 BUT-FUNC must take precisely three arguments: the button label, the
 start position of the delimited button label and its end position (positions
 include delimiters when INCLUDE-DELIMS is non-nil).
@@ -1321,7 +1328,7 @@ current."
 	(t (error "(ibut:rename): Button '%s' not found in visible portion of buffer." old-lbl))))
 
 (defun    ibut:label-p (&optional as-label start-delim end-delim pos-flag two-lines-flag)
-  "Returns key for the Hyperbole implicit button label that point is within, else nil.
+  "Return key for the Hyperbole implicit button label that point is within, else nil.
 This is an optional label that may precede an implicit button.
 Use `ibut:at-p' instead to test if point is on either the
 implicit button itself or the label.  Assumes point is within the
@@ -1338,13 +1345,13 @@ constrains label search to two lines."
 		(or end-delim ibut:label-end) pos-flag two-lines-flag))
 
 (defun    ibut:label-regexp (lbl-key &optional no-delim)
-  "Unnormalizes ibutton LBL-KEY.  Returns regular expr matching delimited button label.
+  "Unnormalize ibutton LBL-KEY.  Return regular expr matching delimited button label.
 Optional NO-DELIM leaves off delimiters and leading and trailing space."
   (hbut:label-regexp lbl-key no-delim ibut:label-start ibut:label-end))
 
 (defun    ibut:label-set (label &optional start end)
-  "Sets current implicit button attributes from LABEL and optional START, END positions.
-Returns label.  When START and END are given, they specify the
+  "Set current implicit button attributes from LABEL and optional START, END positions.
+Return label.  When START and END are given, they specify the
 region in the buffer to flash when this implicit button is
 activated or queried for its attributes.  If LABEL is a list, it
 is assumed to contain all arguments."
@@ -1360,8 +1367,8 @@ is assumed to contain all arguments."
   label)
 
 (defun    ibut:list (&optional file loc-p)
-  "Returns list of labels of labeled ibuts in FILE or the current buffer.
-Removes duplicate labels if optional LOC-P is omitted.  With LOC-P, returns
+  "Return list of labels of labeled ibuts in FILE or the current buffer.
+Remove duplicate labels if optional LOC-P is omitted.  With LOC-P, return
 list of elements (label start end) where start and end are the buffer
 positions at which the button label delimiter begins and ends."
   (interactive)
@@ -1386,7 +1393,7 @@ positions at which the button label delimiter begins and ends."
 
 (defun    ibut:map (but-func &optional start-delim end-delim
 			     regexp-match include-delims)
-  "Applies BUT-FUNC to the labeled implicit buttons in the visible part of the current buffer.
+  "Apply BUT-FUNC to the labeled implicit buttons in the visible part of the current buffer.
 If REGEXP-MATCH is non-nil, only buttons which match this argument are
 considered.
 
@@ -1396,9 +1403,9 @@ include delimiters when INCLUDE-DELIMS is non-nil)."
   (hbut:map but-func ibut:label-start ibut:label-end regexp-match include-delims))
 
 (defun    ibut:next-occurrence (lbl-key &optional buffer)
-  "Moves point to next occurrence of a labeled implicit button with LBL-KEY in optional BUFFER.
+  "Move point to next occurrence of a labeled implicit button with LBL-KEY in optional BUFFER.
 BUFFER defaults to current buffer.  It may be a buffer name.
-Returns non-nil iff occurrence is found.
+Return non-nil iff occurrence is found.
 
 Remember to use (goto-char (point-min)) before calling this in order to
 move to the first occurrence of the button."
@@ -1413,9 +1420,9 @@ move to the first occurrence of the button."
 (defalias 'ibut:summarize 'hbut:report)
 
 (defun    ibut:to (lbl-key)
-  "Finds the nearest implicit button with LBL-KEY (a label or label key) within the visible portion of the current buffer.
-Leaves point inside the button text or its optional label, if it has one.
-Returns the symbol for the button, else nil."
+  "Find the nearest implicit button with LBL-KEY (a label or label key) within the visible portion of the current buffer.
+Leave point inside the button text or its optional label, if it has one.
+Return the symbol for the button, else nil."
   ;; Handle a label given rather than a label key
   (if (string-match-p "\\s-" lbl-key)
       (setq lbl-key (ibut:label-to-key lbl-key)))
@@ -1430,7 +1437,11 @@ Returns the symbol for the button, else nil."
       ;; re-search forward
       (while (and (not found) (re-search-forward regexp nil t))
 	(setq pos (match-beginning 0)
-	      found (equal (ibut:label-p nil nil nil nil t) lbl-key)))
+	      ;; Point might be on closing delimiter of ibut in which
+	      ;; case ibut:label-p returns nil; move back one
+	      ;; character to prevent this.
+	      found (progn (goto-char (1- (point)))
+			   (equal (ibut:at-p t) lbl-key))))
       ;; re-search backward
       (while (and (not found) (re-search-backward regexp nil t))
 	(setq pos (match-beginning 0)
@@ -1457,32 +1468,38 @@ Returns the symbol for the button, else nil."
 (defalias 'defib 'ibtype:create)
 (put      'ibtype:create 'lisp-indent-function 'defun)
 (defmacro ibtype:create (type params doc at-p &optional to-p style)
-  "Creates Hyperbole implicit button TYPE (unquoted sym) with PARAMS, described by DOC.
+  "Create Hyperbole implicit button TYPE (unquoted sym) with PARAMS, described by DOC.
 PARAMS are presently ignored.
 
-  AT-P is a boolean form of no arguments which determines whether or not point
+AT-P is a boolean form of no arguments which determines whether or not point
 is within a button of this type and if it is, calls `hact' with an
 action to be performed whenever a button of this type is activated.
-The action may be a regular Emacs Lisp function or a Hyperbole action
-type created with `defact'.
 
-  Optional TO-P is a boolean form which moves point immediately after the next
+The action may be a regular Emacs Lisp function or a Hyperbole action
+type created with `defact' but may not return nil since any nil value
+returned is converted to t to ensure the implicit button checker
+recognizes that the action has been executed.
+
+Optional TO-P is a boolean form which moves point immediately after the next
 button of this type within the current buffer and returns a list of (button-
 label start-pos end-pos), or nil when none is found.
-  Optional STYLE is a display style specification to use when highlighting
+
+Optional STYLE is a display style specification to use when highlighting
 buttons of this type; most useful when TO-P is also given.
 
-Returns symbol created when successful, else nil.  Nil indicates that action
+Return symbol created when successful, else nil.  Nil indicates that action
 type for ibtype is presently undefined."
-  (if type
-      (let ((to-func (if to-p (action:create nil (list to-p))))
-	    (at-func (list at-p)))
-	`(htype:create ,type ibtypes ,doc nil ,at-func
-		       (list 'to-p ,to-func 'style ,style)))))
+  (when type
+    (symtable:add type symtable:ibtypes)
+    (let ((to-func (when to-p (action:create nil (list to-p))))
+	  (at-func (list at-p)))
+      `(htype:create ,type ibtypes ,doc nil ,at-func
+		     (list 'to-p ,to-func 'style ,style)))))
 
 (defun    ibtype:delete (type)
-  "Deletes an implicit button TYPE (a symbol).
-Returns TYPE's symbol if it existed, else nil."
+  "Delete an implicit button TYPE (a symbol).
+Return TYPE's symbol if it existed, else nil."
+  (symtable:delete type symtable:ibtypes)
   (htype:delete type 'ibtypes))
 
 (provide 'hbut)

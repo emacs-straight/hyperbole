@@ -1,6 +1,294 @@
+2019-09-17  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:action):
+  hui-mini.el (hui:menu-item):
+  hibtypes.el (hyp-source):
+  hargs.el (hargs:at-p):
+  hyrolo-logic.el (hyrolo-map-logic):
+  hyrolo.el (hyrolo-grep-file): Undo adding second arg t to prin1-to-string
+    call (meant to prevent string properties output) since has side effect
+    of removing needed quote marks and changes the way buffers print which
+    causes (hyp-source) matches to fail.
+
+* hpath.el (hpath:to-line): Added and used in hpath:find and hpath:find-line.
+           (hpath:find-line): Changed to save-restriction when move.
+	   (hpath:shell-modes): Added and used in hpath:to-markup-anchor.
+
+2019-09-16  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:line-and-column-regexp): Added.
+           (hpath:markup-link-anchor-regexp): Added group number to doc.
+	   (hpath:find): Added support to jump to line and optional
+    column based on :line-num:col-num path suffix, even when preceded
+    by a link anchor.
+
+2019-09-15  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-lisp-at-tag-p): Ignore any leading '<' character
+    from action buttons or other links, i.e. only when followed by an
+    alphabetic character.
+
+* hibtypes.el (action): Moved to near highest priority so embedded
+    paths or other constructs do not match first.
+
+* hact.el (symset:create): Added.  Can be used to manually test out
+    different ibtype activation priorities.
+
+* hibtypes.el (pathname-line-and-column): Moved to higher priority
+    than grep, debugger and stack frame matches, so optional col
+    number is not ignored.
+
+* hpath.el (hpath:markdown-section-pattern): Added '*' as a section prefix
+    and allowed for leading whitespace.
+
+* hbut.el (ibut:at-p): Ignore any invalid null ibtype entries.
+
+* hact.el (htype:category, htype:names): Simplified and speeded up.  Don't
+    check existence of types.  Only valid types should be in
+    the type category list.
+
+* hbut.el (hattr:report): Changed intern call to make-symbol.
+
+* hact.el (actype:elisp-symbol, actype:def-symbol): Added.
+  hui.el (hui:ebut-message, hui:actype, hui:link-create): Changed
+    to use above two functions.
+
+2019-09-14  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:link-directly):
+  hbut.el (ibut:at-p):
+  hact.el (actype:act, actype:action, actype:create, actype:delete,
+           actype:action-body, actype:interact, ibtype:create,
+           ibtype:delete, htype:category, htype:delete, htype:symbol):
+    Changed to use new, faster symtable instead of symset.
+
+* hact (actype:action): Fixed to handle regular Elisp functions properly.
+
+* set.el: Changed doc strings to imperative form.  Explained in the
+    commentary that set:add can create a new single element set if the
+    set passed is nil (empty).
+         (set:empty): Added to test for emptiness.
+
+* hact.el (symtable): Added to speed checks of whether a symbol is an
+    existing Hyperbole type or not.  Created symtable:ibtypes and
+    symtable:actypes to hold the categories of types.
+* hact.el (actype:obarray): Added and filled in actype:create to speed
+    checks of whether a symbol is an actype.
+
+2019-09-13  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): Added buffer-name to error messages as
+    may be called when a buffer is temporarily selected.
+
+2019-09-12  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:find): Changed to return buffer if path is displayed
+    within a buffer and not externally (used to return t).  Added
+    third parameter 'noselect' flag to return a buffer attached
+    to the parsed filename but not to display it.
+           (hpath:find-noselect): Added.
+	   (hpath:normalize): Added and used in link-to-e/ibutton
+
+2019-09-11  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-emacs-lisp-mode-p): Added change-log-mode so
+    Elisp symbols there are matched.
+
+* hact.el (actype:create): Added definition-name property used by
+    find-function-search-for-symbol so now Elisp stack frame function
+    calls that look like actypes::<action-type> and
+    ibtypes::<implicit-button-type> jump to the associated defact and
+    defib definitions.
+
+    actypes::link-to-file
+
+* hmouse-tag.el (smart-lisp-at-definition-p): Don't match to 'def' alone.
+
+2019-09-10  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (actype:action-body): Renamed from actype:action.
+          (actype:action): Return action function symbol whenever possible
+
+* hibtypes.el (hlink): Fixed to include link type in ibut:label-set call.
+
+* hbut.el (gbut:help): Added labeled implicit button support.
+
+* hargs.el (hargs:reading-p): Updated doc string.
+
+2019-09-02  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibut:to): Point might be on closing delimiter of ibut in which
+   case ibut:label-p returns nil; moved back one character to prevent this.
+   Also changed wrong ibut:label-p call to proper ibut:at-p call to
+   compare ibut key value at point to search match.
+
+* hpath.el (hpath:substitute-value): Handled case where path does not
+    include a directory separator after the variable name since the
+    variable itself does, e.g.
+    "${hyperb:dir}DEMO#POSIX and MSWindows Paths".  Also works if path
+    separator is included.
+
+* hui.el (hui:gbut-create, hui:gbut-modify): Fixed so that when link button paths
+    are created, they are normalized and made absolute based upon the
+    current buffer's default directory, not the global button file directory.
+  hact.el (action:path-args-rel): Prior to button data storage, make absolute
+    paths relative to the default-directory of their button file, not the current
+    directory.
+
+* hpath.el (hpath:find): Improved default-directory handling.
+
+* hpath.el (hpath:relative-to, hpath:absolute-to):
+  hactypes.el (link-to-file, link-to-file-line, link-to-file-line-and-column):
+    Remove any double quotes and whitespace at the start and end of the path
+    that interactive use or key series may have introduced.
+  hactypes.el (link-to-file): Rewrote for use with global buttons where the button
+    source directory is different than the link-to directory.  If path is not
+    absolute, add its link-to directory to it.
+
+* hibtypes.el, hpath.el: Added require of subr-x for string-trim function.
+  hpath.el (hpath:trim): Added.
+
+* hpath.el (hpath:is-p): Fixed failure to expand variables when path contains
+     a [#,] suffix.
+
+2019-08-31  Bob Weiner  <rsw@gnu.org>
+
+* XEmacs: Removed support since no one uses it anymore.
+
+* hbdata.el (hbdata:build): Fixed bug where int was sent to concat.
+
+* hbut.el (ebut:operate): Fixed bug that caused hui:gbut-create to
+    create buttons in the wrong place, sometimes in the middle of
+    other buttons.  Added (and (not curr-label) (hmouse-use-region-p)
+    calls to fix this.
+
+* hib-kbd.el (kbd-key): Handled long key series up to 3000 characters
+    with embedded elisp actions.
+
+* hactypes.el (exec-shell-cmd): Fixed window handling accounting for
+    pop-to-buffer call in shell function when shell is newly created.
+
+* DEMO: Added sections on Button Files and Global Buttons.
+
+2019-08-28  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el, hib-social.el, hib-debbugs.el: Changed from active to
+    imperative tense.
+
+* man/hyperbole.texi (Implicit Button Types): Added 'links' concept index entry.
+
+2019-08-27  Bob Weiner  <rsw@gnu.org>
+
+* DEMO: Changed most 'click' uses in DEMO to 'press'.
+
+* man/hyperbole.texi (Implicit Button Type Summaries): Changed to Implicit
+    Button Types.
+                     (Implicit Button Type): Changed to Implicit Button
+    Type Creation.
+
+2019-08-26  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (hlink, parse-label-and-file): Added to allow for linking
+    to Hyperbole butttons in other files and used in e/g/ilinks.
+
+* hargs.el (hargs:delimited): Replaced cl evenp call with zerop and modulo.
+  hibtypes.el (action): Replaced cl 'find' call with 'string-match-p'.
+
+* Makefile (dev-install): Removed this target and replaced with 'bin'.  Added
+   'src' target to setup to run from .el files only.  Updated help to explain
+   how to run test code either from .el or .elc files.
+
+==============================================================================
+V7.0.5 changes ^^^^:
+==============================================================================
+
+2019-08-25  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (HYPERBOLE_FILES): Removed hyperbole-pkg.el and deleted that file
+    which is now auto-generated.
+
+* hactypes.el (exec-window-cmd): BUG FIX: Removed use of InfoDock 'new-shell'
+    function which did not support provision of a buffer name for shell
+    creation.  Also, called 'shell' command if existing shell buffer does not
+    have a process and updated buf-name with the buffer returned by the
+    'shell' command.
+              (exec-shell-cmd): Applied similar changes.
+
+* hpath.el (hpath:find): Changed modifier comparisons to use = and wrapped
+    (load filename) in a 'hact' macro.
+    (hpath:is-p): BUG FIX: Only temporarily strip any initial execution modifier
+      character from the path so can be handled later by action types.
+
+2019-08-24  Bob Weiner  <rsw@gnu.org>
+
+* DEMO (Action Buttons): Added this new section to explain implicit action buttons.
+
+* Merged in doc string change from active to imperative tense and updated
+    the same in hibtypes.el and hactypes.el.
+
+2019-08-23  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (display-variable): Added to display Elisp variable values.
+  hibtypes.el (action:start, action:end, action): Added to allow in-buffer angle bracket
+    delimited action/function calls/variable displays.
+  hact.el (actype:act): Simplified logic and added support for printing variable values as an action.
+          (actype:eval): Added to support action ibuts.
+
+* hbut.el (hbut:act): Changed to use hrule:action setting.
+
+* hbut.el (defact): Updated doc to reflect that action type functions may not return nil.
+    Temporarily set hrule:action to #'actype:eval if you need a potential nil return.
+  hactypes.el (eval-elisp): Updated doc-string to reflect it is for its side-effects and cannot
+    return a nil value.
+
+2019-08-22  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-lisp-identifier-first-char-regexp, smart-lisp-identifier-chars,
+    smart-lisp-identifier): Added and used in smart-lisp-at-tag-p.
+
+* hpath.el (hpath:is-p): BUG FIX: Move space normalization and variable substitution to beginning of
+    function to apply to all paths given as inputs.  Expanded doc to explain this normalization.
+
+2019-08-18  Bob Weiner  <rsw@gnu.org>
+
+* hyperbole: Added second arg of t to most calls to prin1-to-string so properties are not utilized,
+    notably when displaying @loc> locations.
+
+* hversion.el: Change to using numeric test release codes instead of letters to ease version parsing.
+
+2019-08-16  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:start-end): Added so implicit pathname buttons can flash when activated.
+
+2019-08-14  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (elink, glink, ilink): Renamed from link-to-e/g/ibut.
+
+2019-08-13  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (man-show): Eliminated infinite recursion and made work with latest
+    Emacs man.el library.
+              (link-to-ebut): Reversed order of args to match link-to-ibut.
+
+2019-08-12  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kimport.el (kimport:copy-and-set-buffer): Made an autoload since M-x kotl-mode
+    may call kfile;create which then calls this function.
+
+* Change to use only 3 section version numbers for elpa compatibility.  Test releases
+    change the 3rd section and production releases change the second.
+
+==============================================================================
+V7.0.4 changes ^^^^:
+==============================================================================
+
 2019-08-06  Bob Weiner  <rsw@gnu.org>
 
 * hyrolo-menu.el (infodock-hyrolo-menu): Fixed Edit-Rolo to call a function rather than an sexp.
+
+==============================================================================
+V7.0.3b changes ^^^^:
+==============================================================================
 
 2019-08-05  Bob Weiner  <rsw@gnu.org>
 
@@ -9,11 +297,10 @@
 
 2019-07-28  Bob Weiner  <rsw@gnu.org>
 
-* DEMO, man/hyperbole.texi (Implicit Button Type Summaries): Updated to expanded
-    Org mode support.
+* DEMO, man/hyperbole.texi (Implicit Button Types): Updated to expanded Org mode support.
 
 * hib-kbd.el:
-  man/hyperbole.texi (Implicit Button Type Summaries, Glossary): Changed hib-kbd
+  man/hyperbole.texi (Implicit Button Types, Glossary): Changed hib-kbd
     key-sequence to key-series to indicate can be multiple key sequences.  Added
     def. to Glossary.
                      (kbd-key:doc): Changed to call hkey-help rather than trigger

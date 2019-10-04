@@ -32,59 +32,179 @@ e.g. to inhibit actions.")
 ;;; ************************************************************************
 
 ;;; ========================================================================
-;;; symset class - Hyperbole internal symbol set maintenance
+;;; symtable class - Hyperbole unordered symbol tables with fast lookup
 ;;; ========================================================================
 
-(defun    symset:add (elt symbol prop)
-  "Adds ELT to SYMBOL's PROP set.
-Returns nil iff ELT is already in SET.  Uses `eq' for comparison."
-  (let* ((set (get symbol prop))
+(defvar symtable:category-plist nil
+  "Holds a property list of Hyperbole type category symbols ('actypes or 'ibtypes) and their associated symtables.")
+
+(defun  symtable:operate (operation symbol-or-name symtable)
+  "Call hash-table function OPERATION with Hyperbole SYMBOL-OR-NAME as key upon SYMTABLE.
+Trigger an error if SYMBOL-OR-NAME cannot be mapped to an existing Elisp
+symbol or if SYMTABLE is invalid."
+  (let ((name (cond ((stringp symbol-or-name)
+		     symbol-or-name)
+		    ((symbolp symbol-or-name)
+		     (symbol-name symbol-or-name))
+		    (t (error "(symtable:operate): Invalid type for symbol-or-name: %s" symbol-or-name))))
+	(hash-table (plist-get symtable 'hash-table))
+	(intern-op (if (eq operation #'puthash) #'intern #'intern-soft))
+	def-name elisp-name elisp-symbol)
+    (unless hash-table
+      (error "(symtable:operate): symtable lacks required hash-table property: %s" symtable))
+    (if (string-match "\\`\\(actypes\\|ibtypes\\)::" name)
+	(setq def-name (substring name (match-end 0))
+	      elisp-name name
+	      elisp-symbol (funcall intern-op elisp-name))
+      (setq def-name name
+	    elisp-name (concat (symtable:name symtable) "::" name)
+	    elisp-symbol (funcall intern-op elisp-name)))
+    ;; Comment this out so can look for and try to remove symbols yet not defined.
+    ;; (unless elisp-symbol
+    ;;   (error "(symtable:operate): Use `%s' to create a new type named `%s' before using `%s' on it"
+    ;; 	     (if (equal (plist-get symtable 'name) "actypes") "defact" "defib")
+    ;; 	     def-name
+    ;; 	     operation))
+    (pcase operation
+      ('gethash
+       (funcall operation def-name   hash-table))
+      ('remhash
+       (funcall operation elisp-name hash-table)
+       (funcall operation def-name   hash-table))
+      ('puthash
+       (funcall operation elisp-name elisp-symbol hash-table)
+       (funcall operation def-name   elisp-symbol hash-table)
+       (gethash def-name  hash-table))
+      (_ (error "(symtable:operate): Invalid operation request: %s" operation)))))
+
+(defsubst symtable:select (type-category)
+  "Inline the return of the symtable for TYPE-CATEGORY, one of 'actypes or 'ibtypes."
+  (plist-get symtable:category-plist type-category))
+
+(defun    symtable:create (name size)
+  "Create and return a new Hyperbole type symbol table with NAME and SIZE.
+Also add it under the symbol for its NAME in `symtable:category-plist'."
+  (let ((symtable (list 'name name
+			'hash-table (make-hash-table :test #'equal :size size))))
+    (setq symtable:category-plist (plist-put symtable:category-plist (intern name) symtable))
+    symtable))
+
+(defsubst symtable:hash-table (symtable)
+  "Return the hash-table containing symbol names and values from SYMTABLE."
+  (plist-get symtable 'hash-table))
+
+(defsubst symtable:name (symtable)
+  "Return the name of SYMTABLE as a string."
+  (plist-get symtable 'name))
+
+(defvar   symtable:actypes (symtable:create "actypes" 97)
+  "Symbol table (hash table) of Hyperbole action type symbols.
+For each actype, there are two entries whose keys are strings: one
+with the `actypes::' prefix and one without.  The value for both
+keys is the Elisp symbol for the type, which includes the prefix.")
+
+(defvar   symtable:ibtypes (symtable:create "ibtypes" 97)
+  "Symbol table (hash table) of Hyperbole implicit button type symbols.
+For each ibtype, there are two entries whose keys are strings: one
+with the `ibtypes::' prefix and one without.  The value for both
+keys is the Elisp symbol for the type, which includes the prefix.")
+
+(defsubst symtable:actype-p (symbol-or-name)
+  "Return the Elisp symbol given by SYMBOL-OR-NAME if it is a Hyperbole action type name, else nil."
+  (symtable:get symbol-or-name symtable:actypes))
+
+(defsubst symtable:ibtype-p (symbol-or-name)
+  "Return the Elisp symbol given by SYMBOL-OR-NAME if it is a Hyperbole implicit button type name, else nil."
+  (symtable:get symbol-or-name symtable:ibtypes))
+
+(defun    symtable:add (symbol-or-name symtable)
+  "Add Hyperbole SYMBOL-OR-NAME to existing SYMTABLE.
+Return the Elisp symbol for SYMBOL-OR-NAME.
+Caller must ensure SYMBOL-OR-NAME is a symbol or string."
+  (symtable:operate #'puthash symbol-or-name symtable))
+
+(defalias 'symtable:delete 'symtable:remove)
+
+(defun    symtable:get (symbol-or-name symtable)
+  "Return the Elisp symbol given by Hyperbole SYMBOL-OR-NAME if it is in existing SYMTABLE, else nil.
+Caller must ensure SYMBOL-OR-NAME is a symbol or string."
+  (symtable:operate #'gethash symbol-or-name symtable))
+
+(defun    symtable:remove (symbol-or-name symtable)
+  "Remove the Elisp symbol given by Hyperbole SYMBOL-OR-NAME if it is in existing SYMTABLE.
+Always return nil.
+Caller must ensure SYMBOL-OR-NAME is a symbol or string."
+  (symtable:operate #'remhash symbol-or-name symtable))
+
+
+;;; ========================================================================
+;;; symset class - Hyperbole internal ordered symbol sets
+;;; ========================================================================
+
+(defun    symset:create (symbol property &rest symbols)
+  "Set SYMBOL's PROPERTY to a new symset created from any number of SyMBOLS.
+If no SYMBOLS are given, set it to the empty set.  Return the symset.  Uses
+`eq' for comparison."
+  (let* ((set:equal-op 'eq)
+	 (first (car symbols)))
+    (when (and symbols first (listp first))
+      (setq symbols first))
+    (put symbol property (apply #'set:create symbols))))
+
+(defun    symset:add (elt symbol property)
+  "Add ELT to SYMBOL's PROPERTY set.
+Return nil iff ELT is already in SET; otherwise, return PROPERTY's value.
+Use `eq' for comparison."
+  (let* ((set (get symbol property))
 	 (set:equal-op 'eq)
 	 (new-set (set:add elt set)))
-    (and new-set (put symbol prop new-set))))
+    (and new-set (put symbol property new-set))))
 
-(defalias    'symset:delete 'symset:remove)
+(defalias 'symset:delete 'symset:remove)
 
-(defun    symset:get (symbol prop)
-  "Returns SYMBOL's PROP set."
-  (get symbol prop))
+(defun    symset:get (symbol property)
+  "Return SYMBOL's PROPERTY set."
+  (get symbol property))
 
-(defun    symset:remove (elt symbol prop)
-  "Removes ELT from SYMBOL's PROP set and returns the new set.
-Assumes PROP is a valid set.  Uses `eq' for comparison."
-  (let ((set (get symbol prop))
+(defun    symset:remove (elt symbol property)
+  "Remove ELT from SYMBOL's PROPERTY set and return the new set.
+Assume PROPERTY is a valid set.  Use `eq' for comparison."
+  (let ((set (get symbol property))
 	(set:equal-op 'eq))
-    (put symbol prop (set:remove elt set))))
+    (put symbol property (set:remove elt set))))
 
 ;;; ========================================================================
 ;;; htype class - Hyperbole Types, e.g. action and implicit button types
 ;;; ========================================================================
 
 (defun    htype:body (htype-sym)
-  "Returns body for HTYPE-SYM.  If HTYPE-SYM is nil, returns nil."
+  "Return body for HTYPE-SYM.  If HTYPE-SYM is nil, return nil."
   (and htype-sym (hypb:indirect-function htype-sym)))
 
 (defun    htype:category (type-category)
-  "Returns list of symbols in Hyperbole TYPE-CATEGORY in priority order.
+  "Return list of symbols in Hyperbole TYPE-CATEGORY in priority order.
 Symbols contain category component.
 TYPE-CATEGORY should be 'actypes, 'ibtypes or nil for all."
-  (let ((types (symset:get type-category 'symbols))
-	(categ-name (symbol-name type-category)))
-    (mapcar (lambda (type)
-	      (intern (concat categ-name "::" (symbol-name type))))
-	    types)))
+  (let ((def-symbols (symset:get type-category 'symbols))
+	(symtable (symtable:select type-category)))
+    ;; Expand def-symbols to Elisp symbols by adding prefix
+    (when (and def-symbols symtable)
+      (mapcar (lambda (sym) (symtable:get sym symtable)) def-symbols))))
+
 
 ;; Thanks to JWZ for help on this.
 (defmacro htype:create (type type-category doc params body property-list)
-  "Creates a new Hyperbole TYPE within TYPE-CATEGORY (both unquoted symbols).
+  "Create a new Hyperbole TYPE within TYPE-CATEGORY (both unquoted symbols).
 Third arg DOC is a string describing the type.
 Fourth arg PARAMS is a list of parameters to send to the fifth arg BODY,
 which is a list of forms executed when the type is evaluated.
 Sixth arg PROPERTY-LIST is attached to the new type's symbol.
 
-Returns the new function symbol derived from TYPE."
+Return the new function symbol derived from TYPE."
+  (when (null type)
+    (error "(htype:create): `type' must not be null"))
   (let* ((sym (htype:symbol type type-category))
-	(action (nconc (list 'defun sym params doc) body)))
+	 (action (nconc (list 'defun sym params doc) body)))
     `(progn
        ,action
        (setplist ',sym ,property-list)
@@ -93,47 +213,48 @@ Returns the new function symbol derived from TYPE."
        ',sym)))
 
 (defun    htype:delete (type type-category)
-  "Deletes a Hyperbole TYPE derived from TYPE-CATEGORY (both symbols).
-Returns the Hyperbole symbol for the TYPE if it existed, else nil."
+  "Delete a Hyperbole TYPE derived from TYPE-CATEGORY (both symbols).
+Return the Hyperbole symbol for the TYPE if it existed, else nil."
   (let* ((sym (htype:symbol type type-category))
 	 (exists (fboundp 'sym)))
     (setplist sym nil)
+    (symtable:delete type (symtable:select type-category))
     (symset:delete type type-category 'symbols)
     (fmakunbound sym)
     (run-hooks 'htype-delete-hook)
     (and exists sym)))
 
 (defun    htype:doc (type)
-  "Returns documentation for Hyperbole TYPE, a symbol."
+  "Return documentation for Hyperbole TYPE, a symbol."
   (documentation type))
 
 (defun    htype:names (type-category &optional sym)
-  "Returns a list of the current names for Hyperbole TYPE-CATEGORY in priority order.
-Names do not contain the category component.
+  "Return a list of the current definition names for TYPE-CATEGORY in priority order.
+Definition names do not contain the category prefix.
 TYPE-CATEGORY should be 'actypes, 'ibtypes or nil for all.
 When optional SYM is given, returns the name for that symbol only, if any."
   (let ((types (symset:get type-category 'symbols))
-	(sym-name (and sym (symbol-name sym))))
+	(sym-name (when sym (symbol-name sym))))
     (if sym-name
 	;; Strip category from sym-name before looking for a match.
-	(progn (if (string-match "::" sym-name)
-		   (setq sym (intern (substring sym-name (match-end 0)))))
-	       (if (memq sym types) (symbol-name sym)))
-      (mapcar 'symbol-name types))))
+	(progn (when (string-match "::" sym-name)
+		 (setq sym (make-symbol (substring sym-name (match-end 0)))))
+	       (when (symtable:get sym (symtable:select type-category))
+		 (symbol-name sym)))
+      (mapcar #'symbol-name types))))
 
 ;;; ------------------------------------------------------------------------
 
 (defun   htype:symbol (type type-category)
-  "Returns Hyperbole type symbol composed from TYPE and TYPE-CATEGORY (both symbols)."
-  (intern (concat (symbol-name type-category) "::"
-		  (symbol-name type))))
+  "Return Hyperbole type symbol composed from TYPE and TYPE-CATEGORY (both symbols)."
+  (symtable:get type (symtable:select type-category)))
 
 ;;; ========================================================================
 ;;; action class
 ;;; ========================================================================
 
 (defun action:commandp (function)
-  "Returns interactive calling form if FUNCTION has one, else nil."
+  "Return interactive calling form if FUNCTION has one, else nil."
   (let ((action
 	 (cond ((null function) nil)
 	       ((symbolp function)
@@ -153,13 +274,13 @@ When optional SYM is given, returns the name for that symbol only, if any."
 	  (t (commandp action)))))
 
 (defun action:create (param-list body)
-  "Creates Hyperbole action defined by PARAM-LIST and BODY, a list of Lisp forms."
+  "Create Hyperbole action defined by PARAM-LIST and BODY, a list of Lisp forms."
   (if (symbolp body)
       body
     (list 'function (cons 'lambda (cons param-list body)))))
 
 (defun action:kbd-macro (macro &optional repeat-count)
-  "Returns Hyperbole action that executes a keyboard MACRO REPEAT-COUNT times."
+  "Return Hyperbole action that execute a keyboard MACRO REPEAT-COUNT times."
   (list 'execute-kbd-macro macro repeat-count))
 
 ;; This function is based on Emacs `help-function-arglist'.
@@ -216,7 +337,7 @@ When optional SYM is given, returns the name for that symbol only, if any."
       (action:params-emacs def)))))
 
 (defun action:params (action)
-  "Returns unmodified ACTION parameter list.
+  "Return unmodified ACTION parameter list.
 Autoloads action function if need be to get the parameter list."
   (when (and (symbolp action) (fboundp action))
     (setq action (hypb:indirect-function action)))
@@ -233,24 +354,28 @@ Autoloads action function if need be to get the parameter list."
 	 (car (cdr (and (fboundp action) (hypb:indirect-function action)))))))
 
 (defun action:param-list (action)
-  "Returns list of actual ACTION parameters (removes `&' special forms)."
+  "Return list of actual ACTION parameters (remove `&' special forms)."
   (delq nil (mapcar (lambda (param)
 		      (if (eq (aref (symbol-name param) 0) ?&)
 			  nil param))
 	      (action:params action))))
 
 (defun action:path-args-abs (args-list &optional default-dirs)
-  "Returns any paths in ARGS-LIST made absolute.
+  "Return any paths in ARGS-LIST made absolute.
 Uses optional DEFAULT-DIRS or `default-directory'.
 Other arguments are returned unchanged."
   (mapcar (lambda (arg) (hpath:absolute-to arg default-dirs))
 	  args-list))
 
 (defun action:path-args-rel (args-list)
-  "Returns any paths in ARGS-LIST below current directory made relative.
+  "Return any paths in ARGS-LIST below button source loc directory made relative.
 Other paths are simply expanded.  Non-path arguments are returned unchanged."
-  (let ((dir (hattr:get 'hbut:current 'dir)))
-    (mapcar (lambda (arg) (hpath:relative-to arg dir))
+  (let ((loc (hattr:get 'hbut:current 'loc)))
+    (mapcar (lambda (arg)
+	      (hpath:relative-to arg
+				 (if (stringp loc)
+				     loc
+				   (buffer-local-value 'default-directory loc))))
 	    args-list)))
 
 
@@ -259,14 +384,15 @@ Other paths are simply expanded.  Non-path arguments are returned unchanged."
 ;;; ========================================================================
 
 (defmacro hact (&rest args)
-  "Performs action formed from rest of ARGS and returns the result or acts as a no-op when testing implicit button type contexts.
+  "Perform action formed from rest of ARGS and return the result.
+Alternatively act as a no-op when testing implicit button type contexts.
 First arg may be a symbol or symbol name for either an action type or a
 function.  Runs `action-act-hook' before performing action.
 The value of `hrule:action' determines what effect this has."
   (eval `(cons 'funcall (cons 'hrule:action ',args))))
 
 (defun    actype:act (actype &rest args)
-  "Performs action formed from ACTYPE and rest of ARGS and returns value.
+  "Perform action formed from ACTYPE and rest of ARGS and return value.
 If value is nil, however, t is returned instead, to ensure that implicit button
 types register the performance of the action.  ACTYPE may be a symbol or symbol
 name for either an action type or a function.  Runs `action-act-hook' before
@@ -281,56 +407,99 @@ performing ACTION."
       ;; string arguments like "tags" as a pathname, when it is not
       ;; being used as a path.  So do this only if actype is a defact
       ;; and not a defun to limit any potential impact. RSW - 9/22/2017
-      (if (symbolp action) (string-match "\\`actypes::" (symbol-name action))
-	(setq args (action:path-args-abs args)))
+      (and (symbolp action) (symtable:actype-p action)
+	   (setq args (action:path-args-abs args)))
       (let ((hist-elt (hhist:element)))
 	(run-hooks 'action-act-hook)
-	(prog1 (or (cond ((or (symbolp action) (listp action)
-			      (hypb:emacs-byte-code-p action))
-			  (eval act))
-			 ((and (stringp action)
-			       (let ((func (key-binding action)))
-				 (if (not (integerp action))
-				     (setq action func))))
-			  (eval act))
-			 (t (eval action)))
+	(prog1 (or (if (or (symbolp action) (listp action)
+			   (hypb:emacs-byte-code-p action)
+			   (and (stringp action) (not (integerp action))
+				(setq action (key-binding action))))
+		       (eval act)
+		     (eval action))
 		   t)
-	  (hhist:add hist-elt))
-	))))
+	  (hhist:add hist-elt))))))
+
+;; Return the full Elisp symbol for ACTYPE, which may be a string or symbol."
+(defalias   'actype:elisp-symbol 'symtable:actype-p)
+
+(defun    actype:def-symbol (actype)
+  "Return the abbreviated symbol for ACTYPE used in its `defact'; ACTYPE may be a string or symbol."
+  (let ((name (if (stringp actype)
+		  actype
+		(symbol-name actype))))
+    (when (string-match "\\`actypes::" name)
+      (make-symbol (substring sym-name (match-end 0))))))
+
+(defun    actype:eval (actype &rest args)
+  "Performs action formed from ACTYPE and rest of ARGS and returns value.
+ACTYPE may be a string containing a Lisp expression from which ACTYPE
+and ARGS are extracted   ACTYPE may be a symbol or symbol name for
+either an action type or a function.  Runs `action-act-hook' before
+performing ACTION."
+  (let ((prefix-arg current-prefix-arg)
+	(action (actype:action actype))
+	(act '(apply action args)))
+    (if (null action)
+	(error "(actype:act): Null action for: `%s'" actype)
+      (let ((hist-elt (hhist:element)))
+	(run-hooks 'action-act-hook)
+	(prog1 (if (or (symbolp action) (listp action)
+		       (hypb:emacs-byte-code-p action)
+		       (and (stringp action) (not (integerp action))
+			    (setq action (key-binding action))))
+		   (eval act)
+		 (eval action))
+	  (hhist:add hist-elt))))))
 
 (defun    actype:action (actype)
-  "Returns action part of ACTYPE (a symbol or symbol name).
+  "Return action part of ACTYPE (a bound function symbol, symbol name or function body).
 ACTYPE may be a Hyperbole actype or Emacs Lisp function."
+  (let (actname
+	action)
+    (if (stringp actype)
+	(setq actname actype
+	      actype (intern actype))
+      (setq actname (symbol-name actype)))
+    (setq actype (or (symtable:actype-p actname) actype)
+	  action (htype:body actype))
+    (if (fboundp actype)
+	actype
+      action)))
+
+(defun    actype:action-body (actype)
+  "Return action body derived from ACTYPE (a symbol or symbol name).
+ACTYPE may be a Hyperbole actype or Emacs Lisp function.
+If no action body and actype is a bound function symbol, return that."
   (let (actname)
     (if (stringp actype)
 	(setq actname actype
 	      actype (intern actype))
       (setq actname (symbol-name actype)))
-    (cond ((htype:body (if (string-match "\\`actypes::" actname)
-			   actype
-			 (intern-soft (concat "actypes::" actname)))))
-	  ((fboundp actype) actype)
-	  )))
+    (cond ((htype:body (or (symtable:actype-p actname) actype)))
+	  ((fboundp actype) actype))))
 
 (defmacro actype:create (type params doc &rest default-action)
-  "Creates an action TYPE (an unquoted symbol) with PARAMS, described by DOC.
+  "Create an action TYPE (an unquoted symbol) with PARAMS, described by DOC.
 The type uses PARAMS to perform DEFAULT-ACTION (list of the rest of the
 arguments).  A call to this function is syntactically the same as for
 `defun',  but a doc string is required.
-Returns symbol created when successful, else nil."
- (list 'htype:create type 'actypes doc params default-action nil))
+Return symbol created when successful, else nil."
+  (symtable:add type symtable:actypes)
+  (list 'htype:create type 'actypes doc params default-action `'(definition-name ,type)))
 
 (defalias 'defact 'actype:create)
 (put      'actype:create 'lisp-indent-function 'defun)
 
 (defun    actype:delete (type)
-  "Deletes an action TYPE (a symbol).  Returns TYPE's symbol if it existed."
+  "Delete an action TYPE (a symbol).  Return TYPE's symbol if it existed."
+  (symtable:delete type symtable:actypes)
   (htype:delete type 'actypes))
 
 (defun    actype:doc (hbut &optional full)
-  "Returns first line of act doc for HBUT (a Hyperbole button symbol).
+  "Return first line of act doc for HBUT (a Hyperbole button symbol).
 With optional FULL, returns full documentation string.
-Returns nil when no documentation."
+Return nil when no documentation."
   (let* ((act (and (hbut:is-p hbut) (or (hattr:get hbut 'action)
 					(hattr:get hbut 'actype))))
 	 (but-type (hattr:get hbut 'categ))
@@ -350,25 +519,24 @@ Returns nil when no documentation."
     doc))
 
 (defun    actype:identity (&rest args)
-  "Returns list of ARGS unchanged or if no ARGS, returns t.
+  "Return list of ARGS unchanged or if no ARGS, return t.
 Used as the setting of `hrule:action' to inhibit action evaluation."
   (or args t))
 
 (defun    actype:interact (actype)
-  "Interactively calls default action for ACTYPE.
+  "Interactively call default action for ACTYPE.
 ACTYPE is a symbol that was previously defined with `defact'.
-Returns nil only when no action is found or the action has no interactive
-calling form." 
-  (let ((action (htype:body
-		 (intern-soft (concat "actypes::" (symbol-name actype))))))
+Return nil only when no action is found or the action has no interactive
+calling form."
+  (let ((action (htype:body (symtable:actype-p actype))))
     (and action (action:commandp action) (or (call-interactively action) t))))
 
 (defun    actype:params (actype)
-  "Returns list of ACTYPE's parameters, including keywords."
+  "Return list of ACTYPE's parameters, including keywords."
   (action:params (actype:action actype)))
 
 (defun    actype:param-list (actype)
-  "Returns list of ACTYPE's parameters without keywords."
+  "Return list of ACTYPE's parameters without keywords."
   (action:param-list (actype:action actype)))
 
 (provide 'hact)
