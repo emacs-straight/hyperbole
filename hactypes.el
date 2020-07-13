@@ -46,8 +46,16 @@ inserted, delete the completions window."
 	     (delete-window))
     (hargs:completion)))
 
+(defact display-boolean (bool-expr)
+  "Display a message showing the result value of a BOOL-EXPR.
+Return any non-nil value or t."
+  (let ((result (eval bool-expr)))
+    (message "Boolean result (%s) = %s" (if result "True" "False") (prin1-to-string result))
+    (or result t)))
+
 (defact display-variable (var)
-  "Display a message showing `var` (a symbol) and its value."
+  "Display a message showing `var` (a symbol) and its value.
+Return any non-nil value or t."
   (message "%s = %s" var (symbol-value var))
   (or (symbol-value var) t))
 
@@ -239,6 +247,19 @@ For example:  To: hyperbole-users-join@gnu.org\n")))
 	    (t (hpath:find buf-str-or-file)))
     (hypb:error "(hyp-source): Non-string argument: %s" buf-str-or-file)))
 
+(defact link-to-bookmark (bookmark)
+  "Display an Emacs BOOKMARK (a name).
+When creating the button, if in Bookmark Menu mode, use the bookmark
+nearest point as the default.  Otherwise, utilize the most recently used
+bookmark in the current file (bookmark-current-bookmark) as the default,
+if any."
+  (interactive
+   (list (bookmark-completing-read "Bookmark to link to"
+				   (if (derived-mode-p 'bookmark-bmenu-mode)
+				       (bookmark-bmenu-bookmark)
+				     bookmark-current-bookmark))))
+  (bookmark-jump bookmark (hpath:display-buffer-function)))
+
 (defact link-to-buffer-tmp (buffer &optional point)
   "Display a BUFFER scrolled to optional POINT.
 If POINT is given, the buffer is displayed with POINT at the top of
@@ -263,7 +284,8 @@ This type of link is for use within a single editor session.  Use
   "Perform action given by an explicit button, specified by KEY and optional KEY-FILE.
 KEY-FILE defaults to the current buffer's file name."
   (interactive
-   (let (but-file but-lbl)
+   (let (but-lbl
+         but-file)
      (while (cond ((setq but-file
 			 (read-file-name
 			  "File of button to link to: " nil nil t))
@@ -290,7 +312,7 @@ KEY-FILE defaults to the current buffer's file name."
 	(setq normalized-file (hpath:normalize key-file)))
     (setq normalized-file buffer-file-name))
 
-    (if (setq but (and key-file (ebut:get key normalized-file)))
+    (if (setq but (and key-file (ebut:get key nil normalized-file)))
 	(hbut:act but)
       (hypb:error "(link-to-ebut): No button `%s' in `%s'"
 		  (ebut:key-to-label key)
@@ -331,9 +353,20 @@ the window."
 		;; have introduced.
 		(path (hpath:trim (read-file-name "Path to link to: "
 						  file-path file-path)))
-		;; Ensure any variables and heading suffixes following
-		;; [#,] are removed before doing path matching.
-		(normalized-path (hpath:is-p path)))
+		(orig-path path)
+		path-line-and-col
+		line-num
+		column-num
+		normalized-path)
+	   ;; Handle if :line:column are included in path.
+	   (setq path-line-and-col (hpath:file-line-and-column path))
+	   (when path-line-and-col
+	     (setq path (nth 0 path-line-and-col)
+		   line-num (nth 1 path-line-and-col)
+		   column-num (nth 2 path-line-and-col)))
+	   ;; Ensure any variables and heading suffixes following
+	   ;; [#,] are removed before doing path matching.
+	   (setq normalized-path (hpath:is-p path))
 	   (when (not (or (file-name-absolute-p path)
 			  (string-match "\\`\\$\{" path)))
 	     (setq path (concat default-directory path)))
@@ -343,7 +376,7 @@ the window."
 				   (prog1 (set-buffer (find-file-noselect normalized-path t))
 				     (when (integerp file-point)
 				       (goto-char (min (point-max) file-point)))))))
-	   (if path-buf
+	   (if (and path-buf (not line-num))
 	       (with-current-buffer path-buf
 		 (setq hargs:reading-p 'character)
 		 (if (y-or-n-p
@@ -351,17 +384,26 @@ the window."
 			      (count-lines 1 (point))))
 		     (list path (point))
 		   (list path)))
-	     (list path)))
+	     (if path-buf
+		 (delq nil (list path (save-excursion
+					(goto-char (point-min))
+					(forward-line (1- line-num))
+					(when column-num (move-to-column column-num))
+					(point))))
+	       (list (or path orig-path)))))
        (setq hargs:reading-p prev-reading-p)
        (when (and path-buf (not existing-buf))
 	 (kill-buffer path-buf)))))
-  ;; Remove any double quotes and whitespace at the start and end of
-  ;; the path that use within a key series may have introduced.
-  (setq path (hpath:trim path))
-  (and (hpath:find path)
-       (integerp point)
-       (progn (goto-char (min (point-max) point))
-	      (recenter 0))))
+  (if path
+      (progn
+	;; Remove any double quotes and whitespace at the start and end of
+	;; the path that use within a key series may have introduced.
+	(setq path (hpath:trim path))
+	(and (hpath:find path)
+	     (integerp point)
+	     (progn (goto-char (min (point-max) point))
+		    (recenter 0))))
+    (hypb:error "(link-to-file): Invalid file name: \"%s\"" path)))
 
 (defact link-to-file-line (path line-num)
   "Display a file given by PATH scrolled to LINE-NUM."
@@ -445,8 +487,13 @@ and its buffer must have a file attached."
    (let ((ibut-key (ibut:at-p t)))
      (if (and ibut-key buffer-file-name)
 	 (list ibut-key buffer-file-name (point))
+       ;; TODO: If default is null below and are creating, rather than modifying,
+       ;; the link, it would be better to throw an error than create
+       ;; an invalid link, but it is difficult to tell which operation
+       ;; is in progress, so ignore this for now.  -- RSW, 01-25-2020
+
        ;; When not on an ibut and moddifying the link, use existing arguments
-       (if (and (boundp 'defaults) (listp defaults))
+       (if (and (boundp 'defaults) defaults (listp defaults))
 	   defaults
 	 (list nil nil nil)))))
   (let (but
@@ -462,11 +509,14 @@ and its buffer must have a file attached."
 	(widen)
 	(if (integerp point) (goto-char (min point (point-max))))
 	(setq but (ibut:to key))))
-    (if but
-	(hbut:act but)
-      (hypb:error "(link-to-ibut): No button `%s' in `%s'"
-		  (ibut:key-to-label key)
-		  (or key-file (buffer-name))))))
+    (cond (but
+	   (hbut:act but))
+	  (key
+	   (hypb:error "(link-to-ibut): No implicit button `%s' found in `%s'"
+		       (ibut:key-to-label key)
+		       (or key-file (buffer-name))))
+	  (t
+	   (hypb:error "(link-to-ibut): Link reference is null/empty")))))
 
 (defact link-to-kcell (file cell-ref)
   "Display FILE with kcell given by CELL-REF at window top.
@@ -555,17 +605,27 @@ Return t if found, nil if not."
   (funcall (actype:action 'link-to-regexp-match)
 	   (regexp-quote string) n source buffer-p))
 
-(defact link-to-texinfo-node (nodename)
-  "Display the Texinfo node with NODENAME (a string) from the current buffer."
-  (interactive "sTexinfo nodename to link to: ")
+(defact link-to-texinfo-node (file node)
+  "Display the Texinfo FILE and NODE (a string).
+FILE may be a string or nil, in which case the current buffer is used."
+  (interactive "fTexinfo file to link to: \nsNode within file to link to: ")
   (let (node-point)
+    (if file
+        (set-buffer (find-file-noselect file))
+      (setq file buffer-file-name))
     (save-excursion
       (goto-char (point-min))
-      (if (re-search-forward (format "^@node[ \t]+%s *[,\n\r]" nodename) nil t)
+      (if (re-search-forward (format "^@node[ \t]+%s *[,\n\r]" node) nil t)
 	  (setq node-point (match-beginning 0))
-	(hypb:error "(link-to-texinfo-node): Non-existent node: `%s'"
-		    nodename)))
-    (hact 'link-to-file buffer-file-name node-point)))
+	(hypb:error "(link-to-texinfo-node): Non-existent node: \"%s%s\""
+                    (if file
+                        (format "(%s)" (file-name-nondirectory file))
+                      "")
+		    node)))
+    (if file
+        (hact 'link-to-file file node-point)
+      (hypb:error "(link-to-texinfo-node): Non-existent node: \"%s\""
+		  node))))
 
 (defact link-to-web-search (service-name search-term)
   "Search web SERVICE-NAME for SEARCH-TERM.

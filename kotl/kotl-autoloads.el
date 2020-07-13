@@ -37,9 +37,7 @@ Return the new kview.
 \(fn FILE-NAME)" t nil)
 
 (autoload 'kfile:is-p "kfile" "\
-Iff current buffer contains an unformatted or formatted koutline, return file format version string, else nil.
-
-\(fn)" nil nil)
+Iff current buffer contains an unformatted or formatted koutline, return file format version string, else nil." nil nil)
 
 (autoload 'kfile:view "kfile" "\
 View an existing kotl version-2 file FILE-NAME in a read-only mode.
@@ -53,7 +51,7 @@ View an existing kotl version-2 file FILE-NAME in a read-only mode.
 ;;;### (autoloads nil "kfill" "kfill.el" (0 0 0 0))
 ;;; Generated autoloads from kfill.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "kfill" '("kfill:" "set-fill-prefix" "prior-fill-prefix")))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "kfill" '("kfill:" "prior-fill-prefix" "set-fill-prefix")))
 
 ;;;***
 
@@ -158,7 +156,7 @@ copied since there is no need to copy it to import it.
 ;;;### (autoloads nil "klabel" "klabel.el" (0 0 0 0))
 ;;; Generated autoloads from klabel.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "klabel" '("kotl-label:" "klabel")))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "klabel" '("klabel" "kotl-label:")))
 
 ;;;***
 
@@ -243,6 +241,13 @@ Signal an error if current buffer is not a Hyperbole outline, else return t.
 
 ;;;***
 
+;;;### (autoloads nil "kprop-em" "kprop-em.el" (0 0 0 0))
+;;; Generated autoloads from kprop-em.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "kprop-em" '("kproperty:")))
+
+;;;***
+
 ;;;### (autoloads nil "kprop-xe" "kprop-xe.el" (0 0 0 0))
 ;;; Generated autoloads from kprop-xe.el
 
@@ -264,7 +269,7 @@ Signal an error if current buffer is not a Hyperbole outline, else return t.
 
 ;;;***
 
-;;;### (autoloads nil nil ("kprop-em.el" "kproperty.el") (0 0 0 0))
+;;;### (autoloads nil nil ("kproperty.el") (0 0 0 0))
 
 ;;;***
 

@@ -94,6 +94,7 @@ executable must be found as well (for Oauth security)."
       (message "HyRolo Search List: %S" list))
     list))
 
+(define-obsolete-variable-alias 'rolo-file-list 'hyrolo-file-list "06.00")
 (defvar hyrolo-file-list (hyrolo-initialize-file-list)
   "*List of files containing rolo entries.
 The first file should be a user-specific rolo file, typically in the home
@@ -104,20 +105,26 @@ A hyrolo-file consists of:
        hyrolo-hdr-regexp;
    (2) one or more rolo entries which each begin with
        hyrolo-entry-regexp and may be nested.")
-(define-obsolete-variable-alias 'rolo-file-list 'hyrolo-file-list "06.00")
 
 (defcustom hyrolo-highlight-face nil
   "*Face used to highlight rolo search matches."
   :type 'face
+  :initialize #'custom-initialize-default
   :group 'hyperbole-rolo)
-(unless hyrolo-highlight-face
-  (setq hyrolo-highlight-face
-	(if (fboundp 'defface)
+
+(defun hyrolo-initialize-highlight-face ()
+  "Define the face stored in `hyrolo-highlight-face'."
+  (unless (and (boundp 'hyrolo-highlight-face) hyrolo-highlight-face)
+    (setq hyrolo-highlight-face
+	  (when (fboundp 'defface)
 	    (defface hyrolo-highlight-face nil
 	      "*Face used to highlight rolo search matches."
 	      :group 'hyperbole-rolo)))
-  (if (fboundp 'hproperty:set-item-highlight)
-      (hproperty:set-item-highlight)))
+    (when (fboundp 'hproperty:set-item-highlight)
+      (hproperty:set-item-highlight))))
+
+(unless hyrolo-highlight-face
+  (hyrolo-initialize-highlight-face))
 
 (defcustom hyrolo-kill-buffers-after-use nil
   "*Non-nil means kill rolo file buffers after searching them for entries.
@@ -152,7 +159,8 @@ NAME may be of the form: parent/child to insert child below a parent
 entry which begins with the parent string."
   (interactive
    (progn
-     (or (fboundp 'mail-fetch-field) (require 'mail-utils))
+     (unless (fboundp 'mail-fetch-field)
+       (require 'mail-utils))
      (let* ((lst (hyrolo-name-and-email))
 	    (name (car lst))
 	    (email (car (cdr lst)))
@@ -162,22 +170,25 @@ entry which begins with the parent string."
 		      (string-match (concat "\\`" (regexp-quote entry)) name))
 		 (format hyrolo-email-format entry email) entry)
 	     current-prefix-arg))))
-  (if (or (not (stringp name)) (string= name ""))
-      (error "(hyrolo-add): Invalid name: `%s'" name))
-  (if (and (called-interactively-p 'interactive) file)
-      (setq file (completing-read "File to add to: "
-				  (mapcar 'list hyrolo-file-list))))
-  (if (null file) (setq file (car hyrolo-file-list)))
-  (cond ((and file (or (not (stringp file)) (string= file "")))
+  (when (or (not (stringp name)) (string-equal name ""))
+    (error "(hyrolo-add): Invalid name: `%s'" name))
+  (when (and (called-interactively-p 'interactive) file)
+    (setq file (completing-read "File to add to: "
+				(mapcar 'list hyrolo-file-list))))
+  (unless file
+    (setq file (car hyrolo-file-list)))
+  (cond ((and file (or (not (stringp file)) (string-equal file "")))
 	 (error "(hyrolo-add): Invalid file: `%s'" file))
 	((and (file-exists-p file) (not (file-readable-p file)))
 	 (error "(hyrolo-add): File not readable: `%s'" file))
 	((not (file-writable-p file))
 	 (error "(hyrolo-add): File not writable: `%s'" file)))
   (set-buffer (or (get-file-buffer file) (find-file-noselect file)))
-  (if (called-interactively-p 'interactive) (message "Locating insertion point for `%s'..." name))
+  (when (called-interactively-p 'interactive)
+    (message "Locating insertion point for `%s'..." name))
   (let ((parent "") (level "") end)
-    (widen) (goto-char 1)
+    (widen)
+    (goto-char 1)
     (while (string-match "\\`[^\]\[<>{}\"]*/" name)
       (setq end (1- (match-end 0))
 	    parent (substring name 0 end)
@@ -187,15 +198,14 @@ entry which begins with the parent string."
 	  (setq level (match-string-no-properties hyrolo-entry-group-number))
 	(error "(hyrolo-add): `%s' category not found in \"%s\""
 	       parent file)))
-    (narrow-to-region (point)
-		      (progn (hyrolo-to-entry-end t level) (point)))
+    (narrow-to-region (point) (progn (hyrolo-to-entry-end t (length level)) (point)))
     (let* ((len (length name))
 	   (name-level (concat level "*"))
 	   (level-len (length name-level))
 	   (first-char (aref name 0))
 	   (entry "")
 	   (entry-spc "")
-	   (entry-level)
+	   (entry-level-len)
 	   (match)
 	   (again t))
       ;; Speed up entry insertion point location if this is a first-level
@@ -218,7 +228,7 @@ entry which begins with the parent string."
 				     "]")
 			     nil t))
 		       (progn (goto-char (match-end 0))
-			      (hyrolo-to-entry-end t entry-level)
+			      (hyrolo-to-entry-end t level-len)
 			      ;; Now at the insertion point, immediately after
 			      ;; the last existing entry whose first character
 			      ;; is less than that of `name'.  Setting `again'
@@ -228,22 +238,21 @@ entry which begins with the parent string."
 	(goto-char (point-min)))
 
       (while (and again (re-search-forward hyrolo-entry-regexp nil 'end))
-	(setq entry-level (match-string-no-properties hyrolo-entry-group-number))
-	(if (/= (length entry-level) level-len)
-	    (hyrolo-to-entry-end t entry-level)
+	(setq entry-level-len (length (match-string-no-properties hyrolo-entry-group-number)))
+	(if (/= entry-level-len level-len)
+	    (hyrolo-to-entry-end t entry-level-len)
 	  (setq entry (buffer-substring-no-properties (point) (+ (point) len))
 		entry-spc (match-string-no-properties hyrolo-entry-trailing-space-group-number))
-	  (cond ((string< entry name)
-		 (hyrolo-to-entry-end t entry-level))
-		((string< name entry)
+	  (cond ((string-lessp entry name)
+		 (hyrolo-to-entry-end t entry-level-len))
+		((string-lessp name entry)
 		 (setq again nil) (beginning-of-line))
 		(t ;; found existing entry matching name
 		 (setq again nil match t)))))
       (setq buffer-read-only nil)
-      (if match
-	  nil
-	(insert (or entry-level (concat level "*"))
-		(if (string= entry-spc "") "   " entry-spc)
+      (unless match
+	(insert (concat level "*")
+		(if (string-equal entry-spc "") "   " entry-spc)
 		name "\n")
 	(backward-char 1))
       ;; hyrolo-to-buffer may move point from its desired location, so
@@ -388,7 +397,7 @@ Nil value of MAX-MATCHES means find all matches, t value means find all matches
 but omit file headers, negative values mean find up to the inverse of that
 number of entries and omit file headers.
 
-Returns number of entries matched.  See also documentation for the variable
+Return number of entries matched.  See also documentation for the variable
 hyrolo-file-list."
   (interactive "sFind rolo regular expression: \nP")
   (unless (or (integerp max-matches) (memq max-matches '(nil t)))
@@ -457,12 +466,10 @@ search for the current match string rather than regular expression."
     (hyrolo-isearch-for-regexp hyrolo-match-regexp)))
 
 (defun hyrolo-verify ()
-  "Verify point is in a rolo match buffer and a match query has been performed, then execute rest of forms, BODY."
-  (cond ((not (stringp hyrolo-match-regexp))
-	 (error "(HyRolo): Invoke a rolo search expression first"))
-	((not (equal (buffer-name) hyrolo-display-buffer))
-	 (error "(HyRolo): Use this command in the %s match buffer"
-		hyrolo-display-buffer))))
+  "Verify point is in a rolo match buffer."
+  (when (not (equal (buffer-name) hyrolo-display-buffer))
+    (error "(HyRolo): Use this command in the %s match buffer"
+	   hyrolo-display-buffer)))
 
 ;;;###autoload
 (defun hyrolo-kill (name &optional file)
@@ -470,9 +477,9 @@ search for the current match string rather than regular expression."
 With prefix argument, prompts for optional FILE to locate entry within.
 NAME may be of the form: parent/child to kill child below a parent entry
 which begins with the parent string.
-Returns t if entry is killed, nil otherwise."
+Return t if entry is killed, nil otherwise."
   (interactive "sKill rolo entry named: \nP")
-  (if (or (not (stringp name)) (string= name "") (string-match "\\*" name))
+  (if (or (not (stringp name)) (string-equal name "") (string-match "\\*" name))
       (error "(hyrolo-kill): Invalid name: `%s'" name))
   (if (and (called-interactively-p 'interactive) current-prefix-arg)
       (setq file (completing-read "Entry's File: "
@@ -485,19 +492,19 @@ Returns t if entry is killed, nil otherwise."
 	  (setq file buffer-file-name)
 	  (if (file-writable-p file)
 	      (let ((kill-op
-		     (lambda (start level)
+		     (lambda (start level-len)
 		       (kill-region
-			start (hyrolo-to-entry-end t level))
+			start (hyrolo-to-entry-end t level-len))
 		       (setq killed t)
 		       (hyrolo-save-buffer)
 		       (hyrolo-kill-buffer)))
-		    start end level)
+		    start end level-len)
 		(setq buffer-read-only nil)
 		(re-search-backward hyrolo-entry-regexp nil t)
 		(setq end (match-end 0))
 		(beginning-of-line)
 		(setq start (point)
-		      level (buffer-substring-no-properties start end))
+		      level-len (length (buffer-substring-no-properties start end)))
 		(goto-char end)
 		(skip-chars-forward " \t")
 		(if (called-interactively-p 'interactive)
@@ -507,10 +514,10 @@ Returns t if entry is killed, nil otherwise."
 					    (progn (end-of-line) (point))))))
 		      (if (y-or-n-p (format "Kill `%s...'? " entry-line))
 			  (progn
-			    (funcall kill-op start level)
+			    (funcall kill-op start level-len)
 			    (message "Killed"))
 			(message "Aborted")))
-		  (funcall kill-op start level)))
+		  (funcall kill-op start level-len)))
 	    (message
 	     "(hyrolo-kill): Entry found but file not writable: `%s'" file)
 	    (beep)))
@@ -622,7 +629,7 @@ XEmacs only."
 (defun hyrolo-sort (&optional hyrolo-file)
   "Sort up to 14 levels of entries in HYROLO-FILE (default is personal rolo).
 Assumes entries are delimited by one or more `*'characters.
-Returns list of number of groupings at each entry level."
+Return list of number of groupings at each entry level."
   (interactive
    (list (let ((default "")
 	       (file))
@@ -641,7 +648,7 @@ Returns list of number of groupings at each entry level."
 				     buffer-file-name
 				   (car hyrolo-file-list)))))
 		  (mapcar 'list hyrolo-file-list)))
-	   (if (string= file "") default file))))
+	   (if (string-equal file "") default file))))
   (if (or (not hyrolo-file) (equal hyrolo-file ""))
       (setq hyrolo-file (car hyrolo-file-list)))
   (if (not (and (stringp hyrolo-file) (file-readable-p hyrolo-file)))
@@ -747,7 +754,7 @@ Nil value of MAX-MATCHES means find all matches, t value means find all matches
 but omit file headers, negative values mean find up to the inverse of that
 number of entries and omit file headers.
 
-Returns number of entries matched.  See also documentation for the variable
+Return number of entries matched.  See also documentation for the variable
 hyrolo-file-list."
   (interactive "sFind rolo whole word matches of: \nP")
   (let ((total-matches (hyrolo-grep (format "\\b%s\\b" (regexp-quote string))
@@ -822,7 +829,7 @@ Nil value of MAX-MATCHES means find all matches, t value means find all matches
 but omit file headers, negative values mean find up to the inverse of that
 number of entries and omit file headers.  Optional COUNT-ONLY non-nil
 means don't retrieve matching entries.
-Returns number of matching entries found."
+Return number of matching entries found."
   (let ((hyrolo-entry-regexp "^\\[")
 	(hyrolo-display-format-function #'hyrolo-bbdb-entry-format)
 	;; Kill the bbdb file after use if it is not already in a buffer.
@@ -875,7 +882,7 @@ Nil value of MAX-MATCHES means find all matches, t value means find all matches
 but omit file headers, negative values mean find up to the inverse of that
 number of entries and omit file headers.  Optional COUNT-ONLY non-nil
 means don't retrieve matching entries.
-Returns number of matching entries found."
+Return number of matching entries found."
   ;; Kill the google-contacts buffer after use if it is not already in use.
   (let ((hyrolo-kill-buffers-after-use (not (get-buffer google-contacts-buffer-name))))
     (hyrolo-grep-file hyrolo-file-or-buf regexp max-matches count-only)))
@@ -921,19 +928,19 @@ Returns number of matching entries found."
                                                                   (xml-node-get-attribute-type child 'protocol)
                                                                   (cdr (assoc 'address (xml-node-attributes child))))))
              (beg (point)))
-        (unless (and (string= familyname "") (string= givenname "") (string= nickname ""))
-	  (insert contact-prefix-string familyname (if (or (string= familyname "")
-							   (string= givenname "")) "" ", ")
+        (unless (and (string-equal familyname "") (string-equal givenname "") (string-equal nickname ""))
+	  (insert contact-prefix-string familyname (if (or (string-equal familyname "")
+							   (string-equal givenname "")) "" ", ")
 		  givenname
-		  (if (string= nickname "")
+		  (if (string-equal nickname "")
 		      ""
 		    (format " (%s)" nickname))
 		  "\n"))
 
-        (unless (and (string= organization-name "")
-                     (string= organization-title ""))
+        (unless (and (string-equal organization-name "")
+                     (string-equal organization-title ""))
 	  (insert (google-contacts-margin-element))
-	  (if (string= organization-title "")
+	  (if (string-equal organization-title "")
 	      (insert organization-name "\n")
 	    (insert organization-title " @ " organization-name "\n")))
 
@@ -961,7 +968,7 @@ Returns number of matching entries found."
         (when birthday
           (insert "\n" (google-contacts-margin-element) "Birthday: " birthday "\n"))
 
-        (unless (string= notes "")
+        (unless (string-equal notes "")
           (insert "\n" (google-contacts-margin-element) "Notes:  "
                   (google-contacts-add-margin-to-text notes 8)
                   "\n"))
@@ -1029,7 +1036,7 @@ Nil value of MAX-MATCHES means find all matches, t value means find all matches
 but omit file headers, negative values mean find up to the inverse of that
 number of entries and omit file headers.  Optional COUNT-ONLY non-nil
 means don't retrieve matching entries.
-Returns number of matching entries found."
+Return number of matching entries found."
   ;;
   ;; Save regexp as last rolo search expression.
   (setq hyrolo-match-regexp regexp)
@@ -1040,7 +1047,7 @@ Returns number of matching entries found."
 		 (if (file-exists-p hyrolo-file-or-buf)
 		     (setq actual-buf (find-file-noselect hyrolo-file-or-buf t)
 			   new-buf-p t))))
-	(let ((hdr-pos) (num-found 0) (curr-entry-level)
+	(let ((hdr-pos) (num-found 0) (curr-entry-level-len)
 	      (incl-hdr t) start next-entry-exists)
 	  (if max-matches
 	      (cond ((eq max-matches t)
@@ -1066,8 +1073,8 @@ Returns number of matching entries found."
 		(setq start (point)
 		      next-entry-exists nil)
 		(re-search-forward hyrolo-entry-regexp nil t)
-		(setq curr-entry-level (buffer-substring-no-properties start (point)))
-		(hyrolo-to-entry-end t curr-entry-level)
+		(setq curr-entry-level-len (length (buffer-substring-no-properties start (point))))
+		(hyrolo-to-entry-end t curr-entry-level-len)
 		(or count-only
 		    (if (and (zerop num-found) incl-hdr)
 			(let* ((src (or (buffer-file-name actual-buf)
@@ -1102,7 +1109,8 @@ means all groupings at the given level.  FUNC should take two arguments, the
 start and the end of the region that it should manipulate.  LEVEL-REGEXP
 should match the prefix text of any rolo entry of the given level, not the
 beginning of a line (^); an example, might be (regexp-quote \"**\") to match
-level two.  Returns number of groupings matched."
+level two.
+Return number of groupings matched."
   (let ((actual-buf))
     (if (and (or (null max-groupings) (< 0 max-groupings))
 	     (or (setq actual-buf (hyrolo-buffer-exists-p hyrolo-file-or-buf))
@@ -1207,21 +1215,21 @@ HYROLO-BUF may be a file-name, `buffer-name', or buffer."
 
 (defun hyrolo-format-name (name-str first last)
   "Reverse order of NAME-STR field given my regexp match field FIRST and LAST."
-  (if (match-beginning last)
-      (concat (substring name-str (match-beginning last) (match-end last))
-	      ", "
-	      (substring name-str (match-beginning first) (match-end first)))))
+  (when (match-beginning last)
+    (concat (substring name-str (match-beginning last) (match-end last))
+	    ", "
+	    (substring name-str (match-beginning first) (match-end first)))))
 
 (defun hyrolo-highlight-matches (regexp start end)
   "Highlight matches for REGEXP in region from START to END."
-  (if (fboundp 'hproperty:but-add)
-      (let ((hproperty:but-emphasize-flag))
-	(save-excursion
-	  (goto-char start)
-	  (while (re-search-forward regexp nil t)
-	    (hproperty:but-add (match-beginning 0) (match-end 0)
-			       (or hyrolo-highlight-face
-				   hproperty:highlight-face)))))))
+  (when (fboundp 'hproperty:but-add)
+    (let ((hproperty:but-emphasize-flag))
+      (save-excursion
+	(goto-char start)
+	(while (re-search-forward regexp nil t)
+	  (hproperty:but-add (match-beginning 0) (match-end 0)
+			     (or hyrolo-highlight-face
+				 hproperty:highlight-face)))))))
 
 (defun hyrolo-isearch-for-regexp (regexp)
   "Interactively search forward for the next occurrence of current match REGEXP.
@@ -1355,13 +1363,13 @@ a default of MM/DD/YYYY."
 `hyrolo-file-list' is used as default when FILE-LIST is nil.
 Leaves point immediately after match for NAME within entry.
 Switches internal current buffer but does not alter the frame.
-Returns point where matching entry begins or nil if not found."
+Return point where matching entry begins or nil if not found."
   (or file-list (setq file-list hyrolo-file-list))
   (let ((found) file)
     (while (and (not found) file-list)
       (setq file (car file-list)
 	    file-list (cdr file-list))
-      (cond ((and file (or (not (stringp file)) (string= file "")))
+      (cond ((and file (or (not (stringp file)) (string-equal file "")))
 	     (error "(hyrolo-to): Invalid file: `%s'" file))
 	    ((and (file-exists-p file) (not (file-readable-p file)))
 	     (error "(hyrolo-to): File not readable: `%s'" file)))
@@ -1386,10 +1394,10 @@ Returns point where matching entry begins or nil if not found."
 		 (hyrolo-to-buffer (current-buffer))
 		 (error "(hyrolo-to): `%s' part of name not found in \"%s\""
 			parent file)))
-	  (if level
-	      (narrow-to-region (point)
-				(save-excursion
-				  (hyrolo-to-entry-end t level) (point)))))
+	  (when level
+	    (narrow-to-region (point)
+			      (save-excursion
+				(hyrolo-to-entry-end t (length level)) (point)))))
 	(goto-char (point-min))
 	(while (and (search-forward name nil t)
 		    (not (save-excursion
@@ -1398,7 +1406,8 @@ Returns point where matching entry begins or nil if not found."
 				 (if (looking-at
 				      (concat hyrolo-entry-regexp (regexp-quote name)))
 				     (point))))))))
-      (or found (hyrolo-kill-buffer))) ;; conditionally kill
+      (unless found
+	(hyrolo-kill-buffer))) ;; conditionally kill
     (widen)
     found))
 
@@ -1406,19 +1415,22 @@ Returns point where matching entry begins or nil if not found."
   "Pop to BUFFER."
   (pop-to-buffer buffer other-window-flag))
 
-(defun hyrolo-to-entry-end (&optional include-sub-entries curr-entry-level)
+(defun hyrolo-to-entry-end (&optional include-sub-entries curr-entry-level-len)
   "Move point to the end of the whole entry that point is within if optional INCLUDE-SUB-ENTRIES is non-nil.
-CURR-ENTRY-LEVEL is a string whose length is the same as the last found entry
-header.  If INCLUDE-SUB-ENTRIES is nil, CURR-ENTRY-LEVEL is not needed.
-Returns current point."
+CURR-ENTRY-LEVEL-LEN is a the integer length of the last found entry
+header.  If INCLUDE-SUB-ENTRIES is nil, CURR-ENTRY-LEVEL-LEN is not needed.
+Return current point."
   ;; Sets free variable, next-entry-exists, for speed.
   (while (and (setq next-entry-exists
 		    (re-search-forward hyrolo-entry-regexp nil t))
 	      include-sub-entries
+	      ;; Prevents including trailing whitespace in entry level
+	      ;; length which in turn causes moving to (point-max).
+	      (goto-char (match-end hyrolo-entry-group-number))
 	      (> (- (point) (save-excursion
 			      (beginning-of-line)
 			      (point)))
-		 (length curr-entry-level))))
+		 curr-entry-level-len)))
   (if next-entry-exists
       (progn (beginning-of-line) (point))
     (goto-char (point-max))))
@@ -1434,8 +1446,7 @@ Calls the functions given by `hyrolo-mode-hook'.
   ;;
   (set-syntax-table hyrolo-mode-syntax-table)
   ;;
-  (if (not (fboundp 'outline-minor-mode))
-      nil
+  (when (fboundp 'outline-minor-mode)
     (outline-minor-mode 1))
   (run-hooks 'hyrolo-mode-hook))
 
@@ -1443,9 +1454,9 @@ Calls the functions given by `hyrolo-mode-hook'.
 ;;; Private variables
 ;;; ************************************************************************
 
+(define-obsolete-variable-alias 'rolo-display-buffer 'hyrolo-display-buffer "06.00")
 (defvar hyrolo-display-buffer "*Hyperbole Rolo*"
   "Buffer used to display set of last matching rolo entries.")
-(define-obsolete-variable-alias 'rolo-display-buffer 'hyrolo-display-buffer "06.00")
 
 (defvar hyrolo-entry-group-number 1
   "Group number within `hyrolo-entry-regexp' whose length represents the level of any entry matched.")
@@ -1453,13 +1464,13 @@ Calls the functions given by `hyrolo-mode-hook'.
 (defvar hyrolo-entry-trailing-space-group-number 2
   "Group number within `hyrolo-entry-regexp; containing trailing space.")
 
+(define-obsolete-variable-alias 'rolo-entry-regexp 'hyrolo-entry-regexp "06.00")
 (defvar hyrolo-entry-regexp "^\\(\\*+\\)\\([ \t]+\\)"
   "Regular expression to match the beginning of a rolo entry.
-This pattern must match the beginning of the line.  Use
-`hyrolo-entry-group-number' to compute the entry's level in the
-hierarchy.  Use `hyrolo-entry-trailing-space-group-number' to capture
+This pattern must match the beginning of a line.
+`hyrolo-entry-group-number' must capture the entry's level in the
+hierarchy.  `hyrolo-entry-trailing-space-group-number' must capture
 the whitespace following the entry hierarchy level.")
-(define-obsolete-variable-alias 'rolo-entry-regexp 'hyrolo-entry-regexp "06.00")
 
 (defconst hyrolo-hdr-format
   (concat
@@ -1477,7 +1488,7 @@ file are added.")
 
 (defconst hyrolo-match-regexp nil
   "Last regular expression used to search the rolo.
-Nil before a search is done.
+Nil before a search is done, including after a logical search is done.
 String search expressions are converted to regular expressions.")
 
 (defvar hyrolo--wconfig nil
@@ -1531,7 +1542,8 @@ String search expressions are converted to regular expressions.")
   )
 
 ;; Prompt user to rename old personal rolo file to new name, if necessary.
-(or noninteractive (call-interactively 'hyrolo-rename))
+(unless noninteractive
+  (call-interactively 'hyrolo-rename))
 
 (provide 'hyrolo)
 

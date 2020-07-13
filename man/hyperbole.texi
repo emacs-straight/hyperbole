@@ -139,7 +139,7 @@ Texinfo markup language.
 
 <CENTER><H2>The Everyday Hypertextual Information Manager</H2></CENTER>
 
-<CENTER><H3><A HREF="https://saythanks.io/to/rswgnu">Say thanks if you like Hyperbole.</A></H3></CENTER>
+<CENTER><H3><A HREF="mailto:rsw@@gnu.org">Say thanks or send a testimonial if you like Hyperbole.</A></H3></CENTER>
 
 
 <P>Copyright &copy; 1989-2019  Free Software Foundation, Inc.</P>
@@ -154,8 +154,8 @@ WITHOUT ANY WARRANTY, without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</P>
 
 <PRE>
-Edition 7.0.6
-Printed September 17, 2019.
+Edition 7.1.2
+Printed July 5, 2020.
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -179,7 +179,7 @@ Printed September 17, 2019.
 
 @center The Everyday Hypertextual Information Manager
 
-@center Say thanks: https://saythanks.io/to/rswgnu
+@center Send any thanks in email to: <rsw@@gnu.org>.
 
 @sp 2
 @noindent
@@ -196,8 +196,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 @sp 2
 
 @example
-Edition 7.0.6
-September 17, 2019
+Edition 7.1.2
+July 5, 2020
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -295,6 +295,7 @@ Smart Mouse Key Drags
 * Creating and Deleting Windows::
 * Saving and Restoring Window Configurations::
 * Resizing Windows::
+* Moving Frames::
 * Dragging Buffers::
 
 Dragging Buffers, Windows and Items
@@ -407,6 +408,11 @@ Customization
 * Invisible Text Searches::
 * Button Colors::
 
+Global Key Bindings
+
+* Binding Minibuffer Menu Items::
+* Default Global Bindings::
+
 Smart Key Reference
 
 * Smart Mouse Keys::
@@ -439,6 +445,7 @@ Smart Keyboard Keys
 * Smart Key - The Koutliner::
 * Smart Key - RDB Mode::
 * Smart Key - Help Buffers::
+* Smart Key - Bookmark Mode::
 * Smart Key - Pages Directory Mode::
 * Smart Key - Python Source Code::
 * Smart Key - Identifier Menu Mode ::
@@ -474,7 +481,7 @@ Smart Keyboard Keys
 @chapter Introduction
 
 This edition of the GNU Hyperbole Manual is for use with any version
-7.0.6 or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 24.3
+7.1.2 or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 24.3
 or higher.  It will trigger an error if your Emacs is older.
 
 This chapter summarizes the structure of the rest of the manual,
@@ -1087,14 +1094,15 @@ parenthesis.
 
 @cindex HTML tag pair
 @cindex SGML tag pair
+@cindex XML tag pair
 The best way to mark a delimited thing is to move your cursor to the
-starting delimiter of the thing and then press the Action Key.  Typically,
-you will see the thing highlight.  You can then operate upon it as you
-would any Emacs region.  In many cases, you can do the same thing upon
-the closing delimiter, but this is not as reliable.  An Action Key
-press on the start of an HTML or SGML tag pair marks the entire region
-span of the pair.  If you use the Assist Key instead, it will mark and
-kill (delete) the thing.
+starting delimiter of the thing and then press the Action Key.
+Typically, you will see the thing highlight.  You can then operate
+upon it as you would any Emacs region.  In many cases, you can do the
+same thing upon the closing delimiter, but this is not as reliable.
+An Action Key press on the start of an HTML, XML, or SGML tag pair
+marks the entire region span of the pair.  If you use the Assist Key
+instead, it will mark and kill (delete) the thing.
 
 @cindex drag, with region
 @cindex kill region
@@ -1135,12 +1143,13 @@ a different mouse key to use single clicks instead of double clicks.
 
 @kindex C-c .
 @findex hui-select-goto-matching-tag
-The second convenience key is bound only in HTML/web mode.  @bkbd{C-c
-.} @code{hui-select-goto-matching-tag} jumps between the opening and
-closing tag of a pair.  It moves point to the start of the tag paired
-with the closest tag that point is within or which it precedes.  A
-second press moves point to the matching tag of the pair, allowing you
-to quickly jump back and forth between opening and closing tags.
+The second convenience key is bound in HTML/XML/SGML/web
+modes.  @bkbd{C-c .} @code{hui-select-goto-matching-tag} jumps between
+the opening and closing tag of a pair.  It moves point to the start of
+the tag paired with the closest tag that point is within or which it
+precedes.  A second press moves point to the matching tag of the pair,
+allowing you to quickly jump back and forth between opening and
+closing tags.
 
 @node Smart Mouse Key Modeline Clicks, Smart Mouse Key Drags, Smart Key Thing Selection, Smart Keys
 @section   Smart Mouse Key Modeline Clicks
@@ -1293,6 +1302,7 @@ Mouse Keys}.
 * Creating and Deleting Windows::
 * Saving and Restoring Window Configurations::
 * Resizing Windows::
+* Moving Frames::
 * Dragging Buffers::
 @end menu
 
@@ -1341,26 +1351,47 @@ from the ring.  Window configurations are restored in reverse order of the
 way they were saved.  Since a ring is circular, after the oldest element is
 restored, the newest element will again be restored and so on.
 
-@node Resizing Windows, Dragging Buffers, Saving and Restoring Window Configurations, Smart Mouse Key Drags
+@node Resizing Windows, Moving Frames, Saving and Restoring Window Configurations, Smart Mouse Key Drags
 @subsection Resizing Windows
 
 @cindex resizing windows
 @cindex drag, resize window
-Emacs windows may be resized by dragging their window separators (modelines
-or vertical side lines) within a frame.  Simply depress either Smart Mouse
-Key on a modeline or near a window side, hold it down while you drag to a
-new location and then release.  The window separator will then jump to the
-location of release.  Basically, just drag the window separator to where
-you want it.  Nowadays a better version of Emacs window resizing exists on
-the left mouse key.  A drag with this key from a blank area of a modeline
-or a window side divider shows visible feedback as the window is resized.
-But if you are always using the Smart Mouse Keys, you may prefer to use
-them for resizing windows as well.
+Emacs windows may be resized by dragging their window separators
+(modelines or vertical side lines) within a frame.  Simply depress either
+Smart Mouse Key on a non-bottommost modeline or near a window side, hold
+it down while you drag to a new location and then release.  The window
+separator will move to the location of release.  Basically, just drag the
+window separator to where you want it.  Drags from a blank area of a
+modeline show visible feedback as the window is resized.
 
-Note that you cannot drag the bottom-most modeline; you would have to
-resize the frame to move the bottom of that window up.
+@node Moving Frames, Dragging Buffers, Resizing Windows, Smart Mouse Key Drags
+@subsection Moving Frames
 
-@node Dragging Buffers,  , Resizing Windows, Smart Mouse Key Drags
+@cindex dragging frames
+@cindex moving frames
+@cindex drag, move frame
+@cindex modeline drag, move frame
+@vindex drag-with-mode-line
+Drags of either Smart Key from a bottommost modeline can be configured to
+drag Emacs frames to new locations on screen.  To configure all existing
+and future frames for such dragging, use:
+
+  @code{(modify-all-frames-parameters '((drag-with-mode-line . t)))}.
+
+@noindent
+To configure just the selected frame for such dragging, use:
+
+  @code{(set-frame-parameter nil 'drag-with-mode-line t)}.
+
+@noindent
+on each frame you would like to drag.
+
+Then drag with either Smart Key from a bottommost modeline within a frame
+to move the frame on screen with live feedback, as if you were dragging
+from the titlebar.  If you use a click-to-focus window manager, click on
+the desired frame first and then depress to drag.
+
+@node Dragging Buffers,  , Moving Frames, Smart Mouse Key Drags
 @subsection Dragging Buffers, Windows and Items
 
 Smart Mouse Key drags let you display buffers and windows however you want
@@ -1386,10 +1417,12 @@ Swapping buffer locations is quick and easy with Hyperbole.  Simply drag
 from one window to another with the Assist Key (not the Action Key).  This
 works across frames as well.
 
-If you have just two windows in an Emacs frame, you can swap their buffers
-from the keyboard.  Use this Hyperbole minibuffer menu key sequence
-involving the tilde key to swap the buffers and quit from the Hyperbole
-minibuffer menu: @bkbd{C-h h s w ~ q}.
+If you have just two windows in an Emacs frame, you can swap their
+buffers from the keyboard.  Use this Hyperbole minibuffer menu key
+sequence involving the tilde key to swap the buffers and quit from the
+Hyperbole minibuffer menu: @bkbd{C-h h s w ~ Q}.  Similarly, if you
+have two single window frames, you can swap buffers between them with
+@bkbd{C-h h s f ~ Q}.
 
 @node Displaying Buffers, Cloning Windows, Swapping Buffers, Dragging Buffers
 @subsubsection Displaying Buffers
@@ -1402,9 +1435,9 @@ buffers?  Depress the Action Mouse Key in the open area of the modeline of
 the source window and drag to the text area of the destination window.
 Voila, the buffer appears in the new location as well as the old one.
 
-If you want a new window where you release (so the original destination window's
-buffer stays onscreen), just drag to a window's modeline; that window will be
-split before the buffer is displayed.
+If you want a new window where you release (so the original destination
+window's buffer stays onscreen), just drag to a window's modeline; that
+window will be split before the buffer is displayed.
 
 @node Cloning Windows, Displaying File and Buffer Items, Displaying Buffers, Dragging Buffers
 @subsubsection Cloning Windows
@@ -1488,12 +1521,11 @@ the drags performed by @code{hkey-operate}).  If you already have a key bound
 for @code{ace-window}, then just ensure it is initialized by calling
 @code{(hkey-ace-window-setup)} without a key argument.
 
-@cindex link creation from keyboard
-@cindex keyboard link creation
 @kindex M-o i <window-id>
 @kindex M-o m <window-id>
 @kindex M-o r <window-id>
 @kindex M-o t <window-id>
+@cindex insert item
 @cindex drag item
 @cindex replace window buffer
 @cindex swap window buffers
@@ -1501,6 +1533,7 @@ for @code{ace-window}, then just ensure it is initialized by calling
 @cindex buffer replace
 @cindex buffers swap
 @cindex item drag
+@cindex item insert
 @cindex item throw
 After setup, the leftmost character or two of each window's modeline will show
 the ID to type to use that window as the drag destination.  Then whenever point
@@ -1513,6 +1546,16 @@ the selected window's buffer with that of another window, use
 @bkbd{M-o r <id-of-window-displaying-desired-buffer>}.  To instead
 @emph{swap} the selected window's buffer with that of another window,
 use @bkbd{M-o m <id-of-window-to-swap-with>}.
+
+@cindex throw region
+@cindex region throw
+You can also throw the active (highlighted) region of text to another
+window.  Simply activate a region and then use @bkbd{M-o
+t <window-id>}.  If you don't use region highlighting,
+i@.e@. @code{transient-mark-mode}, then use @bkbd{C-u M-o
+t <window-id>} for the same effect.  The buffer in the target window
+must differ from the one in the source window.  With no region active,
+this command throws the source buffer to the target window.
 
 In summary:
 @table @asis
@@ -1527,7 +1570,7 @@ swap the buffers in the selected window and <window>
 replace the selected (current) window's buffer with that of <window>
 
 @item M-o t <window>
-throw listing item at point or current buffer to <window>
+throw region, listing item at point, or current buffer to <window>
 @end table
 
 @c -------
@@ -1718,19 +1761,20 @@ asking for help on a button.
 @cindex button, global
 @cindex button label
 @cindex label, button
-Access to explicit buttons depends upon the information on your screen
-since they are embedded within particular buffers.  Sometimes it is
+Sometimes it is
 useful to activate buttons without regard to the information with which
 you are working.  In such instances, you use @dfn{global buttons}, which
 are buttons that may be activated or otherwise operated upon by typing
 their labels/names when they are prompted for, rather than selecting the
-buttons within a buffer.
+buttons within a buffer.  In contrast, activation of explicit buttons
+depends upon the information on your screen since they are accessible
+only from within their particular buffers.
 
 If you want a permanent link to a file section that you can follow at
 any time, you can use a global button.  Or what about an Emacs keyboard
-macro that you use frequently?  Create an @code{exec-kbd-macro} button
-with an easy to type name and then you can activate it whenever the need
-arises.
+macro that you use frequently?  Create a global button with an action type
+of @code{exec-kbd-macro} button and an easy to type name.  Then you can
+activate it whenever the need arises.
 
 @kindex C-h h g
 @cindex menu, Gbut
@@ -1740,17 +1784,20 @@ Global buttons are managed with the Hyperbole Gbut/ menu accessed with
 global button name, an action type, and the action's associated
 arguments, such as a file to link to.  It then creates the button.  To
 activate the button, use the Act menu item, @bkbd{C-h h g a}.  Type
-the button's name and its action will be executed.
+the button's name and its action will be  To remove the
+button, use the Delete menu item, @bkbd{C-h h g d}; @pxref{Deletion}.
 
 Global buttons are actually explicit buttons stored at the end of your
 personal button file, @pxref{Button Files}.  You can always go into that
 file and activate, edit or annotate these buttons with comments.
 
 @cindex bookmarks
-Emacs has a built-in feature similar to Global Buttons called Bookmarks.
-Bookmarks store places in files or link to URLs, so they are more limited
-than Hyperbole's global buttons and cannot utilize all of Hyperbole's
-capabilities for performing actions.  @xref{Bookmarks,,,emacs, the Emacs
+Emacs has a built-in feature similar to Global Buttons called
+Bookmarks.  Bookmarks store places in files or link to URLs, so they
+are more limited than Hyperbole's global buttons and cannot utilize
+all of Hyperbole's capabilities for performing actions.  Hyperbole has
+an action type, @code{link-to-bookmark}, for using an Emacs bookmark
+as a Hyperbole button referent.  @xref{Bookmarks,,,emacs, the Emacs
 Manual}, for details on bookmarks.
 
 @node Implicit Buttons, Button Files, Global Buttons, Buttons
@@ -2351,6 +2398,9 @@ handled by func-menu.
 @item pathname-line-and-column
 Make a valid pathname:line-num[:column-num] pattern display the path
 at line-num and optional column-num.  Also works for remote pathnames.
+May also contain hash-style link references with the following format:
+@file{<path>[#<link-anchor>]:<line-num>[:<column-num>]}.
+
 
 @findex ibtypes pathname
 @findex hpath:at-p
@@ -2362,14 +2412,23 @@ at line-num and optional column-num.  Also works for remote pathnames.
 @cindex remote path
 @cindex filename
 @cindex link, pathname
+@cindex environment variables
+@cindex Emacs Lisp variables
+@cindex Lisp variables
 @item pathname
 Make a valid pathname display the path entry.  Also works for
 delimited and non-delimited remote pathnames, Texinfo @@file@{@}
-entries, and hash-style link references to HTML, Markdown or Emacs
-outline headings, and MSWindows paths (see @file{$@{hyperb:dir@}/DEMO#POSIX
-and MSWindows Paths} for details).  Emacs Lisp library files
-(filenames without any directory component that end in .el and .elc)
-are looked up using the @code{load-path} directory list.
+entries, and hash-style link references to HTML, XML, SGML, Markdown
+or Emacs outline headings, shell script comments, and MSWindows paths
+(see @file{$@{hyperb:dir@}/DEMO#POSIX and MSWindows Paths} for
+details).  Emacs Lisp library files (filenames without any directory
+component that end in .el and .elc) are located using
+the @code{load-path} directory list.
+
+@noindent
+The pathname may contain references to Emacs Lisp variables or shell
+environment variables using the syntax, \"$@{variable-name@}\".
+@xref{Link Variable Substitution}, for how this handled.
 
 @noindent
 See the function documentation for @code{hpath:at-p} for possible
@@ -2379,8 +2438,7 @@ for a valid match.  See the function documentation for @code{hpath:find}
 for special file display options.
 
 @findex ibtypes org-mode
-@cindex org-mode
-@cindex Org mode
+@cindex Org-mode
 @cindex radio target
 @cindex code block
 @cindex links
@@ -2388,29 +2446,36 @@ for special file display options.
 @kindex M-@key{RET}
 @findex org-ctrl-c-ctrl-c
 @findex org-meta-return
+@vindex inhibit-hsys-org
+@cindex disable org-mode support
+@cindex inhibit org-mode support
 @item org-mode
-For users of Emacs Org mode, Hyperbole does quite a few things.
+For users of Emacs Org-mode, Hyperbole does quite a few things.
 
-First, the Action Key follows internal links in Org mode files.  When
+First, the Action Key follows internal links in Org-mode files.  When
 pressed on a link referent/target, the link definition is displayed,
 allowing two-way navigation between definitions and targets.
 
-Second, the Action Key follows Org mode external links.  The Assist
-Key displays help when pressed on an Org mode link.
+Second, the Action Key follows Org-mode external links.  The Assist
+Key displays help when pressed on an Org-mode link.
 
 Third, within a radio target definition, the Action Key jumps to the
 first occurrence of an associated radio target.
 
-Fourth, when point is on an outline heading in Org mode, the Action Key
+Fourth, when point is on an outline heading in Org-mode, the Action Key
 cycles the view of the subtree at point and the Assist Key cycles the
 view of all headings in the buffer.
 
 Fifth, with point on the first line of a code block definition, the
-Action Key executes the code block via the Org mode standard binding
+Action Key executes the code block via the Org-mode standard binding
 of @bkbd{C-c C-c}, @code{org-ctrl-c-ctrl-c}.
 
 In any other context besides the end of a line, the Action Key invokes
-the Org mode standard binding of @bkbd{M-@key{RET}}, @code{org-meta-return}.
+the Org-mode standard binding of @bkbd{M-@key{RET}}, @code{org-meta-return}.
+
+To disable ALL Hyperbole support within Org major and minor modes, set
+the custom option @code{inhibit-hsys-org} to @code{t}.  Then in Org modes,
+the Action Key will simply invoke @code{org-meta-return}.
 @end table
 
 @node Action Buttons,  , Implicit Button Types, Implicit Buttons
@@ -2448,9 +2513,14 @@ Lisp function name rather than an action type name, e.g.
 <find-file-other-window "/tmp">
 @end example
 
+Generally, such functions are invoked for their side-effects and their
+return value is silently ignored.  But if a function is a boolean
+predicate whose name ends in @samp{-p}, then the result is displayed
+in the minibuffer.
+
 @item variable displays
-These consist of only an Emacs Lisp variable name and display a
-message with the variable name and value, e.g.
+These consist of an Emacs Lisp variable name only.  They display
+messages with their variable name and value, e.g.
 
 @example
 <fill-column>
@@ -2612,6 +2682,14 @@ Execute the function binding for KEY-SEQUENCE, delimited by @{@}.
 Return @samp{t} if a KEY-SEQUENCE has a binding, else @samp{nil}.
 
 @cindex link action types
+@findex actypes link-to-bookmark
+@item link-to-bookmark
+Display an Emacs BOOKMARK.
+When creating the button, if in Bookmark Menu mode, use the bookmark
+nearest point as the default.  Otherwise, utilize the most recently used
+bookmark in the current file (bookmark-current-bookmark) as the default,
+if any.
+
 @findex actypes link-to-buffer-tmp
 @item link-to-buffer-tmp
 Display a BUFFER.  This type of link is for use in  a single editor session.
@@ -2886,8 +2964,10 @@ Referent Context         Link Type
 Global Button            link-to-gbut
 Explicit Button          link-to-ebut
 Implicit Button          link-to-ibut
+Bookmarks List           link-to-bookmark
 Info Index Item          link-to-Info-index-item
 Info Node                link-to-Info-node
+Texinfo Node             link-to-texinfo-node
 Mail Reader Message      link-to-mail
 Directory Name           link-to-directory
 Filename                 link-to-file
@@ -2963,15 +3043,12 @@ button in the buffer will be renamed.
 
 @vindex file, .emacs
 @vindex file, hyperbole.el
-@kindex C-c C-r
 @findex hui:ebut-rename
 The rename command may be invoked from the Hyperbole menu via
-Ebut/Rename.  A faster method is to use a key bound to the
-@code{hui:ebut-rename} command.  Hyperbole typically binds this to
-@bkbd{C-c C-r}.  @bkbd{C-h w hui:ebut-rename @key{RET}} will show
-what if any key runs it.  If no key binding has been established or if
-you prefer one of your own, simply bind it within your @file{~/.emacs}
-file: @code{(global-set-key "\C-c\C-r" 'hui:ebut-rename)}.
+Ebut/Rename.  Hyperbole does not bind this command to a key by default.
+@bkbd{C-h w hui:ebut-rename @key{RET}} will show what if any key is bound
+within your Emacs.  Bind it within your @file{~/.emacs} file with:
+@code{(global-set-key "\C-cr" 'hui:ebut-rename)}, for example.
 
 
 @node Deletion, Modification, Renaming, Utilizing Explicit Buttons
@@ -2984,9 +3061,9 @@ selected button.  The button's delimiters are removed to confirm the
 deletion.  If the delete command is invoked with a prefix argument, then
 both the button label and the delimiters are removed as confirmation.
 
-@vindex hui:ebut-delete-confirm-p
+@vindex hui:hbut-delete-confirm-flag
 Presently there is no way to recover a deleted button; it must
-be recreated.  Therefore, the @code{hui:ebut-delete-confirm-p} variable
+be recreated.  Therefore, the @code{hui:hbut-delete-confirm-flag} variable
 is true by default, causing Hyperbole to require confirmation before
 interactively deleting explicit buttons.  Set it to @samp{nil} if you
 prefer no confirmation.
@@ -3228,13 +3305,15 @@ Action or Assist Key action to use when no matching context is found.
 @xref{Smart Key - Default Context}, for details.
 
 @cindex minibuffer menus
+@cindex menu item key bindings
 The rest of this section discusses only the
 specialized @dfn{minibuffer menus} which appear in the minibuffer
-window and work with all emacs versions on all display devices.
-They provide similar capabilities to those of the Hyperbole menubar
-but additionally allow for fast menu item selection via the keyboard
-or mouse.  When used with the keyboard, they provide command access
-similar to key bindings.
+window and work with all emacs versions on all display devices.  They
+provide similar capabilities to those of the Hyperbole menubar but
+additionally allow for fast menu item selection via the keyboard or
+mouse.  When used with the keyboard, they provide command access
+similar to key bindings.  In fact, any menu item can be bound to a
+global key sequence.  @xref{Binding Minibuffer Menu Items}.
 
 @kindex C-h h
 @cindex minibuffer menu
@@ -3289,11 +3368,10 @@ The top-level Hyperbole minibuffer menu items serve the following purposes:
 
 @table @strong
 @cindex menu item, Act
-@cindex menu item, Activate-Button-at-Point
+@cindex menu item, Activate-Button-in-Buffer
 @item Act
-Activation of any button at point.  If there is no button at
-point, it prompts for the label of an explicit button within the
-current buffer to activate.
+Activate button at point or if there is no button at point, prompt for
+a labeled explicit or implicit button from the current buffer to activate.
 
 @cindex menu, Button-File
 @cindex menu, Butfile
@@ -3853,9 +3931,14 @@ Toggle between WINDOWS and FRAMES submodes.
 @cindex HyControl exit
 @cindex quit HyControl
 @cindex exit HyControl
+@kindex screen, Q
 @kindex screen, q
+@kitem Q
 @kitem q
-Quit from HyControl mode and restore normal key bindings.
+Press @bkbd{Q} to globally quit HyControl mode and restore normal key bindings.
+Typically @bkbd{q} works as well, unless in a help buffer where
+@bkbd{q} is bound to @code{quit-window}, then that is run instead of quitting
+HyControl.  A second press of @bkbd{q} will then quit HyControl.
 @end table
 
 @sp 1
@@ -6070,9 +6153,15 @@ if any emacs-related terms are unfamiliar to you.
 @table @b
 
 @item Action
+@itemx Button Action
 An executable behavior associated with a Hyperbole button.  @dfn{Links}
 are a specific class of actions which display existing entities, such as
 files. See also @b{Action Type}.
+
+@item Action Button
+An implicit button that uses a universal button syntax delimited by <angle brackets>
+to invoke any available Hyperbole action type or Emacs Lisp function.  Alternatively,
+if it is an Emacs Lisp variable name, its action is to display the variable value.
 
 @item Action Key
 See @b{Smart Key}.
@@ -6171,10 +6260,6 @@ so behave exactly alike.  Since button labels are simply text strings,
 they may be embedded within any text to provide non-linear information
 or operational access points.
 
-@vindex ebut:max-len
-The maximum length of a button label is limited by the variable
-@code{ebut:max-len}.
-
 @item Button Selection
 The act of designating a Hyperbole button upon which to operate.
 Use the Action Key to select a button.
@@ -6219,6 +6304,12 @@ its predicate is true.
 A mouse button press in one location and following release in another
 location.
 
+@item Elink
+@itemx link-to-ebut
+An Action Button that links to an explicit button.  It begins with <elink:
+followed by an explicit button label, an optional ebut file and ends with a
+closing >.
+
 @item Environment
 See @b{Hyperbole Environment}.
 
@@ -6247,11 +6338,23 @@ buttons are stored in the file given by the variable @code{gbut:file}
 and may be activated with the Action Key when editing this file.  By
 default, this is the same as the user's personal button file.
 
+@item Glink
+@itemx link-to-gbut
+An Action Button that links to a global button.  It begins with <glink:
+followed by a global button label and then a closing >.
+
 @item Global Button File
 See @b{Button File, personal} and @b{Global Button}.
 
 @item Grid
 See @b{Windows Grid}.
+
+@vindex hbut:max-len
+@findex hbut:max-len
+The maximum length of a button label is limited by the variable
+@code{hbut:max-len}.  If 0, there is no limit and searches for button
+end delimiters can go as far as the end of the buffer.  Use the
+function, @code{(hbut:max-len)}, to read the proper value.
 
 @findex run-hooks
 @item Hook Variable
@@ -6287,6 +6390,12 @@ HyRolo, the Hyperbole record/contact manager, provides rapid lookup of
 multi-line, hierarchically ordered free form text records.  It can
 also lookup records from Google/GMail Contacts and the Big Brother
 DataBase (BBDB) package.
+
+@item Ilink
+@itemx link-to-ibut
+An Action Button that links to another implicit button.  It begins with <ilink:
+followed by an implicit button label, an optional ibut file and ends with a
+closing >.
 
 @item Implicit Button
 A button recognized contextually by Hyperbole.  Such buttons contain no
@@ -6876,7 +6985,8 @@ substituted into the link pathname, in place of its literal value.
 When a link button is activated, potentially at a different site,
 Hyperbole replaces each variable in the link pathname with the first
 matching value from this list to recreate the literal pathname.
-Environment variables are also replaced whenever link paths are
+Environment variables and Emacs Lisp variables delimited
+by \"$@{variable-name@}\" are also replaced whenever link paths are
 resolved.
 
 This permits sharing of links over wide areas, where the variable values
@@ -7034,17 +7144,37 @@ addition to any non-mouse-sensitive button highlighting.
 @node Global Key Bindings, Koutliner Keys, Setup, Top
 @appendix Global Key Bindings
 
-@noindent
 @cindex key binding list
-This appendix summarizes all of Hyperbole's global key bindings and
-whether each overrides any existing binding or not.  It also describes
-how to temporarily disable these bindings and how to manage whether
-Hyperbole overrides local, mode-specific key bindings that hide
-global Hyperbole keys.
+This appendix covers two topics: 1. how to bind Hyperbole minibuffer
+menu items to global keys and 2. summaries of all of Hyperbole's
+global key bindings and whether each overrides any existing binding or
+not.  It also describes how to temporarily disable these bindings and
+how to manage whether Hyperbole overrides local, mode-specific key
+bindings that hide global Hyperbole keys.
 
-These bindings can be viewed and edited from either the
-Cust/KeyBindings minibuffer menu or from the Hyperbole menubar menu as
-shown here:
+@menu
+* Binding Minibuffer Menu Items::
+* Default Global Bindings::
+@end menu
+
+@node Binding Minibuffer Menu Items, Default Global Bindings, Global Key Bindings, Global Key Bindings
+@section Binding Minibuffer Menu Items
+
+@cindex binding keys
+@cindex minibuffer menu bindings
+@findex hyperbole-set-key
+Use @bkbd{M-x hyperbole-set-key @key{RET}} to bind any global key to
+any Hyperbole minibuffer item.  This command will first prompt for the
+key sequence you want to use to activate the menu item.  Immediately
+after it will display the Hyperbole top-level minibuffer menu.  Simply
+select the item you want to bind to your key.
+
+@node Default Global Bindings,  , Binding Minibuffer Menu Items, Global Key Bindings
+@section Default Global Bindings
+
+Hyperbole's default global key bindings can be viewed and edited from
+either the Cust/KeyBindings minibuffer menu or from the Hyperbole
+menubar menu as shown here:
 
 @float Image,image:Change-Key-Bindings
 @caption{Global Key Bindings Menu}
@@ -7093,11 +7223,6 @@ bound prior to loading Hyperbole.
 
 For further details, see the @bkbd{@@} key binding description
 in @ref{HyControl}.
-
-@cindex key binding, C-c C-r
-@kitem C-c C-r
-Button Rename: Rename an explicit button. This binding is made only if
-the key is not bound prior to loading Hyperbole.
 
 @cindex key binding, M-o
 @kitem M-o
@@ -7919,14 +8044,15 @@ a vertical scroll bar:
 @node Modeline Clicks and Drags, Smart Mouse Drags between Windows, Side-by-Side Window Resizing, Smart Mouse Keys
 @subsection Modeline Clicks and Drags
 
-@cindex depress, modeline
-@cindex modeline depress
+@cindex click, modeline
+@cindex modeline click
+@cindex modeline drag
 @vindex action-key-modeline-function
 @vindex assist-key-modeline-function
 @format
 @group
 If depressed within a window modeline:
-  ACTION KEY
+  ACTION MOUSE KEY
      (1) clicked on the first blank character of a window's modeline,
          the window's buffer is buried (placed at the bottom of the
          buffer list);
@@ -7943,17 +8069,21 @@ If depressed within a window modeline:
      (5) dragged vertically from a modeline to within a window, the
          modeline is moved to the point of the drag release, thereby
          resizing its window and potentially its vertically neighboring
-         windows.
+         windows;
      (6) dragged other than straight vertically from a modeline to another
          window, duplicate the modeline's window buffer to the window of
-         release.
-     (7) dragged from a modeline to outside of Emacs, create a new frame
-         sized to match the selected window with the same buffer.
+         release;
+     (7) dragged from a bottommost modeline when the frame has a non-nil
+         @code{drag-with-mode-line} property, then move the frame until
+         release of the Action Mouse Key;
+     (8) otherwide, dragged from a another modeline to outside of
+         Emacs (MacOS only), create a new frame sized to match the
+         selected window with the same buffer.
 @end group
 @end format
 @format
 @group
-  ASSIST KEY
+  ASSIST MOUSE KEY
      (1) clicked on the first blank character of a window's modeline,
          the bottom buffer in the buffer list is unburied and placed in
          the window;
@@ -7962,21 +8092,25 @@ If depressed within a window modeline:
          displayed and the modeline clicked upon belongs to a window
          displaying the summary, the summary buffer is hidden;
      (3) clicked on the buffer id of a window's modeline, the next
-         buffer in sequence is displayed in the window
+         buffer in sequence is displayed in the window;
      (4) clicked anywhere within the middle of a window's modeline,
          the function given by @code{assist-key-modeline-function} is
          called;
      (5) dragged vertically from a modeline to within a window, the
          modeline is moved to the point of the drag release, thereby
          resizing its window and potentially its vertically neighboring
-         windows.
+         windows;
      (6) dragged other than straight vertically from a modeline to another
-         window, swap buffers in the two windows.
-     (7) dragged from a modeline to outside of Emacs, create a new frame
-         sized to match the selected window with the same buffer.  If there
-         is only one window in the source frame or if @code{hycontrol-keep-window-flag}
-         is non-nil, leave the original window and just clone it into the
-         new frame;otherwise, delete the original window.
+         window, swap buffers in the two windows;
+     (7) dragged from a bottommost modeline when the frame has a non-nil
+         @code{drag-with-mode-line} property, then move the frame until
+         release of the Action Mouse Key;
+     (8) dragged from a modeline to outside of Emacs (MacOS only),
+         create a new frame sized to match the selected window with
+         the same buffer.  If there is only one window in the source
+         frame or if @code{hycontrol-keep-window-flag} is non-nil,
+         leave the original window and just clone it into the new
+         frame; otherwise, delete the original window.
 @end group
 @end format
 
@@ -8144,6 +8278,7 @@ If dragged from an Emacs window to outside of Emacs:
 * Smart Key - The Koutliner::
 * Smart Key - RDB Mode::
 * Smart Key - Help Buffers::
+* Smart Key - Bookmark Mode::
 * Smart Key - Pages Directory Mode::
 * Smart Key - Python Source Code::
 * Smart Key - Identifier Menu Mode ::
@@ -8540,7 +8675,7 @@ relational databases (part of InfoDock):
 @end group
 @end format
 
-@node Smart Key - Help Buffers, Smart Key - Pages Directory Mode, Smart Key - RDB Mode, Smart Keyboard Keys
+@node Smart Key - Help Buffers, Smart Key - Bookmark Mode, Smart Key - RDB Mode, Smart Keyboard Keys
 @subsection Smart Key - Help Buffers
 @cindex help buffer
 @format
@@ -8552,7 +8687,24 @@ When pressed at the end of a Help buffer:
 @end group
 @end format
 
-@node Smart Key - Pages Directory Mode, Smart Key - Python Source Code, Smart Key - Help Buffers, Smart Keyboard Keys
+@node Smart Key - Bookmark Mode, Smart Key - Pages Directory Mode, Smart Key - Help Buffers, Smart Keyboard Keys
+@subsection Smart Key - Bookmark Mode
+
+@format
+@group
+Bookmark-bmenu-mode lists existing per-user Emacs bookmarks, which each link to a particular file location.
+
+@noindent
+When pressed on a bookmark-bmenu-mode entry line:
+  ACTION KEY
+     Jumps to the file point linked to by the bookmark.
+  ASSIST KEY
+     Shows what the Action Key does in this context.
+@end group
+@end format
+
+@page
+@node Smart Key - Pages Directory Mode, Smart Key - Python Source Code, Smart Key - Bookmark Mode, Smart Keyboard Keys
 @subsection Smart Key - Pages Directory Mode
 
 @format
@@ -8568,7 +8720,6 @@ When pressed on a pages-directory-mode entry line:
 @end group
 @end format
 
-@page
 @node Smart Key - Python Source Code, Smart Key - Identifier Menu Mode , Smart Key - Pages Directory Mode, Smart Keyboard Keys
 @subsection Smart Key - Python Source Code
 @format
@@ -9472,25 +9623,24 @@ let it flow through you.
 Ok, joking aside, now that we have your attention, here are some
 serious questions and answers.
 
-@cindex Org mode
-@item Isn't Org mode the same as Hyperbole?
+@cindex Org-mode
+@item Isn't Org-mode the same as Hyperbole?
 
 No, they offer very different capabilities when you compare them a bit
 more deeply.  In fact, it makes sense to use them together and they
-are highly compatible.  The only overlap we see is that Org mode has a
+are highly compatible.  The only overlap we see is that Org-mode has a
 more limited kind of hyperlinks and offers some BBDB integration as
-Hyperbole does.
-
-Initial Smart Key support for Org mode is already in Hyperbole and
-more will come.  For a list of some differences, see:
+Hyperbole does.  For a list of some differences, see:
 @url{https://www.emacswiki.org/emacs/Hyperbole}.
+
+@vindex inhibit-hsys-org
+Smart Key support for Org-mode is already in Hyperbole with compatibility
+with Org's @bkbd{M-RET} binding.  With the flag, @code{inhibit-hsys-org}
+set to @code{t}, Hyperbole gives Org complete control over that key as well.
 
 Org-mode offers traditional Emacs outlining, todo list management,
 agenda and diary management, so it is very complementary to Hyperbole.
-It did not exist when Hyperbole was first developed.  Today it is just
-a matter of having time and resources to devote to finding ways to
-integrate the two.  We would like to see this happen.  If you would
-like to see it, offer time or money to help make it happen.
+It did not exist when Hyperbole was first developed.
 
 @cindex Smart Key
 @cindex mouse key bindings
@@ -9541,13 +9691,14 @@ request it.
 @item How can I modify a number of global buttons in succession?
 
 Rather than typing the name for each, it is quicker to jump to the
-global button file and edit the buttons there as you would any explicit
-buttons.  By default, the ButFile/PersonalFile menu item takes you to
-the file where global buttons are saved at the end of the file.
+global button file and edit the buttons there as you would any
+explicit or implicit buttons.  By default, the ButFile/PersonalFile
+menu item takes you to the file where global buttons are saved.
+Global buttons are saved near the end of this file.
 
 @item Why are button attributes scattered across directories?
 
-When you think of a hyper-space that you depend on every day, you
+When you think of a hyperspace that you depend on every day, you
 don't want to have a single point of failure that can make you
 incapable of doing work.  With Hyperbole, if some directories become
 unavailable for a particular time (e.g.@: the filesystems on which

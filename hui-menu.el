@@ -131,7 +131,7 @@ Return t if cutoff, else nil."
   (nconc
    (list
     (vector (hui-menu-key-binding-item "Action-Key          \t\t\t" 'hkey-either)                        '(hui:bind-key #'hkey-either) t)                    ;; {M-RET}
-    (vector (hui-menu-key-binding-item "Button-Rename-Key   \t"     'hui:ebut-rename)                    '(hui:bind-key #'hui:ebut-rename) t)                ;; {C-c C-r}
+    (vector (hui-menu-key-binding-item "Button-Rename-Key   \t"     'hui:ebut-rename)                    '(hui:bind-key #'hui:ebut-rename) t)                ;; None
     (vector (hui-menu-key-binding-item "Drag-Emulation-Key  \t\t"   'hkey-operate)                       '(hui:bind-key #'hkey-operate) t)                   ;; {M-o}
     (vector (hui-menu-key-binding-item "Find-Web-Key        \t\t"   'hui-search-web)                     '(hui:bind-key #'hui-search-web) t)                 ;; {C-c /}
     (vector (hui-menu-key-binding-item "Grid-of-Windows-Key \t"     'hycontrol-windows-grid)             '(hui:bind-key #'hycontrol-windows-grid) t)         ;; {C-c @}
@@ -269,8 +269,7 @@ Return t if cutoff, else nil."
 	       (customize-set-variable 'menubar-configuration
 				       (cons 'Hyperbole menubar-configuration))
 	     (setq menubar-configuration
-		   (cons 'Hyperbole menubar-configuration))))
-	 (set-menubar-dirty-flag))
+		   (cons 'Hyperbole menubar-configuration)))))
 	(t (let ((add-before (cond ((and (boundp 'infodock-menubar-type)
 					 (eq infodock-menubar-type 'menubar-infodock))
 				    "Key")
@@ -318,13 +317,11 @@ REBUILD-FLAG is non-nil, in which case the menu is rebuilt."
 		    ;; Delete Hyperbole menu from all menubars.
 		    (hui-menu-remove Hyperbole)
 		    ;;
-		    ;; Remove Hyperbole button comment from future
-		    ;; outgoing mail.
+		    ;; Remove Hyperbole button comment from future outgoing mail.
 		    (if (boundp 'smail:comment) (setq smail:comment nil)))
 		  t]
 		 "----"
-		 ["Activate-Button-at-Point" hui:hbut-current-act
-		  (hbut:is-p (hbut:at-p))]
+		 ["Activate-Button-in-Buffer" hui:hbut-act t]
 		 ["Back-to-Prior-Location" (hhist:remove current-prefix-arg)
 		  (and (boundp '*hhist*) *hhist*)]
 		 '("Button-File"
@@ -398,15 +395,17 @@ REBUILD-FLAG is non-nil, in which case the menu is rebuilt."
 		 '("Global-Button"
 		   :filter hui-menu-global-buttons
 		   ["Create" hui:gbut-create t]
+		   ["Delete" hui:gbut-delete t]
 		   ["Edit"   hui:gbut-modify t]
 		   ["Help"   gbut:help t]
 		   ["Modify" hui:gbut-modify t]
+                   ["Rename" hui:gbut-rename t]
 		   )
 		 '("Implicit-Button"
 		   ["Manual"   (id-info "(hyperbole)Implicit Buttons") t]
 		   "----"
-		   ["Activate-at-Point"    hui:hbut-current-act t]
-		   ["Delete-Type"         (hui:htype-delete 'ibtypes) t]
+		   ["Activate" hui:ibut-act t]
+		   ["Delete-Type" (hui:htype-delete 'ibtypes) t]
 		   ["Help"   hui:hbut-help t]
 		   ["Label"  hui:ibut-label-create t]
 		   ["Rename" hui:ibut-rename t]

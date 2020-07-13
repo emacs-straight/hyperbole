@@ -262,7 +262,7 @@ The final predicate should always be t, for default values, typically of zero.")
     (define-key map "D"     'hycontrol-delete-other-frames)
     (define-key map "f"     'hycontrol-clone-window-to-new-frame)
     (define-key map "F"     'hycontrol-window-to-new-frame)
-    (define-key map "\C-g"  'hycontrol-abort-mode)
+    (define-key map "\C-g"  'hycontrol-abort)
     (define-key map "%"     (lambda () (interactive) (setq hycontrol-arg (hycontrol-frame-percentage-of-screen hycontrol-arg))))
     (define-key map "H"     (lambda () (interactive) (setq hycontrol-arg (hycontrol-frame-height-percentage-of-screen hycontrol-arg))))
     (define-key map "W"     (lambda () (interactive) (setq hycontrol-arg (hycontrol-frame-width-percentage-of-screen hycontrol-arg))))
@@ -277,8 +277,8 @@ The final predicate should always be t, for default values, typically of zero.")
     (define-key map "O"     (lambda () (interactive) (let ((w (selected-window))) (other-frame hycontrol-arg) (if (eq w (selected-window)) (other-frame 1)))))
     ;; Numeric keypad emulation for keyboards that lack one.
     (define-key map "p"     (lambda () (interactive) (hycontrol-virtual-numeric-keypad hycontrol-arg)))
-    (define-key map "q"     'hycontrol-quit-frames-mode)
-    (define-key map "Q"     'hycontrol-quit-frames-mode)
+    (define-key map "q"     'hycontrol-quit)
+    (define-key map "Q"     'hycontrol-quit)
     (define-key map "r"     'raise-frame)
     (define-key map "s"     (lambda () (interactive) (hycontrol-set-frame-height nil (- (frame-height) hycontrol-arg))))
     (define-key map "t"     'hycontrol-enable-windows-mode)
@@ -294,8 +294,8 @@ The final predicate should always be t, for default values, typically of zero.")
     ;; frame iconification under macOS 100-fold, so don't enable it until this issue is resolved.
     ;; (define-key map "^"    'iconify-frame)
     (define-key map "~"     (lambda () (interactive)
-			      (or (hycontrol-frame-swap-buffers) (hycontrol-window-swap-buffers)
-				  (hycontrol-user-error hycontrol-debug "(HyControl): There must be only two windows on screen to swap buffers."))))
+			      (unless (hycontrol-frame-swap-buffers)
+				(hycontrol-user-error hycontrol-debug "(HyControl): There must be at least two frames and the frame to swap to must have only a single window."))))
     (define-key map "-"     'hycontrol-frame-minimize-lines)
     (define-key map "+"     'toggle-frame-maximized)
     (define-key map "="     (lambda () (interactive)
@@ -363,7 +363,7 @@ The final predicate should always be t, for default values, typically of zero.")
     (define-key map "D"     'hycontrol-delete-other-windows)
     (define-key map "f"     'hycontrol-clone-window-to-new-frame)
     (define-key map "F"     'hycontrol-window-to-new-frame)
-    (define-key map "\C-g"  'hycontrol-abort-mode)
+    (define-key map "\C-g"  'hycontrol-abort)
     (define-key map "h"     (lambda () (interactive) (enlarge-window hycontrol-arg)))
 
     ;; Allow frame resizing even when in window control mode because
@@ -378,8 +378,8 @@ The final predicate should always be t, for default values, typically of zero.")
     (define-key map "O"     (lambda () (interactive) (let ((w (selected-window))) (other-frame hycontrol-arg) (if (eq w (selected-window)) (other-frame 1)))))
     ;; Numeric keypad emulation for keyboards that lack one.
     (define-key map "p"     (lambda () (interactive) (hycontrol-virtual-numeric-keypad hycontrol-arg)))
-    (define-key map "q"     'hycontrol-quit-windows-mode)
-    (define-key map "Q"     'hycontrol-quit-windows-mode)
+    (define-key map "q"     'hycontrol-quit)
+    (define-key map "Q"     'hycontrol-quit)
     (define-key map "s"     (lambda () (interactive) (shrink-window hycontrol-arg)))
     (define-key map "t"     'hycontrol-enable-frames-mode)
     (define-key map "u"     'unbury-buffer)
@@ -400,8 +400,8 @@ The final predicate should always be t, for default values, typically of zero.")
     (define-key map "\)"    'hycontrol-restore-frame-configuration)
 
     (define-key map "~"     (lambda () (interactive)
-			      (or (hycontrol-window-swap-buffers) (hycontrol-frame-swap-buffers)
-				  (hycontrol-user-error hycontrol-debug "(HyControl): There must be only two windows on screen to swap buffers."))))
+			      (unless (hycontrol-window-swap-buffers)
+				(hycontrol-user-error hycontrol-debug "(HyControl): There must be precisely two windows within the selected frame to swap buffers."))))
     (define-key map "-"     'hycontrol-window-minimize-lines)
     (define-key map "+"     'hycontrol-window-maximize-lines)
     (define-key map "="     (lambda () (interactive) (and (> (length (window-list)) 1)
@@ -434,7 +434,7 @@ The final predicate should always be t, for default values, typically of zero.")
 	 ;; d/^/D=delete/iconify frame/others - iconify left out due to some bug on macOS (see comment near ^ below)
 	 "a/A=cycle adjust width/height, d/D=delete frame/others, o/O=other win/frame, [/]=create frame, (/)=save/restore fconfig\n"
 	 "@=grid of wins, f/F=clone/move win to new frame, -/+=minimize/maximize frame, ==frames same size, u/b/~=un/bury/swap bufs\n"
-	 "Frame to edges: c=cycle, i/j/k/m=expand/contract, p/num-keypad=move; z/Z=zoom out/in, t=to WINDOWS mode, q=quit")
+	 "Frame to edges: c=cycle, i/j/k/m=expand/contract, p/num-keypad=move; z/Z=zoom out/in, t=to WINDOWS mode, Q=quit")
  "HyControl frames-mode minibuffer prompt string to pass to format.
 Format it with 2 arguments: `prefix-arg' and a plural string indicating if
 `prefix-arg' is not equal to 1.")
@@ -444,7 +444,7 @@ Format it with 2 arguments: `prefix-arg' and a plural string indicating if
    "WINDOWS: (h=heighten, s=shorten, w=widen, n=narrow, arrow=move frame) by %d unit%s, .=clear units\n"
    "a/A=cycle adjust frame width/height, d/D=delete win/others, o/O=other win/frame, [/]=split win atop/sideways, (/)=save/restore wconfig\n"
    "@=grid of wins, f/F=clone/move win to new frame, -/+=minimize/maximize win, ==wins same size, u/b/~=un/bury/swap bufs\n"
-   "Frame to edges: c=cycle, i/j/k/m=expand/contract, p/num-keypad=move; z/Z=zoom out/in, t=to FRAMES mode, q=quit")
+   "Frame to edges: c=cycle, i/j/k/m=expand/contract, p/num-keypad=move; z/Z=zoom out/in, t=to FRAMES mode, Q=quit")
   "HyControl windows-mode minibuffer prompt string to pass to format.
 Format it with 2 arguments: `prefix-arg' and a plural string indicating if
 `prefix-arg' is not equal to 1.")
@@ -849,40 +849,31 @@ is set to 1.  If it is > `hycontrol-maximum-units', it is set to
 (defun hycontrol-disable-modes ()
   "Disable HyControl Frames and Windows modes when active."
   (interactive)
-  (if (or hycontrol-frames-mode hycontrol-windows-mode)
-      (hycontrol-invert-mode-line))
+  (when (or hycontrol-frames-mode hycontrol-windows-mode)
+    (hycontrol-invert-mode-line))
   (hycontrol-frames-mode -1)
   (hycontrol-windows-mode -1))
 
-(defun hycontrol-abort-mode ()
+(defun hycontrol-abort ()
   "Abort HyControl, typically on a press of {C-g}."
   (interactive)
   (hycontrol-disable-modes)
   (keyboard-quit))
 
-(defun hycontrol-quit-frames-mode ()
-  "Globally quit HyControl Frames mode, typically on a press of {q}.
+(defun hycontrol-quit ()
+  "Globally quit HyControl Frames mode, typically on a press of {q}, always on a press of {Q}.
 If in a help buffer where {q} is bound to `quit-window', run that
-instead of quitting HyControl.  Use {Q} to always quit from HyControl."
+instead of quitting HyControl."
   (interactive)
   ;; Allow for quitting from help windows displayed when HyControl is active.
   (if (and (eq last-command-event ?q)
 	   (eq (local-key-binding "q") #'quit-window))
       (call-interactively #'quit-window)
-    (hycontrol-disable-modes)
-    (message "Finished controlling frames")))
-
-(defun hycontrol-quit-windows-mode ()
-  "Globally quit HyControl Windows mode, typically on a press of {q}.
-If in a help buffer where {q} is bound to `quit-window', run that
-instead of quitting HyControl.  Use {Q} to always quit from HyControl."
-  (interactive)
-  ;; Allow for quitting from help windows displayed when HyControl is active.
-  (if (and (eq last-command-event ?q)
-	   (eq (local-key-binding "q") #'quit-window))
-      (call-interactively #'quit-window)
-    (hycontrol-disable-modes)
-    (message "Finished controlling windows")))
+    (when hycontrol-windows-mode
+      (message "Finished controlling windows"))
+    (when hycontrol-frames-mode
+      (message "Finished controlling frames"))
+    (hycontrol-disable-modes)))
 
 ;;;###autoload
 (define-global-minor-mode hycontrol-frames-mode hycontrol-local-frames-mode
@@ -933,26 +924,25 @@ instead of quitting HyControl.  Use {Q} to always quit from HyControl."
       (delete-other-frames)))
 
 (defun hycontrol-frame-swap-buffers ()
-  "Swap the buffers displayed by each of two frames and return t.
-The selected frame may have multiple windows; the selected window is
-used.  The second frame must have a single window only; otherwise, do
-nothing and return nil."
+  "Swap the buffers displayed by each of two visible, most recently used frames and return t.
+The selected window in each frame is used.  If there are not at least
+two visible frames, do nothing and return nil."
   (interactive)
-  (let ((frames (frame-list))
+  (let ((frames (filtered-frame-list #'frame-visible-p))
 	frame2
 	windows2
 	buf1 buf2)
-    (when (= 2 (length frames))
+    (when (>= (length frames) 2)
       (setq frame2 (if (eq (car frames) (selected-frame))
 		       (cadr frames)
 		     (car frames))
 	    windows2 (window-list frame2 'no-mini))
-      (when (= 1 (length windows2))
-	(setq buf1 (window-buffer (selected-window))
-	      buf2 (window-buffer (car windows2)))
-	(set-window-buffer (selected-window) buf2)
-	(set-window-buffer (car windows2) buf1)
-	t))))
+      (setq buf1 (window-buffer (selected-window))
+	    buf2 (window-buffer (car windows2)))
+      (set-window-buffer (selected-window) buf2)
+      (set-window-buffer (car windows2) buf1)
+      (other-frame 1)
+      t)))
 
 ;;; Frame Relocation Commands
 
@@ -1459,7 +1449,7 @@ See documentation of `hycontrol-windows-grid' for further details."
 		(mode-strings (mapcar 'symbol-name (apply #'set:create (mapcar (lambda (buf) (buffer-local-value 'major-mode buf))
 									       (hycontrol-windows-grid-buffer-list))))))
 	   (intern-soft (completing-read "(HyControl Grid Windows): Major mode of buffers to display: "
-					 mode-strings nil t (symbol-name major-mode))))))
+					 mode-strings nil t nil nil (symbol-name major-mode))))))
   (let ((hycontrol-display-buffer-predicate-list `((eq major-mode ',mode))))
     (hycontrol-make-windows-grid arg)))
 
@@ -1593,6 +1583,7 @@ if possible."
 
 (defun hycontrol-window-swap-buffers ()
   "Swap the buffers displayed by each of two windows within the selected frame and return t.
+Swap which window is selected so that the current buffer remains the same.
 Do nothing and return nil if there are not precisely two windows."
   (interactive)
   (let ((windows (window-list nil 'no-mini))
@@ -1602,6 +1593,7 @@ Do nothing and return nil if there are not precisely two windows."
 	    buf2 (window-buffer (cadr windows)))
       (set-window-buffer (car windows) buf2)
       (set-window-buffer (cadr windows) buf1)
+      (other-window 1)
       t)))
 
 ;; Derived from Emacs mouse.el.

@@ -1,3 +1,606 @@
+2020-07-08  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:delete, ibut:delete): Added.
+
+2020-07-08  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (gbut:to): Added to move to a global button file button.
+
+==============================================================================
+V7.1.3 changes ^^^^:
+==============================================================================
+
+2020-07-08  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el: Released 7.1.2.
+
+* hmouse-sh.el (hmouse-drag-region): Added.
+               (hmouse-unshifted-setup): Bound down-mouse-1 to hmouse-drag-region to support
+    clickable Emacs buttons and proper highlighting when dragging mouse-1.  This also allowed
+    for deletion of Info-mode-map mouse-1 bindings.
+
+ 2020-07-05  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibut:to): Fix not handling ibut names by substituting ibut:label-p call for ibut:at-p.
+
+* hui-mini.el (hyperbole-set-key): Like global-set-key but binding is a Hyperbole minibuffer key series.
+              (hui:menu-keys): Added.
+	      (hui:menu-act): Cleared hui:menu-keys.
+              (hui:menu-item): Saved hui:menu-keys.
+	      (hui:get-keys, hui:menu-get-keys): Added.
+  man/hyperbole.texi (Binding Minibuffer Menu Items): Added.
+
+
+* hib-kbd.el (kbd-key:hyperbole-mini-menu-key-p): Handled empty string properly.
+
+* man/hyperbole.texi (Global Buttons): Documented Delete command.
+  hui-menu.el (infodock-hyperbole-menu): Global-Button/Delete - Added.
+  hui-mini.el (hui:menus): Gbut/Delete - Added.
+  hui.el (hui:gbut-delete, hui:hbut-delete, hui:ibut-delete-op): Added.
+  hui.el (hui:hbut-delete-confirm-flag):
+  man/hyperbole.texi (Deletion): Renamed from hui:ebut-delete-confirm-p.
+  hbut.el (hbut:delete, ibut:delete, gbut:delete): Add.
+
+2020-07-04  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (gbut:to): Added to move to a global button file button.
+
+2020-06-28  Bob Weiner  <rsw@gnu.org>
+
+* hload-path.el: Used (setq hyperb:dir (file-truename hyperb:dir)) only after Hyperbole paths
+    have been added to load-path, so that if they are symlinks, the symlink name rather than
+    the truename is used there since the package manage usses the symlink name and may have
+    added such a path already.
+
+* hmouse-drv.el (quit-window): Handled primitive functions when replacing this command.
+
+* hypb.el (hypb:function-symbol-replace): Made a no-op if symbol-function is a non-Lisp primitive.
+    Also, replace single clause 'if' calls with 'when' or 'unless'.
+
+2020-05-09  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (beginning-of-visual-line,
+                     end-of-visual-line,
+                     kill-visual-line): Overrode in kotl-mode-map.
+
+2020-03-11  Bob Weiner  <rsw@gnu.org>
+
+* kotl/klink.el (require 'kcell): Removed, caused recursive require loop.
+
+2020-03-10  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibut:label-set): Updated doc to explain that this sets the text of the implicit button
+    (which is only its label if there is no optional preceding delimited name).
+          (ibut:rename): Changed to only move point to the button but not to edit the buffer when
+    old and new labels are the same.
+
+* hui.el (hui:gibut-create): Added to create global implicit buttons.
+         (hui:gbut-create): Small improvements; with prefix arg, interactively call hui:gibut-create.
+         (hui:gbut-modify): Updated to modify the text of an implicit button and to save the global
+    button file after modification if called interactively.
+
+2020-03-09  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (link-to-texinfo-node): Added first param, file, rather than just using the current
+    buffer filename.
+  hibtypes.el (texinfo-ref): Modified to send nil as first arg to link-to-texinfo-node.
+
+2020-03-08  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:link-possible-types): Added link-to-bookmark, link-to-texinfo-node as possible types.
+
+* hbut.el (ibut:previous-occurrence): Added.
+
+* hibtypes.el (action): Added missing quote in front of variable name arg that caused an error
+    on variable name action buttons.
+
+2020-03-01  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (require): Fixed require of 'help-mode' instead of 'help'.  This fixed 'make bin' compilation.
+
+==============================================================================
+V7.1.2 changes ^^^^:
+==============================================================================
+
+* Published 7.1.1 test release.
+
+* hypb.el (hypb:display-file-with-logo): Modified to not move point or do anything other than use view-mode
+    to display the file buffer if it exists prior to this call.  This allows using {C-h h d d} to jump back
+    to the same point in the DEMO.  The FILE argument is now required.
+
+* hbut (hbut:syntax-table, hbut:modify-syntax): Added to modify <> and {} syntactic character pairs for use
+    with implicit button activations, notably Action and Key Series.
+       (ibut:label-p): Used hbut:syntax-table.
+       (require): Added elisp-mode for syntax table support.
+  hyperbole.el (hyperb:init): Added hbut:modify-syntax call.
+
+* DEMO (Sample Explicit Buttons and Types): Removed email example since it wasn't very good and that
+    code has not been  updated in a long time.
+
+* hsettings.el (hyperbole-web-search): Fixed to encode URL special characters including spaces.
+    This fixed the 'electric car' explicit button example in the DEMO.
+
+* hib-kbd.el (kbd-key:binding, kbd-key:kbd, kbd-key:parse): Added and used to prevent (kbd) calls from
+    improperly parsing "<[td]>" as an Emacs event and as a result removing the angle brackets.
+
+* DEMO (Global Buttons): Added a new example of a labeled global implicit button displaying a todo file.
+
+* hpath.el (hpath:substitute-match-value): Added and called in hpath:substitute-value.  This function
+    was hypb:replace-match-string in previous Hyperbole releases but now is only used by this one function.
+
+* man/hyperbole.texi (Glossary):
+  hibtypes.el (action):
+  hib-kbd.el (kbd-key):
+  hbut.el (hbut:max-len): Renamed variable from ebut:max-len since applies to all Hyperbole button types now.
+    Increased to 200; allowed for 0 value which means no limit.  Locally set to 0 in Action implicit
+    button type.
+          (hbut:max-len): Added this inline function to retrieve the proper value.
+
+* hibtypes.el (action):
+  hact.el (actype:act): Added support for special forms like: 'progn', 'and', etc.
+
+2020-02-29  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:find): Fixed bug where hpath:to-markup-buffer with point in the source link buffer
+    rather than the referent.
+
+* hib-kbd.el (kbd-key:key-series-to-events):
+             (kbd-key:normalize): Rewrote and added support for <TAB>, <BS>, C-M-, non-ASCII CONTROL and
+    META key codes, keypad keys, function keys, and these modifier keys: CONTROL, ALT, HYPER, META, SUPER
+    and SHIFT (when whitespace separated).
+             (kbd-key:named-key-list, kbd-key:named-key-regexp, kbd-key:modified-key-regexp): Added and
+    used in kbd-key:normalize.
+             (kbd-key:key-and-arguments): Updated to handle that key-series now have multi-character modifier
+    keys by adding a seq-position call.
+
+* hypb.el (hypb:replace-match-string): Replaced all logic other than error generation with Emacs function,
+    replace-regexp-in-string.
+
+2020-02-27  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:ebut-delete-op):
+  hactypes.el (link-to-ebut): Fixed ebut:get call to send file as 3rd arg, not 2nd; now link-to-ebuts work.
+
+2020-02-26  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-add): Removed conditional on entry-level-len when nil that was causing an error during
+    adding of a record.
+
+==============================================================================
+V7.1.1 test release changes ^^^^:
+==============================================================================
+
+2020-02-23  Bob Weiner  <rsw@gnu.org>
+
+* Published 7.1.0 test release.
+
+* hui-menu.el (infodock-hyperbole-menu): Changed 'Activate-Button-at-Point' to 'Activate-Button-in-Buffer'
+    and made prompt for button if not on one.  This synchronizes it with the top-level 'Act' command in
+    the Hyperbole minibuffer menu.
+* man/hyperbole.texi (Menus): Updated to reflect the above change.
+                     (Modeline Clicks and Drags): Added moving frames with bottommost modeline drags.
+
+* hui.el: (hui:ebut-act, hui:ibut-act): Changed body to a call of hui:hbut-operate.
+          (hui:hbut-operate): Changed to call actype:act to perform operation.  Also changed to a private
+    function.
+  hbut.el (hbut:act): Activated only when a valid Hyperbole button symbol is given; improved error checking.
+
+* hbut.el:
+  hui.el: Changed doc strings to imperative form.
+
+* hui-menu.el (infodock-hyperbole-menu): Updated Implicit-Button/Activate (renamed from Activate-at-Point).
+  hui-mini.el (hui:menus): Updated Ibut/Act.
+  hui.el (hui:ibut-act): Added to better mirror hui:ebut-act and replaced Ibut/Act menu items with this.
+
+* hui.el (hui:hbut-act):
+  hbut.el (hbut:act): Added interactive completion of in-buffer ebuts and ibuts.
+
+* man/hyperbole.texi (Questions and Answers): Rewrote Org-mode question a bit to account for
+    improved integration.
+
+* hbut.el (ibut:act): Added to interactively prompt for and activate labeled implicit buttons.
+
+2020-02-22  Bob Weiner  <rsw@gnu.org>
+
+* hui-em-but.el (after-init-time): Added setting of hyrolo-highlight-face used in HyRolo matches
+   so text is highlighted and readable by default (foreground and background colors of matched
+   text has been the same for some unknown reason.  This may affect user customizations however.
+
+* man/hyperbole.texi (Smart Key - Bookmark Mode): Added.
+
+* hpath.el (hpath:file-line-and-column): Added.
+  hactypes.el (link-to-file): Rewrote to use above function, allow for :line:column suffixes and
+    trigger error if path argument is invalid.
+
+* hui-mouse.el (hkey-alist): Fixed bookmark-bmenu-mode so Assist Key shows what Action Key does
+    rather than generic help.
+
+* hbut.el (ebut:operate): Appended any instance-flag string to the button label; this fixed
+    error where point moved to the wrong location when creating a new numbered instance of
+    a particular button label.  Also, fixed so any existing text following point or
+    highlighted as region is used in button labels, rather than new text being inserted.
+          (ebut:delimit): Changed instance-str to instance-flag since not always a string.
+
+2020-02-17  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:mswindows-to-posix): Made '\\' by itself in Windows an invalid path.
+
+* hib-kbd.el (kbd-key:key-series-to-events): Added for use in testing and called from kbd-key:act.
+
+==============================================================================
+V7.1.0 test release changes ^^^^:
+==============================================================================
+
+2020-02-17  Bob Weiner  <rsw@gnu.org>
+
+* Published 7.0.9 test release.
+
+* hpath.el (hpath:substitute-value): Updated to handle Texinfo @-quoted $@{hyperb:dir@} variable substitution.
+
+* hypb.el (hypb:replace-match-string): Minor code updates.
+
+2020-02-16  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (grep-msg): Fixed handling files names with spaces followed by a null character rather than a
+    colon as a separator.  Note that the null is set to visibly display as a colon in Emacs.
+  hpath.el (hpath:tramp-file-name-regexp): Don't match if a control char is found, notably a null (ASCII 0).
+    These can appear in grep expressions where filenames followed by colons may be confused as remote paths.
+
+* man/hyperbole.texi (Swapping Buffers):
+  DEMO (Swapping Buffers): Added swapping buffers between frames.
+  hycontrol.el (hycontrol-window-swap-buffers): Fixed so current buffer remains the same but selected window
+    changes.
+               (hycontrol-frame-swap-buffers): Fixed so current buffer remains the same but selected frame
+    changes.  Also made this work anytime there are two or more frames regardless of how many windows in each.
+               (hycontrol-frames-mode-map):  {~} removed secondary call of hycontrol-window-swap-buffers.
+               (hycontrol-windows-mode-map): {~} removed secondary call of hycontrol-frame-swap-buffers.
+
+* man/hyperbole.texi (Renaming, Global Key Bindings):
+  hyperbole.el (hkey-initialize):
+  hui-mini.el (hui:menus):
+  hui-menu.el (hui-menu-key-bindings): Removed {C-c C-r} ebut rename binding since conflicts with bindings
+    commonly made in some modes.  Use menu instead or choose a personal binding.
+
+* hui.el (hui:hbut-help): Improved to flash unnamed implicit buttons with lbl-start and lbl-end properties.
+
+* hyperbole.el (hyperb:autoloads-exist-p, hyperb:maybe-generate-autoloads, hyperb:generate-autoloads):
+    Added and called from hyperb:init when initializing Hyperbole to generate auto-autoload files when
+    running from a non-packaged source download of Hyperbole.
+
+* hycontrol.el (hycontrol-quit-frames-mode):
+  man/hyperbole.texi (HyControl): Added doc of {q} vs. {Q}.
+	       (hycontrol-quit): Renamed from hycontrol-quit-frames-mode.
+               (hycontrol-quit-windows-mode): Deleted, created one unified quit command.
+	       (hycontrol-abort): Renamed from hycontrol-abort-mode.
+
+* hui-window.el (hmouse-alist-add-window-handlers): Added 'not a modeline depress' test for the
+    clause that handles drags from a window to a modeline, since otherwise it will catch drags from a
+    modeline that may move a frame.
+                (hmouse-drag-p): Added to test whether absolute depress and release positions differ.
+
+* hui-menu.el (hyperbole-menubar-menu): Removed set-menubar-dirty-flag call.
+              (hmouse-release-left-edge, hmouse-release-right-edge): Removed XEmacs code.
+
+* man/hkey-help.txt:
+  hmouse-drv.el (action-key-depress, assist-key-depress):
+  hui-window.el (action-key-modeline, assist-key-modeline):
+     Modeline window resizing is now handled in action/assist-key-depress via a call to
+     mouse-drag-mode-line, providing live visual feedback.  The same function is also overloaded in
+     hmouse-drv.el to allow repositioning frames that have minibuffer windows by dragging from a
+     bottommost modeline if the frame has a non-nil 'drag-with-mode-line' parameter.
+
+  man/hyperbole.texi, DEMO (Moving Frames): Added this new section.
+
+2020-02-15  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-sh.el (hmouse-unshifted-setup): Disabled `mouse-1-click-follows-link' since it doesn't work
+    with Hyperbole's down and up bindings.
+
+* hui-window.el (hmouse-drag-outside-all-windows): Removed errant backquote typo that was causing
+    any Action Mouse Key click to create a new frame.
+
+* hargs.el (hargs:iform-read): Removed XEmacs setting and replaced with one-time transient-mark-mode
+    setting to keep region enabled when '_' is included in interactive specs.
+
+* DEMO: Removed {} from partial key series that we don't want new automated button tester to activate.
+
+* hycontrol.el (hycontrol-windows-grid-by-major-mode): Changed initial-input to default value.
+
+* hmouse-tag.el (smart-lisp-bound-symbol-def): Documented.
+
+* hact.el (htype:create): Added definition-name property used by
+    find-function-search-for-symbol so now Elisp stack frame and other function
+    calls that look like actypes::<action-type> and ibtypes::<implicit-button-type> jump to
+    the associated defact and defib definitions.
+
+* hbut.el (htype:create): Generalized definition-name property used for tag lookup on names like,
+    ibtypes::grep-msg, which looks for the name used in the defib call, grep-msg.  This had
+    previously been done for actypes.
+
+* hpath.el (hpath:posix-to-mswindows-separators):
+           (hpath:mswindows-to-posix-separators)
+	   (hpath:abbreviate-file-name): Added and called from the above functions.  Same as
+    `abbreviate-file-name' but disables tramp-mode.  This prevents improper processing of hargs
+     with colons in them, e.g. `actypes::link-to-file'."
+
+* hbut.el (ibut:at-p): Fixed that button category/type was not set if KEY-ONLY flag was given.
+
+* hmouse-drv.el (hkey-help): Fixed listing of command executed when prefixed with a funcall.
+
+* hbut.el (hbut:report): Improved doc string.
+
+* hui.el (hui:ebut-act):
+  hsys-org.el (hsys-org-hbut-activate-p):
+  hbut.el (hbut:act): Simplified most common call and made hbut optional, defaulting to 'hbut:current.
+
+2020-02-13  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:cache-mswindows-mount-points): If a network share with a domain
+    name, also add an entry WITHOUT the  domain name to the mount points table
+    since Windows paths often omit the domain.
+           (hpath:mswindows-to-posix-separators): Rewrote to better handle
+    converting Windows UNC paths to Posix mount points.
+           (hpath:directory-expand-alist): Renamed to hpath:posix-mount-point-to-mswindows-alist
+           (hpath:mswindows-path-posix-mount-alist): Removed, unused.
+
+2020-02-12  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-verify): Removed check of (stringp hyrolo-match-regexp) since may have
+    done a logical search which does not set that regexp.  This resolved an error when
+    using {q} to quit from the hyrolo match buffer.
+
+* hyrolo-logic.el (hyrolo-map-logic): Fixed function call.
+    Changed: (match-string-no-properties hyrolo-entry-regexp
+         To: (match-string-no-properties hyrolo-entry-group-number)
+
+* hsys-org.el (inhibit-hsys-org): Added customization to allow disabling all Smart Key support when in an
+    Org mode and documented everywhere.
+              (hsys-org-hbut-activate-p): Defined and added to org-metareturn-hook so local binding
+    of M-RET in org-mode activates Hyperbole buttons (doesn't run full set of Action Key actions).
+    (org-link): Updated to utilize newer org-link-open-from-string function when available.
+    (hsys-org-link-at-p): Updated to utilize newer org-link-any-re variable when available.
+
+2020-02-09  Bob Weiner  <rsw@gnu.org>
+
+* DEMO (Windows Grid): Used {Q} to ensure quit from HyControl and not from the DEMO (which is in Help mode).
+
+* hypb.el (hypb:mark-object, hypb:object-p): Added these to give strings and symbols a hyperbole property.
+  hpath.el (hpath:relative-to, hpath:absolute-to): Ignore any string with a hyperbole property.
+    Prevents removal of trailing whitespace from normalized key series, for example.
+
+* hib-kbd.el (kbd-key:hyperbole-mini-menu-key-p): Optimized to compute kbd-key:mini-menu-key only once.
+             (kbd-key): Allow for double-quoted key series, i.e. "{C-x o}".
+
+2020-02-08  Bob Weiner  <rsw@gnu.org>
+
+* hib-kbd.el (kbd-key:normalize): Prevent multiple normalizations which can strip desired RET and SPC characters.
+
+* hyrolo-logic.el (hyrolo-map-logic):
+                  (hyrolo-kill):
+  hyrolo.el (hyrolo-add):
+	    (hyrolo-grep-file):
+            (hyrolo-to):
+            (hyrolo-to-entry-end): Fixed bug that caused addition of new entries at the end of the hyrolo file,
+    rather than in sorted order.  Also caused hyrolo-logic functions to fail.
+    The issue was that 'hyrolo-entry-regexp' had been updated to include the whitespace following the entry prefix
+    and this whitespace was improperly included when computing the hierarchy level of the entry.  Also, changed
+    'curr-entry-level' parameter from a string to an integer to reduce length comparisons.
+            (hyrolo-r-not): Fixed typo 'path' should be 'pat'.
+
+2020-02-06  Bob Weiner  <rsw@gnu.org>
+
+* hui-em-but.el (hproperty:set-face-after-init): Conditionalized settings to avoid overriding customizations.
+                (hproperty:item-highlight-color): Fixed initialization error.
+                (hproperty:set-flash-color): Ensured not setting to nil values.
+                (hproperty:flash-face, hproperty:highlight-face): Converted to defcustom variables.
+
+2020-02-02  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-drag-to, hkey-drag-item):
+  hui-window.el (hmouse-drag-item-to-display):
+                (hmouse-at-item-p): Fixed to work with ace-window when Action Key is not used.
+
+* hmouse-drv.el (hkey-throw): Rewrote to throw active (highlighted) region if any.
+                (hkey-insert-region): Added.
+  hui-window.el (hmouse-pulse-region): Added.
+
+2020-02-01  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (smart-imenu-item-p): Fixed to handle invalid marker positions after buffer changes
+    when imenu-auto-rescan is false.
+
+* hmouse-drv.el (hkey-execute, hkey-help): Simplified with cddr and cadr calls.
+
+2020-01-31  Bob Weiner  <rsw@gnu.org>
+
+* hui-em-but.el (hproperty:set-flash-color):
+                (hproperty:set-face-after-init): Resolved issue that explicit buttons were not
+    being highlighted upon load and that explicit and named implicit buttons were not flashing
+    properly when activated due to improper face settings.
+
+2020-01-29  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:markup-link-anchor-regexp): Prevent matches to files like: ".#a.org"
+
+* hui-em-but.el (hproperty:but-flash, hproperty:but-flash-time): Revert this value back to 1000
+    since users may have previously customized values that loading Hyperbole does not override.
+    Revert logic to using this to compute number of fractional seconds to flash a button.  Prior
+    change caused a mistaken wait of 1000 seconds since user customization value was not replaced
+    by loading Hyperbole
+
+2020-01-25  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (link-to-ibut): Handled null 'defaults' when called interactively; needed when
+    interactively creating a link-to-ibut and there is no ibut at point.  Also improved
+    error message when a link-to-ibut is invalid, i.e. has a null button reference.
+  hbut.el (ibut:to): Handled null lbl-key arg.
+
+2020-01-21  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibut:at-p): Fixed to recognize non-labeled ibuttons in programming modes.
+
+* man/hyperbole.texi (Glossary): Added Action Button, Elink, Ilink, Glink
+    definitions to the glossary.
+
+* Makefile (GNUFTP): Added --replace option in case need to quickly replace a
+    release when first uploading it.
+
+==============================================================================
+V7.0.9 test release changes ^^^^:
+==============================================================================
+
+2020-01-20  Bob Weiner  <rsw@gnu.org>
+
+* Published 7.0.8 test release.
+
+* hib-social.el (social-reference): Fixed handling of social refs without any service name,
+    e.g. #gnu.
+
+* hibtypes.el (action): 'actype::' should be 'actypes::; action variable args were quoted
+    twice so did not work.
+
+* hpath.el: Fixed to handle in-file HTML-like link references.
+     (hpath:is-p): Allowed for URL "file://" prefix.
+     (hpath:markup-link-anchor-regexp): Allowed for anchor only paths, no pathname.
+     (hpath:find): Use buffer-file-name if pathname is empty.
+     (hpath:to-markup-anchor): Prevent string-match error if buffer-file-name is null.
+  hbut.el (hbut:outside-comment-p): Ignore comment status for html-like markup
+    modes that register as programming modes.  This fixes ibuttons not being
+    recognized, notably in-file anchor links.
+
+* Makefile (ftp): Added missing gzipped tar file dependency
+  hui-select.el: Removed kotl-mode require as it caused an infinite loading cycle
+
+2020-01-07  Bob Weiner  <rsw@gnu.org>
+
+* hui-mini.el (hui:menus): Added Gbut/Rename.
+  hui-menu.el (infodock-hyperbole-menu): Added Global-Button/Rename.
+
+2020-01-06  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:gbut-modify): Changed hargs:read-match to use 'gbut' type
+    rather than 'ebut'.
+         (hui:gbut-rename): Added.
+
+2020-01-05  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:key, ebut:key, ibut:key, hbut:rename): Added.
+
+* hui.el (hui:hbut-rename, hui:hbut-operate): Added.
+         (hui:hbut-act): Rewrote to use hui:hbut-operate.
+
+2020-01-04  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (pathname):
+  man/hyperbole.texi (Implicit Button Types):
+  hpath.el (hpath:find): Documented allowable Emacs Lisp and env. variable syntax.
+
+2019-12-29  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:posix-to-mswindows-separators):
+           (hpath:mswindows-to-posix-separators):
+           (hpath:directory-expand-alist): Corrected use of this variable by switching
+    it to hpath:posix-to-mswindows-separators.
+
+2019-12-28  Bob Weiner  <rsw@gnu.org>
+
+* hui-select.el (hui-select-set-region): Resolved markup-pair selection when selecting
+    the whole buffer.
+
+* hibtypes.el (action): Ignore / don't match to unbound symbols.
+
+2019-12-18  Bob Weiner  <rsw@gnu.org>
+
+* hui-select.el (hui-select-markup-modes):
+  man/hyperbole.texi (Smart Key Thing Selection): Added XML mode support.
+
+2019-10-13  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (action:path-args-rel): Limited to file-name-directory call to 'loc' value.
+  hpath.el (hpath:find): Added file-name-directory call wrapped around 'loc' value;
+    otherwise, default-directory could be set to a filename.
+
+* hpath.el (hpath:absolute-to): Resolved bug that trimmed whitespace off non-path args,
+    e.g. key series, thereby removing trailing C-m keys.
+
+2019-10-06  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (hkey-alist): Added support for selection of bookmarks from bookmark menu list.
+
+2019-10-05  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (link-to-bookmark): Added to link to an Emacs bookmark, similar to a
+    global button with a link action type.
+  man/hyperbole.texi (Action Types): Added link-to-bookmark.
+
+* hpath.el (hpath:cache-mswindows-mount-points): Changed mapcar to mapc since
+    not using return value.
+    (hpath:display-buffer-function, hpath:display-path-function,
+     hpath:display-where-function): Added.
+    (hpath:display-buffer): Added call to hpath:display-buffer-function.
+    (hpath:find): Added call to hpath:display-path-function.
+
+2019-10-04  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): If anchor contains both a dash and a space, then
+    don't convert dashes to spaces.
+
+* hmouse-drv.el (hkey-help): Added display of ibtype or actype (for explicit buttons).
+
+* hact.el (actype:def-symbol):
+* hbut.el (ibtype:def-symbol): Improved doc strings.
+          (htype:def-symbol): Added.
+
+==============================================================================
+V7.0.8 test release changes ^^^^:
+==============================================================================
+
+2019-10-01  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (htype:delete): Removed improper quote in (fboundp 'sym) call.
+          (htype:symbol): Reverted to prior version which properly creates
+    previously undefined Elisp symbols, thereby fixing htype:create.
+          (actype:create): Made symtable:add call part of compile-time macro value.
+
+2019-09-24  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (ELC_COMPILE): Added missing kprop-em.elc.
+
+2019-09-23  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:link-directly): Called symtable:actype-p replacing invalid
+    htype:actype-p call.
+
+* hmouse-drv.el (hkey-buffer-move): Wrapped (require 'windmove) in eval-and-compile
+    to remove a byte-compiler warning.
+
+2019-09-22  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (action:path-args-rel): Added file-name-directory call so always
+    sends a directory as the second argument, preventing off-by-one level
+    of relative directory generation.
+
+2019-09-19  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibtype:def-symbol): Added.
+
+* hact.el (actype:def-symbol): Change mislabeled 'sym-name' to 'name'.
+
+2019-09-18  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:top-cells): Removed (kvspec:activate)
+    which was using the unchanged viewspec that improperly set the view.
+
+* hibtypes.el (action): Updated to handle boolean function results.
+  hactypes.el (display-boolean): Added to display the result of Action ibtypes
+    boolean function calls.
+  man/hyperbole.texi (Action Buttons): Added paragraph on boolean
+    predicate result display.
+
+==============================================================================
+V7.0.7 test release changes ^^^^:
+==============================================================================
+
 2019-09-17  Bob Weiner  <rsw@gnu.org>
 
 * hui.el (hui:action):
@@ -94,14 +697,6 @@
 * hmouse-tag.el (smart-emacs-lisp-mode-p): Added change-log-mode so
     Elisp symbols there are matched.
 
-* hact.el (actype:create): Added definition-name property used by
-    find-function-search-for-symbol so now Elisp stack frame function
-    calls that look like actypes::<action-type> and
-    ibtypes::<implicit-button-type> jump to the associated defact and
-    defib definitions.
-
-    actypes::link-to-file
-
 * hmouse-tag.el (smart-lisp-at-definition-p): Don't match to 'def' alone.
 
 2019-09-10  Bob Weiner  <rsw@gnu.org>
@@ -181,6 +776,10 @@
 
 * DEMO: Changed most 'click' uses in DEMO to 'press'.
 
+==============================================================================
+V7.0.6 test release changes ^^^^:
+==============================================================================
+
 * man/hyperbole.texi (Implicit Button Type Summaries): Changed to Implicit
     Button Types.
                      (Implicit Button Type): Changed to Implicit Button
@@ -199,7 +798,7 @@
    how to run test code either from .el or .elc files.
 
 ==============================================================================
-V7.0.5 changes ^^^^:
+V7.0.5 test release changes ^^^^:
 ==============================================================================
 
 2019-08-25  Bob Weiner  <rsw@gnu.org>
@@ -279,7 +878,7 @@ V7.0.5 changes ^^^^:
     change the 3rd section and production releases change the second.
 
 ==============================================================================
-V7.0.4 changes ^^^^:
+V7.0.4 test release changes ^^^^:
 ==============================================================================
 
 2019-08-06  Bob Weiner  <rsw@gnu.org>
@@ -287,7 +886,7 @@ V7.0.4 changes ^^^^:
 * hyrolo-menu.el (infodock-hyrolo-menu): Fixed Edit-Rolo to call a function rather than an sexp.
 
 ==============================================================================
-V7.0.3b changes ^^^^:
+V7.0.3b test release changes ^^^^:
 ==============================================================================
 
 2019-08-05  Bob Weiner  <rsw@gnu.org>
@@ -567,7 +1166,7 @@ for expanded Org mode reference handling.
     support for helm-pydoc buffers.
 
 ==============================================================================
-V7.0.3a changes ^^^^:
+V7.0.3a test release changes ^^^^:
 ==============================================================================
 
 2019-05-11  Bob Weiner  <rsw@gnu.org>
@@ -4516,7 +5115,7 @@ V5.10 changes ^^^^:
     and used in horizontal drag action; removed window-min-height setting.
                 (hmouse-vertical-assist-drag):
                 (hmouse-horizontal-assist): Renamed to hmouse-horizontal-assist-drag.
-		(hmouse-horizontal): Delted.
+		(hmouse-horizontal): Deleted.
 
 ==============================================================================
 V5.09 changes ^^^^:

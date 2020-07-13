@@ -159,8 +159,9 @@ package to display search results."
     (if (assoc service-name hyperbole-web-search-alist)
 	(let ((browse-url-browser-function
 	       hyperbole-web-search-browser-function))
-	  (browse-url (format (cdr (assoc service-name hyperbole-web-search-alist))
-			      search-term)))
+	  (browse-url
+	   (format (cdr (assoc service-name hyperbole-web-search-alist))
+		   (browse-url-url-encode-chars search-term "[*\"()',=;?% ]"))))
       (user-error "(Hyperbole): Invalid web search service `%s'" service-name))))
 
 (defcustom inhibit-hyperbole-messaging t
@@ -175,7 +176,7 @@ this variable to nil by adding (hyperbole-toggle-messaging 1)
 to your personal Emacs initialization file, prior to loading
 Hyperbole, and then restart Emacs."
   :type 'boolean
-  :initialize 'custom-initialize-set
+  :initialize #'custom-initialize-set
   :set (lambda (symbol value)
 	 ;; Invert value to produce ARG for hyperbole-toggle-messaging.
 	 (hyperbole-toggle-messaging (if value 0 1)))
@@ -209,7 +210,7 @@ The first character of each web-service-name must be unique.
 This custom option is used in the Hyperbole Find/Web menu where
 the %s in the url-with-%s-parameter is replaced with an interactively
 obtained search string."
-  :initialize 'custom-initialize-default
+  :initialize #'custom-initialize-default
   :set (lambda (_option value)
 	 (setq hyperbole-web-search-alist value)
 	 (hyperbole-update-menus))

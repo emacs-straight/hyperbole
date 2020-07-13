@@ -149,6 +149,9 @@ This permits the Smart Keys to behave as paste keys.")
 	action-key-release-args nil
 	action-key-release-window nil
 	action-key-release-prev-point nil)
+  (when (and (not assist-key-depressed-flag)
+	     (hmouse-modeline-event-p action-key-depress-args))
+    (mouse-drag-mode-line action-key-depress-args))
   (run-hooks 'action-key-depress-hook))
 
 (defun assist-key-depress (&rest args)
@@ -166,6 +169,9 @@ This permits the Smart Keys to behave as paste keys.")
 	assist-key-release-args nil
 	assist-key-release-window nil
 	assist-key-release-prev-point nil)
+  (when (and (not action-key-depressed-flag)
+	     (hmouse-modeline-event-p assist-key-depress-args))
+    (mouse-drag-mode-line assist-key-depress-args))
   (run-hooks 'assist-key-depress-hook))
 
 (defun action-key-depress-emacs (event)
@@ -366,7 +372,7 @@ magic happen."
   (push '(?i hkey-drag-item "Hyperbole: Drag Item") aw-dispatch-alist)
   ;; Ace-window includes ?m as the swap windows key, so it is not added here.
   (push '(?r hkey-replace "Hyperbole: Replace Here") aw-dispatch-alist)
-  (push '(?t hkey-throw   "Hyperbole: Throw To") aw-dispatch-alist)
+  (push '(?t hkey-throw   "Hyperbole: Throw") aw-dispatch-alist)
   (ace-window-display-mode 1))
 
 ;;;###autoload
@@ -378,8 +384,8 @@ Optional prefix arg non-nil means emulate Assist Key rather than the
 Action Key.
 
 Works only when running under a window system, not from a dumb terminal."
-  ;; Note: Cannot add start-window as first parameter to this function
-  ;; because it is called like many other functions herein with a
+  ;; Note: Cannot add free variable start-window as first parameter to this
+  ;; function because it is called like many other functions herein with a
   ;; single release-window argument by 'hmouse-choose-windows'.
 
   ;; Cancel any partial drag that may have been recorded.
@@ -437,7 +443,7 @@ Works only when running under a window system, not from a dumb terminal."
 	at-item-flag)
     (unless (window-live-p start-window)
       (setq start-window (selected-window)))
-    (cond ((and (setq at-item-flag (hmouse-at-item-p))
+    (cond ((and (setq at-item-flag (hmouse-at-item-p start-window))
 		(window-live-p release-window))
 	   (hkey-drag release-window)
 	   ;; Leave release-window selected
@@ -446,7 +452,7 @@ Works only when running under a window system, not from a dumb terminal."
 	  (at-item-flag
 	   (error "(hkey-drag-item): No listing item at point"))
 	  (t ;; No item at point or selected release is invalid
-	   (error "(hkey-drag-item): Invalid final window, %s" release-window)))))
+	   (error "(hkey-drag-item): No item at point or invalid final window, %s" release-window)))))
 
 ;;;###autoload
 (defun hkey-drag-to (release-window)
@@ -470,7 +476,7 @@ Works only when running under a window system, not from a dumb terminal."
 			  action-key-depress-window))))
     (unless (window-live-p start-window)
       (setq start-window (selected-window)))
-    (if (and (hmouse-at-item-p) (window-live-p release-window))
+    (if (and (hmouse-at-item-p start-window) (window-live-p release-window))
 	(progn (hkey-drag release-window)
 	       ;; Leave release-window selected
 	       (when (window-live-p release-window)
@@ -525,23 +531,25 @@ Leave TO-WINDOW as the selected window."
 ;;     (display-window-until release-window (current-buffer))))
 
 ;;;###autoload
-(defun hkey-throw (release-window)
-  "Throw either a displayable item at point or the current buffer for display in RELEASE-WINDOW.
+(defun hkey-throw (release-window &optional throw-region-flag)
+  "Throw one of: the active (highlighted) region, a displayable item at point or the current buffer for display in RELEASE-WINDOW.
+With optional prefix arg THROW-REGION-FLAG, throw the current region
+even if not active.
 The selected window does not change."
-  (interactive
-   (list (let ((mode-line-text (concat " Ace - " (nth 2 (assq ?t aw-dispatch-alist)))))
-	   (aw-select mode-line-text))))
+  (interactive (list (ace-window nil) current-prefix-arg))
   (let ((depress-frame (selected-frame))
 	(display-delay (if (boundp 'temp-display-delay)
 			   temp-display-delay
 			 0.5)))
-    (if (cadr (assq major-mode hmouse-drag-item-mode-forms))
-	;; Throw the item at point
+	;; Throw either the region or the item at point and keep selected-window
 	(let ((action-key-depress-window (selected-window))
 	      (action-key-release-window release-window)
 	      (action-key-depress-args))
 	  (hypb:save-selected-window-and-input-focus
-	   (hmouse-item-to-window)
+	   (unless (hkey-insert-region action-key-depress-window release-window throw-region-flag display-delay)
+	     (if (cadr (assq major-mode hmouse-drag-item-mode-forms))
+		 (hmouse-item-to-window)
+	       (set-window-buffer release-window (current-buffer))))
 	   (unless (eq depress-frame (window-frame release-window))
 	     ;; Force redisplay or item buffer won't be displayed here.
 	     (redisplay t)
@@ -549,19 +557,35 @@ The selected window does not change."
 	     ;; input-focus is returned to the depress-frame.
 	     (raise-frame (window-frame release-window))
 	     ;; Don't use sit-for here because it can be interrupted early.
-	     (sleep-for display-delay)
-	     )))
-      ;; Throw the current buffer
-      (set-window-buffer release-window (current-buffer))
-      (unless (eq depress-frame (window-frame release-window))
-	;; Force redisplay or item buffer won't be displayed here.
-	(redisplay t)
-	;; Show the frame thrown to before it is covered when
-	;; input-focus is returned to the depress-frame.
-	(raise-frame (window-frame release-window))
-	;; Don't use sit-for here because it can be interrupted early.
-	(sleep-for display-delay)
-	(select-frame-set-input-focus depress-frame)))))
+	     (sleep-for display-delay))))))
+
+(defun hkey-insert-region (depress-window release-window throw-region-flag display-delay)
+  "Throw any active (highlighted) region from DEPRESS-WINDOW to RELEASE-WINDOW.
+If THROW-REGION-FLAG is non-nil, the region is thrown even if not
+active, unless the buffers in DEPRESS-WINDOW and RELEASE-WINDOW are
+the same, then the region is not thrown.
+Highlight the thrown region for DISPLAY-DELAY seconds.
+
+Return t if thrown, else nil."
+  (when (or (use-region-p) throw-region-flag)
+    (if (> (region-end) (region-beginning))
+	;; Non-empty region
+	(if (eq (window-buffer depress-window) (window-buffer release-window))
+	    (user-error "(hkey-insert-region): Can't throw region from and to the same buffer")
+	  (let* ((orig-buf (current-buffer))
+		 (orig-start (region-beginning))
+		 (orig-end (region-end))
+		 (len (- orig-end orig-start))
+		 insert-start
+		 insert-end)
+	    (select-window release-window 'mark-for-redisplay)
+	    (setq insert-start (point)
+		  insert-end (+ insert-start len))
+	    (insert-buffer-substring orig-buf orig-start orig-end)
+	    (hmouse-pulse-region insert-start insert-end)
+	    (sit-for display-delay)
+	    t))
+      (user-error "(hkey-insert-region): Can't throw an empty region"))))
 
 ;;;###autoload
 (defun hkey-buffer-to (from-window to-window)
@@ -723,12 +747,53 @@ the given direction."
 	   (_ (error "(hkey-buffer-move): Invalid movement direction, '%s'" direction))))
 	(hkey-swap-buffers w1 (selected-window)))
     ;; ... but if not available, use the Emacs builtin windmove package.
-    (require 'windmove)
+    (eval-and-compile
+      (require 'windmove))
     (windmove-do-window-select direction arg)))
 
 ;;; ************************************************************************
 ;;; Public support functions
 ;;; ************************************************************************
+
+;; Next function is redefined from Emacs mouse.el.  The standard
+;; version allows moving frames by dragging a bottommost modeline with
+;; mouse button1 but only if there is no minibuffer window (a rare
+;; configuration) This limitation is so that the minibuffer window 
+;; can be manually resized.
+;;
+;; Hyperbole's mouse buttons do not support resizing the minibuffer
+;; window so instead this function is modified to allow moving frames
+;; that have a minibuffer window.
+;;
+;; The way this function was written does not allow hooking into it,
+;; forcing inclusion of a modified version here.
+(defun mouse-drag-mode-line (start-event)
+  "Change the height of a window by dragging on its mode line.
+START-EVENT is the starting mouse event of the drag action.
+
+If the drag happens in a mode line on the bottom of a frame and
+that frame's `drag-with-mode-line' parameter is non-nil, drag the
+frame instead."
+  (interactive "e")
+  (let* ((start (event-start start-event))
+	 (window (posn-window start))
+         (frame (window-frame window)))
+    (cond
+     ((not (window-live-p window)))
+     ((or (not (window-at-side-p window 'bottom))
+          ;; Allow resizing the minibuffer window if it's on the
+          ;; same frame as and immediately below `window', and it's
+          ;; either active or `resize-mini-windows' is nil.
+          (let ((minibuffer-window (minibuffer-window frame)))
+            (and (eq (window-frame minibuffer-window) frame)
+                 (or (not resize-mini-windows)
+                     (eq minibuffer-window
+                         (active-minibuffer-window))))))
+      (mouse-drag-line start-event 'mode))
+     ((and (frame-parameter frame 'drag-with-mode-line)
+           (window-at-side-p window 'bottom))
+      ;; Drag frame when the window is on the bottom of its frame.
+      (mouse-drag-frame start-event 'move)))))
 
 (defun hkey-debug ()
   (message (format "(HyDebug) %sContext: %s; %s: %s; Buf: %s; Mode: %s; MinibufDepth: %s"
@@ -752,12 +817,12 @@ Return non-nil iff a non-nil predicate is found."
   (let ((hkey-forms hkey-alist)
 	(pred-value) (hkey-action) hkey-form pred)
     (while (and (null pred-value) (setq hkey-form (car hkey-forms)))
-      (if (setq hkey-action (if assist-flag (cdr (cdr hkey-form)) (car (cdr hkey-form)))
+      (if (setq hkey-action (if assist-flag (cddr hkey-form) (cadr hkey-form))
 		pred (car hkey-form)
 		pred-value (eval pred))
 	  ;; Conditionally debug after Smart Key release and evaluation
 	  ;; of matching predicate but before hkey-action is executed.
-	  (progn (if hkey-debug (hkey-debug))
+	  (progn (when hkey-debug (hkey-debug))
 		 (eval hkey-action))
 	(setq hkey-forms (cdr hkey-forms))))
     pred-value))
@@ -778,8 +843,10 @@ Return non-nil iff associated help documentation is found."
 	  (setq hkey-forms (cdr hkey-forms))))
     (if pred-value
 	(setq call (if assist-flag (cdr (cdr hkey-form))
-		     (car (cdr hkey-form)))
-	      cmd-sym (car call))
+		     (cadr hkey-form))
+	      cmd-sym (if (eq (car call) #'funcall)
+			  (cadr call)
+			(car call)))
       (setq cmd-sym (if assist-flag assist-key-default-function action-key-default-function)
 	    call cmd-sym))
     (if (and (consp call) (eq (car call) 'call-interactively))
@@ -841,7 +908,12 @@ Return non-nil iff associated help documentation is found."
 			  calls)
 
 		    (when (memq cmd-sym '(hui:hbut-act hui:hbut-help))
-		      (princ (format "BUTTON SPECIFICS:\n\n%s\n"
+		      (princ (format "%s BUTTON SPECIFICS:\n\n%s\n"
+				     (htype:def-symbol
+				      (if (eq (hattr:get 'hbut:current 'categ)
+					      'explicit)
+					  (hattr:get 'hbut:current 'actype)
+					(hattr:get 'hbut:current 'categ)))
 				     (actype:doc 'hbut:current t)))
 		      (hattr:report
 		       (nthcdr 2 (hattr:list 'hbut:current))))
@@ -861,7 +933,7 @@ Return non-nil iff associated documentation is found."
 ;; Overload help-mode quit-window function to support Hyperbole
 ;; hkey--wconfig window configurations.
 (unless (eq (symbol-function #'quit-window) #'hkey-help-hide)
-  (defalias 'hkey-quit-window (hypb:function-copy #'quit-window)))
+  (defalias 'hkey-quit-window (symbol-function #'quit-window)))
 
 ;;;###autoload
 (defun hkey-help-hide (&optional kill window)
@@ -1281,11 +1353,11 @@ return current point as a marker."
   "Set point to cursor position using SET-POINT-ARG-LIST and return t.
 If 'hmouse-set-point-command' is not bound to a function, this does nothing
 and returns nil."
-  (if (fboundp hmouse-set-point-command)
-      (or (if set-point-arg-list
-	      (funcall hmouse-set-point-command set-point-arg-list)
-	    (funcall hmouse-set-point-command))
-	  t)))
+  (when (fboundp hmouse-set-point-command)
+    (or (if set-point-arg-list
+	    (funcall hmouse-set-point-command set-point-arg-list)
+	  (funcall hmouse-set-point-command))
+	t)))
 
 ;; "hsettings.el" contains documentation for this variable.
 (or (boundp 'smart-scroll-proportional)

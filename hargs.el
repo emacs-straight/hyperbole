@@ -56,24 +56,22 @@
 		(sit-for 1)
 		nil)))
 	(save-excursion
-	  (if (not (memq (char-syntax (preceding-char)) '(?w ?_)))
-	      (while (not (looking-at "\\sw\\|\\s_\\|\\'"))
-		(forward-char 1)))
+	  (unless (memq (char-syntax (preceding-char)) '(?w ?_))
+	    (while (not (looking-at "\\sw\\|\\s_\\|\\'"))
+	      (forward-char 1)))
 	  (while (looking-at "\\sw\\|\\s_")
 	    (forward-char 1))
-	  (if (re-search-backward "\\sw\\|\\s_" nil t)
-	      (regexp-quote
-	       (progn (forward-char 1)
-		      (buffer-substring (point)
-					(progn (forward-sexp -1)
-					       (while (looking-at "\\s'")
-						 (forward-char 1))
-					       (point)))))
-	    nil)))))
+	  (when (re-search-backward "\\sw\\|\\s_" nil t)
+	    (forward-char 1)
+	    (regexp-quote (buffer-substring (point)
+					    (progn (forward-sexp -1)
+						   (while (looking-at "\\s'")
+						     (forward-char 1))
+						   (point)))))))))
 
 (unless (fboundp 'find-tag--default)
   (defun find-tag--default ()
-    (funcall (or (if (fboundp find-tag-default-function) find-tag-default-function)
+    (funcall (or (when (fboundp find-tag-default-function) find-tag-default-function)
 		 (get major-mode 'find-tag-default-function)
 		 'find-tag-default))))
 (defalias 'hargs:find-tag-default 'find-tag--default)
@@ -86,9 +84,9 @@ Return nil if ACTION is not a list or `byte-code' object, has no
 interactive form or takes no arguments."
   (and (or (hypb:emacs-byte-code-p action) (listp action))
        (let ((interactive-form (action:commandp action)))
-	 (if interactive-form
-	     (action:path-args-rel
-	      (hargs:iform-read interactive-form modifying))))))
+	 (when interactive-form
+	   (action:path-args-rel
+	    (hargs:iform-read interactive-form modifying))))))
 
 (defun hargs:buffer-substring (start end)
   (let ((string (buffer-substring-no-properties start end)))
@@ -115,7 +113,9 @@ With optional EXCLUDE-REGEXP, any matched string is ignored if it this regexp."
 	 (end-search-func (if end-regexp-flag 're-search-forward
 			    'search-forward))
 	 (count 0)
-	 start end)
+	 first
+	 start
+	 end)
     (save-excursion
       (beginning-of-line)
       (while (and (setq start (funcall start-search-func start-delim limit t))
@@ -127,17 +127,19 @@ With optional EXCLUDE-REGEXP, any matched string is ignored if it this regexp."
 		  ;; prior to the original point.
 		  (funcall end-search-func end-delim opoint t)
 		  (setq count (1+ count)))
-	(setq start nil))
-      (when (and (not start) (> count 0) (zerop (% count 2))
-		 (string-equal start-delim end-delim))
+	(setq first (or first start)
+	      start nil))
+      (when (and (not start) (> count 0) (zerop (% count 2)))
 	;; Since strings can span lines but this function matches only
 	;; strings that start on the current line, when start-delim and
 	;; end-delim are the same and there are an even number of
 	;; delimiters in the search range, causing the end-delim
 	;; search to match to what should probably be the start-delim,
 	;; assume point is within a string and not between two other strings.
-	;; RSW - 02/05/2019
-	(setq start (point)))
+	;; -- RSW, 02-05-2019
+	(setq start (if (string-equal start-delim end-delim)
+			(point)
+		      first)))
       (when start
 	(forward-line 2)
 	(setq limit (point))
@@ -185,8 +187,8 @@ element of the list is always the symbol 'args."
 	  ((eq (aref interactive-entry 0) ?+)
 	   (setq cmd (aref interactive-entry 1)
 		 prompt (format (substring interactive-entry 2) prior-arg)
-		 func (if (< cmd (length hargs:iform-extensions-vector))
-			  (aref hargs:iform-extensions-vector cmd)))
+		 func (when (< cmd (length hargs:iform-extensions-vector))
+			(aref hargs:iform-extensions-vector cmd)))
 	   (if func
 	       (funcall func prompt default)
 	     (error
@@ -196,8 +198,8 @@ element of the list is always the symbol 'args."
 	  (t (setq cmd (aref interactive-entry 0)
 		   prompt
 		   (format (substring interactive-entry 1) prior-arg)
-		   func (if (< cmd (length hargs:iform-vector))
-			    (aref hargs:iform-vector cmd)))
+		   func (when (< cmd (length hargs:iform-vector))
+			  (aref hargs:iform-vector cmd)))
 	     (if func
 		 (funcall func prompt default)
 	       (error
@@ -242,8 +244,8 @@ Optional DEFAULT-PROMPT is used to describe default value."
   (save-window-excursion
     (set-buffer (window-buffer (minibuffer-window)))
     (setq hargs:string-to-complete (minibuffer-contents-no-properties))
-    (if (equal hargs:string-to-complete "")
-	(setq hargs:string-to-complete nil))))
+    (when (equal hargs:string-to-complete "")
+      (setq hargs:string-to-complete nil))))
 
 (defun hargs:unset-string-to-complete ()
   "Remove any value from `hargs:string-to-complete'."
@@ -304,7 +306,7 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	     (list (hargs:at-p)))))
 	((eq hargs:reading-p 'kvspec)
 	 (read-string "Koutline view spec: "
-		      (if (boundp 'kvspec:current) kvspec:current)))
+		      (when (boundp 'kvspec:current) kvspec:current)))
 	((eolp) nil)
 	((and (eq hargs:reading-p 'hmenu)
 	      (eq (selected-window) (minibuffer-window)))
@@ -325,8 +327,7 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	((eq hargs:reading-p 'gbut)
 	 (when (eq (current-buffer) (get-file-buffer gbut:file))
 	   (hbut:label-p 'as-label)))
-	((eq hargs:reading-p 'hbut) (or (ebut:label-p 'as-label)
-					(ibut:label-p 'as-label)))
+	((eq hargs:reading-p 'hbut) (hbut:label-p 'as-label))
 	((hbut:label-p) nil)
 	((eq hargs:reading-p 'file)
 	 (cond ((derived-mode-p 'dired-mode)
@@ -340,7 +341,7 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	       ;; Unquoted remote file name.
 	       ((hpath:is-p (hpath:remote-at-p) 'file))
 	       ;; Possibly non-existent file name
-	       ((if no-default (hpath:at-p 'file 'non-exist)))
+	       ((when no-default (hpath:at-p 'file 'non-exist)))
 	       (no-default nil)
 	       ((buffer-file-name))
 	       ))
@@ -358,7 +359,7 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	       ;; Unquoted remote directory name.
 	       ((hpath:is-p (hpath:remote-at-p) 'directory))
 	       ;; Possibly non-existent directory name
-	       ((if no-default (hpath:at-p 'directory 'non-exist)))
+	       ((when no-default (hpath:at-p 'directory 'non-exist)))
 	       (no-default nil)
 	       (default-directory)
 	       ))
@@ -376,26 +377,26 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	   (car (set:member name (htype:names 'ibtypes)))))
 	((eq hargs:reading-p 'sexpression) (hargs:sexpression-p))
 	((memq hargs:reading-p '(Info-index-item Info-node))
-	 (if (eq major-mode 'Info-mode)
-	     (let ((file (Info-current-filename-sans-extension))
-		   (node (cond ((Info-note-at-p))
-			       ((Info-menu-item-at-p)
-				(save-excursion
-				  (beginning-of-line)
-				  (forward-char 2)
-				  (Info-extract-menu-node-name nil (Info-index-node))))
-			       (t Info-current-node))))
-	       (cond ((and (stringp node) (string-match "\\`\(" node))
-		      node)
-		     (file
-		      (concat "(" file ")" node))
-		     (t node)))))
+	 (when (eq major-mode 'Info-mode)
+	   (let ((file (Info-current-filename-sans-extension))
+		 (node (cond ((Info-note-at-p))
+			     ((Info-menu-item-at-p)
+			      (save-excursion
+				(beginning-of-line)
+				(forward-char 2)
+				(Info-extract-menu-node-name nil (Info-index-node))))
+			     (t Info-current-node))))
+	     (cond ((and (stringp node) (string-match "\\`\(" node))
+		    node)
+		   (file
+		    (concat "(" file ")" node))
+		   (t node)))))
 	((eq hargs:reading-p 'mail)
 	 (and (hmail:reader-p) buffer-file-name
 	      (prin1-to-string (list (rmail:msg-id-get) buffer-file-name))))
 	((eq hargs:reading-p 'symbol)
 	 (let ((sym (hargs:find-tag-default)))
-	   (if (or (fboundp sym) (boundp sym)) sym)))
+	   (when (or (fboundp sym) (boundp sym)) sym)))
 	((eq hargs:reading-p 'buffer)
 	 (hargs:find-tag-default))
 	((eq hargs:reading-p 'character)
@@ -403,79 +404,80 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	((eq hargs:reading-p 'key)
 	 (require 'hib-kbd)
 	 (let ((key-seq (hbut:label-p 'as-label "{" "}")))
-	   (and key-seq (kbd-key:normalize key-seq))))
+	   (when key-seq (kbd-key:normalize key-seq))))
 	((eq hargs:reading-p 'integer)
 	 (save-excursion (skip-chars-backward "-0-9")
-			 (if (looking-at "-?[0-9]+")
-			     (read (current-buffer)))))))
+			 (when (looking-at "-?[0-9]+")
+			   (read (current-buffer)))))))
 
 (defun hargs:completion (&optional no-insert)
   "If in the completions buffer, return completion at point.
 Also insert unless optional NO-INSERT is non-nil.
 Insert in minibuffer if active or in other window if minibuffer is inactive."
   (interactive '(nil))
-  (if (or (string-match "[* ]Completions\\*\\'" (buffer-name))
-	  (eq major-mode 'completion-mode))
-      (let ((opoint (point))
-	    (owind (selected-window)))
-	(if (re-search-backward "^\\|\t\\| [ \t]" nil t)
-	    (let ((insert-window
-		   (cond ((> (minibuffer-depth) 0)
-			  (minibuffer-window))
-			 ((not (eq (selected-window) (next-window nil)))
-			  (next-window nil))))
-		  (bury-completions)
-		  (entry))
-	      (skip-chars-forward " \t")
-	      (if (and insert-window
-		       ;; Allow single spaces in the middle of completions
-		       ;; since completions always end with either a tab,
-		       ;; newline or two whitespace characters.
-		       (looking-at
-			"[^ \t\n]+\\( [^ \t\n]+\\)*\\( [ \t\n]\\|[\t\n]\\|\\'\\)"))
-		  (progn (setq entry (buffer-substring (match-beginning 0)
-						       (match-beginning 2)))
-			 (select-window insert-window)
-			 (let ((str (or hargs:string-to-complete
-					(buffer-substring
-					 (point)
-					 (save-excursion (beginning-of-line)
-							 (point))))))
-			   (cond
-			    ((and (eq (selected-window) (minibuffer-window)))
-			     (cond ((string-match (concat
-						   (regexp-quote entry)
-						   "\\'")
-						  str)
-				    ;; If entry matches tail of minibuffer
-				    ;; prefix already, then return minibuffer
-				    ;; contents as the entry.
-				    (setq entry str))
-				   ;;
-				   ((string-match "[~/][^/]*\\'" str)
-				    ;; file or directory entry
-				    (setq entry
-					  (concat
-					   (substring
-					    str 0
-					    (1+ (match-beginning 0)))
-					   entry))))
-			     (or no-insert
-				 (if entry (progn (erase-buffer)
-						  (insert entry)))))
-			    ;; In buffer, non-minibuffer completion.
-			    ;; Only insert entry if last buffer line does
-			    ;; not end in entry.
-			    (no-insert)
-			    ((or (string-match
-				  (concat (regexp-quote entry) "\\'") str)
-				 (null entry))
-			     (setq bury-completions t))
-			    (t (insert entry))))))
-	      (select-window owind) (goto-char opoint)
-	      (if bury-completions
-		  (progn (bury-buffer nil) (delete-window)))
-	      entry)))))
+  (when (or (string-match "[* ]Completions\\*\\'" (buffer-name))
+	    (eq major-mode 'completion-mode))
+    (let ((opoint (point))
+	  (owind (selected-window)))
+      (when (re-search-backward "^\\|\t\\| [ \t]" nil t)
+	(let ((insert-window
+	       (cond ((> (minibuffer-depth) 0)
+		      (minibuffer-window))
+		     ((not (eq (selected-window) (next-window nil)))
+		      (next-window nil))))
+	      (bury-completions)
+	      (entry))
+	  (skip-chars-forward " \t")
+	  (when (and insert-window
+		     ;; Allow single spaces in the middle of completions
+		     ;; since completions always end with either a tab,
+		     ;; newline or two whitespace characters.
+		     (looking-at
+		      "[^ \t\n]+\\( [^ \t\n]+\\)*\\( [ \t\n]\\|[\t\n]\\|\\'\\)"))
+	    (setq entry (buffer-substring (match-beginning 0)
+					  (match-beginning 2)))
+	    (select-window insert-window)
+	    (let ((str (or hargs:string-to-complete
+			   (buffer-substring
+			    (point)
+			    (save-excursion (beginning-of-line)
+					    (point))))))
+	      (cond
+	       ((and (eq (selected-window) (minibuffer-window)))
+		(cond ((string-match (concat
+				      (regexp-quote entry)
+				      "\\'")
+				     str)
+		       ;; If entry matches tail of minibuffer
+		       ;; prefix already, then return minibuffer
+		       ;; contents as the entry.
+		       (setq entry str))
+		      ;;
+		      ((string-match "[~/][^/]*\\'" str)
+		       ;; file or directory entry
+		       (setq entry
+			     (concat
+			      (substring
+			       str 0
+			       (1+ (match-beginning 0)))
+			      entry))))
+		(or no-insert
+		    (if entry (progn (erase-buffer)
+				     (insert entry)))))
+	       ;; In buffer, non-minibuffer completion.
+	       ;; Only insert entry if last buffer line does
+	       ;; not end in entry.
+	       (no-insert)
+	       ((or (string-match
+		     (concat (regexp-quote entry) "\\'") str)
+		    (null entry))
+		(setq bury-completions t))
+	       (t (insert entry)))))
+	  (select-window owind) (goto-char opoint)
+	  (when bury-completions
+	    (bury-buffer nil)
+	    (delete-window))
+	  entry)))))
 
 (defun hargs:iform-read (iform &optional modifying)
   "Read action arguments according to IFORM, a list with car = 'interactive.
@@ -488,11 +490,9 @@ See also documentation for `interactive'."
   ;; Save this now, since use of minibuffer will clobber it.
   (setq prefix-arg current-prefix-arg)
   (if (not (and (listp iform) (eq (car iform) 'interactive)))
-      (error
-       "(hargs:iform-read): arg must be a list whose car = 'interactive")
+      (error "(hargs:iform-read): arg must be a list whose car = 'interactive")
     (setq iform (car (cdr iform)))
-    (if (or (null iform) (and (stringp iform) (equal iform "")))
-	nil
+    (unless (or (null iform) (and (stringp iform) (equal iform "")))
       (let ((prev-reading-p hargs:reading-p))
 	(unwind-protect
 	    (progn
@@ -502,8 +502,7 @@ See also documentation for `interactive'."
 				      (hattr:get 'hbut:current 'args)
 				    (and (boundp 'hargs:defaults)
 					 (listp hargs:defaults)
-					 hargs:defaults)
-				    )))
+					 hargs:defaults))))
 		    (eval iform))
 		(let ((i 0) (start 0) (end (length iform))
 		      (ientry) (results) (val) (default)
@@ -511,8 +510,7 @@ See also documentation for `interactive'."
 				    (hattr:get 'hbut:current 'args)
 				  (and (boundp 'hargs:defaults)
 				       (listp hargs:defaults)
-				       hargs:defaults)
-				  )))
+				       hargs:defaults))))
 		  ;;
 		  ;; Handle special initial interactive string chars.
 		  ;;
@@ -528,7 +526,7 @@ See also documentation for `interactive'."
 		  ;;   See `this-command-keys-shift-translated' for an explanation.
 		  ;;
 		  ;;   `_' means keep region in same state (active or inactive)
-		  ;;   after this command.  (XEmacs only.)
+		  ;;   after this command.
 		  ;;
 		  (while (cond
 			  ((eq (aref iform i) ?*))
@@ -538,7 +536,7 @@ See also documentation for `interactive'."
 			  ((eq (aref iform i) ?^)
 			   (handle-shift-selection))
 			  ((eq (aref iform i) ?_)
-			   (setq zmacs-region-stays t)))
+			   (push 'only transient-mark-mode)))
 		    (setq i (1+ i) start i))
 		  ;;
 		  (while (and (< start end)
@@ -595,12 +593,13 @@ string read or nil."
 			  (and predicate (not (funcall predicate val)))))
 	    (if bad-val (setq bad-val nil) (setq default val))
 	    (beep)
-	    (if err (progn (message err) (sit-for 3))))
+	    (when err
+	      (message err)
+	      (sit-for 3)))
 	  val)
       (setq hargs:reading-p prev-reading-p)
       (select-window owind)
-      (switch-to-buffer obuf)
-      )))
+      (switch-to-buffer obuf))))
 
 (defun hargs:read-match (prompt collection
 			 &optional predicate must-match initial-input val-type)
@@ -636,32 +635,32 @@ the current minibuffer argument, otherwise, the minibuffer is erased
 and value is inserted there.
 Optional ASSIST-FLAG non-nil triggers display of Hyperbole menu item
 help when appropriate."
-    (if (and (> (minibuffer-depth) 0) (or value (setq value (hargs:at-p))))
-	(let ((owind (selected-window)) (back-to)
-	      (str-value (and value (format "%s" value)))
-	      ;; This command requires recursive minibuffers.
-	      (enable-recursive-minibuffers t))
-	  (unwind-protect
-	      (progn
-		(select-window (minibuffer-window))
-		(set-buffer (window-buffer (minibuffer-window)))
-		(cond
-		 ;;
-		 ;; Selecting a menu item
-		 ((eq hargs:reading-p 'hmenu)
-		  (if assist-flag (setq hargs:reading-p 'hmenu-help))
-		  (hui:menu-enter str-value))
-		 ;;
-		 ;; Enter existing value into the minibuffer as the desired parameter.
-		 ((string-equal str-value (minibuffer-contents))
-		  (exit-minibuffer))
-		 ;;
-		 ;; Clear minibuffer and insert value.
-		 (t (delete-minibuffer-contents)
-		    (insert str-value)
-		    (setq back-to t)))
-		value)
-	    (if back-to (select-window owind))))))
+    (when (and (> (minibuffer-depth) 0) (or value (setq value (hargs:at-p))))
+      (let ((owind (selected-window)) (back-to)
+	    (str-value (and value (format "%s" value)))
+	    ;; This command requires recursive minibuffers.
+	    (enable-recursive-minibuffers t))
+	(unwind-protect
+	    (progn
+	      (select-window (minibuffer-window))
+	      (set-buffer (window-buffer (minibuffer-window)))
+	      (cond
+	       ;;
+	       ;; Selecting a menu item
+	       ((eq hargs:reading-p 'hmenu)
+		(if assist-flag (setq hargs:reading-p 'hmenu-help))
+		(hui:menu-enter str-value))
+	       ;;
+	       ;; Enter existing value into the minibuffer as the desired parameter.
+	       ((string-equal str-value (minibuffer-contents))
+		(exit-minibuffer))
+	       ;;
+	       ;; Clear minibuffer and insert value.
+	       (t (delete-minibuffer-contents)
+		  (insert str-value)
+		  (setq back-to t)))
+	      value)
+	  (when back-to (select-window owind))))))
 
 ;;; ************************************************************************
 ;;; Private variables

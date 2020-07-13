@@ -5,8 +5,8 @@
 ;; Author:           Bob Weiner
 ;; Maintainer:       Bob Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:          06-Oct-92 at 11:52:51
-;; Released:         27-Aug-19
-;; Version:          7.0.6
+;; Released:         01-Mar-20
+;; Version:          7.1.2
 ;; Keywords:         comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:          hyperbole
 ;; Package-Requires: ((emacs "24.4"))
@@ -250,17 +250,16 @@ Entry format is: (key-description key-sequence key-binding)."
 	  (hkey-global-set-key "\M-o" 'hkey-operate)
 	(hkey-maybe-global-set-key "\M-o" 'hkey-operate)))
     ;;
-    ;; Binds {C-c @} to created a user-specified sized grid of windows
+    ;; Binds {C-c @} to create a user-specified sized grid of windows
     ;; displaying different buffers.
     ;;
     ;; Don't override prior global bindings of this key.
     (hkey-maybe-global-set-key "\C-c@" 'hycontrol-windows-grid t)
     ;;
-    ;; Binds {C-c C-r} as a site standard way of performing explicit
-    ;; button renames without invoking the Hyperbole menu.
-    ;;
+    ;; Explicit button renames without invoking the Hyperbole menu.
+    ;; No binding by default.
     ;; Don't override prior global bindings of this key.
-    (hkey-maybe-global-set-key "\C-c\C-r" 'hui:ebut-rename t)
+    ;; (hkey-maybe-global-set-key "\C-cr" 'hui:ebut-rename t)
     ;;
     ;; Binds {C-c RET} to select larger and larger synctactical units in a
     ;; buffer when invoked repeatedly, showing in the minibuffer the type
@@ -658,6 +657,7 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
   "Standard configuration routine for Hyperbole."
   (interactive)
   (message "Initializing Hyperbole...")
+  ;;
   (run-hooks 'hyperbole-init-hook)
   (hyperb:check-dir-user)
   (or (stringp hyperb:user-email)
@@ -668,7 +668,15 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
 		     user-mail-address)
 		(concat (user-login-name) (hypb:domain-name)))))
   ;;
-  ;; Conditionally initialize Hyperbole key bindings (when hkey-init is t)
+  ;; When running from git source and not a release package, ensure
+  ;; auto-autoload.el files are already generated or generate them.
+  (unless noninteractive
+    (hyperb:maybe-generate-autoloads))
+  ;;
+  ;; Modify syntactic character pairs for use with implicit button activations.
+  (hbut:modify-syntax)
+  ;;
+  ;; Conditionally initialize Hyperbole key bindings (when hkey-init is t).
   (hkey-initialize)
   ;;
   ;; Abbreviate MSWindows mount point paths.
@@ -702,14 +710,39 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
   (message "Initializing Hyperbole...done")
   (message "Hyperbole %s is ready for action." hyperb:version))
 
+(defun hyperb:autoloads-exist-p ()
+  "Return t if all Hyperbole autoload files exist or nil otherwise."
+  (and (file-readable-p (expand-file-name "hyperbole-autoloads.el" hyperb:dir))
+       (file-readable-p (expand-file-name "kotl-autoloads.el"
+					  (expand-file-name "kotl" hyperb:dir)))))
+
+(defun hyperb:maybe-generate-autoloads ()
+  "Ensure Hyperbole *-autoload.el files are already generated or generate them.
+This is used only when running from git source and not a package release."
+  (unless (hyperb:autoloads-exist-p)
+    (hyperb:generate-autoloads)))
+
+(defun hyperb:generate-autoloads ()
+  "Renerate Hyperbole *-autoload.el files whether they already exist or not."
+  (let* ((default-directory hyperb:dir)
+	 (generated-autoload-file (expand-file-name "hyperbole-autoloads.el"))
+	 (backup-inhibited t))
+    (update-directory-autoloads ".")
+    (setq generated-autoload-file (expand-file-name "kotl/kotl-autoloads.el"))
+    (update-directory-autoloads "kotl/"))
+  (unless (hyperb:autoloads-exist-p)
+    (error (format "Hyperbole failed to generate autoload files; try running 'make src' in a shell in %s" hyperb:dir))))
+
 ;; This call loads the rest of the Hyperbole system.
 (require 'hinit)
 
-(if after-init-time
-    ;; This call initializes Hyperbole key bindings and hooks.
-    (hyperb:init)
-  ;; Initialize after other key bindings are loaded at startup.
-  (add-hook 'after-init-hook #'hyperb:init t))
+;; Prevent multiple initializations of Hyperbole
+(unless (featurep 'hyperbole)
+  (if after-init-time
+      ;; This call initializes Hyperbole key bindings and hooks.
+      (hyperb:init)
+    ;; Initialize after other key bindings are loaded at startup.
+    (add-hook 'after-init-hook #'hyperb:init t)))
 
 (makunbound 'hyperbole-loading)
 

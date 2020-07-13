@@ -23,6 +23,10 @@
 ;; ======================================================================================================
 ;; Drag from thing start or end    Yank thing at release       Kill thing and yank at release
 ;;
+;; Drag from bottom Modeline       Reposition frame as         <- same
+;; in frame with non-nil           drag happens
+;; drag-with-mode-line param
+
 ;; Drag from shared window side
 ;;   or from left of scroll bar    Resize window width         <- same
 ;; Modeline vertical drag          Resize window height        <- same
@@ -72,7 +76,7 @@
 
 (eval-when-compile (defvar assist-flag nil)) ;; Silences free variable compiler warnings
 (require 'hycontrol)
-;; For momentary highlighting of buffer/file item lines.
+;; If installed, use pulse library for momentary highlighting of buffer/file item lines.
 (require 'pulse nil t)
 
 ;;; ************************************************************************
@@ -197,8 +201,9 @@ drag release window.")
 	     ;;   ((and (hmouse-modeline-depress) (hmouse-drag-between-frames)) .
 	     ;;    ((hmouse-clone-window-to-frame) . (hmouse-move-window-to-frame)))
 	     ;;
-	     ;; Drag with release on a Modeline
-	     ((and (hmouse-modeline-release) (not (hmouse-modeline-click))) .
+	     ;; Drag from within a window (not a Modeline) with release on a Modeline
+	     ((and (not (hmouse-modeline-depress)) (hmouse-modeline-release)
+		   (not (hmouse-modeline-click))) .
 	      ((or (hmouse-drag-item-to-display t) (hmouse-buffer-to-window t)) .
 	       (hmouse-swap-buffers)))
 	     ;; Non-vertical Modeline drag between windows
@@ -247,10 +252,12 @@ drag release window.")
 ;;; Public functions
 ;;; ************************************************************************
 
-(defun hmouse-at-item-p ()
+(defun hmouse-at-item-p (start-window)
   "Return t if point is on an item draggable by Hyperbole, otherwise nil."
-  (let* ((buf (and (window-live-p action-key-depress-window) (window-buffer action-key-depress-window)))
-	 (mode (and buf (buffer-local-value 'major-mode buf))))
+  (let* ((buf (when (window-live-p start-window)
+		(window-buffer start-window)))
+	 (mode (when buf
+		 (buffer-local-value 'major-mode buf))))
     (and buf (with-current-buffer buf
 	       ;; Point must be on an item, not after one
 	       (not (looking-at "\\s-*$")))
@@ -522,7 +529,7 @@ not on an item, then nil.
 
 See `hmouse-drag-item-mode-forms' for how to allow for draggable
 items in other modes."
-  (when (hmouse-at-item-p)
+  (when (hmouse-at-item-p action-key-depress-window)
     (hmouse-item-to-window new-window)
     t))
 
@@ -811,6 +818,10 @@ With optional boolean NEW-WINDOW non-nil, sensibly split the release window befo
     (recenter)
     (pulse-momentary-highlight-one-line (point) 'next-error)))
 
+(defun hmouse-pulse-region (start end)
+  (when (and hmouse-pulse-flag (featurep 'pulse) (pulse-available-p))
+    (pulse-momentary-highlight-region start end 'next-error)))
+
 (defun hmouse-item-to-window (&optional new-window)
   "Display buffer or file menu item of Action Key depress at the location of Action Key release.
 
@@ -884,21 +895,26 @@ If the Action Key is:
      successive clicks walk up the directory tree
  (4) clicked anywhere in the middle of a window's modeline,
      the function given by `action-key-modeline-function' is called;
- (5) dragged vertically from modeline to within a window,
+ (5) dragged vertically from non-bottommost modeline to within a window,
      the modeline is moved to point of key release, thereby resizing
-     its window and potentially its vertical neighbors."
+     its window and potentially its vertical neighbors.
+ (6) dragged from a bottommost modeline in a frame with a non-nil
+     `drag-with-mode-line' parameter (use `frame-set-parameter'),
+     moves the frame as the drag occurs."
+  ;; Modeline window resizing is now handled in action-key-depress
+  ;; via a call to mouse-drag-mode-line, providing live visual
+  ;; feedback.
   (let ((w (smart-window-of-coords action-key-depress-args)))
     (if w (select-window w))
-    (cond ((hmouse-modeline-click)
-	   (cond ((hmouse-emacs-at-modeline-buffer-id-p)
-		  (funcall action-key-modeline-buffer-id-function))
-		 ((hmouse-release-left-edge) (bury-buffer))
-		 ((hmouse-release-right-edge)
-		  (if (eq major-mode 'Info-mode)
-		      (Info-exit)
-		    (info)))
-		 (t (funcall action-key-modeline-function))))
-	  (t (hmouse-modeline-resize-window)))))
+    (when (hmouse-modeline-click)
+      (cond ((hmouse-emacs-at-modeline-buffer-id-p)
+	     (funcall action-key-modeline-buffer-id-function))
+	    ((hmouse-release-left-edge) (bury-buffer))
+	    ((hmouse-release-right-edge)
+	     (if (eq major-mode 'Info-mode)
+		 (Info-exit)
+	       (info)))
+	    (t (funcall action-key-modeline-function))))))
 
 (defun assist-key-modeline ()
   "Handles Assist Key depresses on a window mode line.
@@ -913,13 +929,19 @@ If the Assist Key is:
      the next buffer in sequence is displayed in the window
  (4) clicked anywhere in the middle of a window's modeline,
      the function given by `assist-key-modeline-function' is called;
- (5) dragged vertically from modeline to within a window,
+ (5) dragged vertically from non-bottommost modeline to within a window,
      the modeline is moved to point of key release, thereby resizing
-     its window and potentially its vertical neighbors."
+     its window and potentially its vertical neighbors.
+ (6) dragged from a bottommost modeline in a frame with a non-nil
+     `drag-with-mode-line' parameter (use `frame-set-parameter'),
+     moves the frame as the drag occurs."
+  ;; Modeline window resizing is now handled in assist-key-depress
+  ;; via a call to mouse-drag-mode-line, providing live visual
+  ;; feedback.
   (let ((buffers)
 	(w (smart-window-of-coords assist-key-depress-args)))
-    (if w (select-window w))
-    (cond ((hmouse-modeline-click)
+    (when w (select-window w))
+    (when (hmouse-modeline-click)
 	   (cond ((hmouse-emacs-at-modeline-buffer-id-p)
 		  (next-buffer))
 		 ((hmouse-release-left-edge)
@@ -931,12 +953,30 @@ If the Assist Key is:
 		  (if (string-match "Hyperbole Smart Keys" (buffer-name))
 		      (hkey-help-hide)
 		    (hkey-summarize 'current-window)))
-		 (t (funcall assist-key-modeline-function))))
-	  (t (hmouse-modeline-resize-window)))))
+		 (t (funcall assist-key-modeline-function))))))
+
+(defun hmouse-drag-p ()
+  "Return non-nil if last Smart Key depress and release locations differ.
+Even if the mouse pointer stays within the same position within a
+window, its frame may have been moved by a bottommost modeline drag."
+  (not (and (eq (if assist-flag
+		    assist-key-depress-window
+		  action-key-depress-window)
+		(if assist-flag
+		    assist-key-release-window
+		  action-key-release-window))
+	    (equal (if assist-flag
+		       assist-key-depress-position
+		     action-key-depress-position)
+		   (if assist-flag
+		       assist-key-release-position
+		     action-key-release-position)))))
 
 (defun hmouse-modeline-click ()
   "Return non-nil if last Smart Key depress and release were at a single point (less than drag tolerance apart) in a modeline."
-  (and (hmouse-modeline-release) (hmouse-modeline-depress)
+  (and (not (hmouse-drag-p))
+       (hmouse-modeline-depress)
+       (hmouse-modeline-release)
        (not (or (hmouse-drag-horizontally) (hmouse-drag-vertically) (hmouse-drag-diagonally)))))
 
 (defun hmouse-emacs-modeline-event-p (event)
@@ -1025,24 +1065,7 @@ of the Smart Key."
 			  (marker-buffer action-key-release-prev-point))
 			 (goto-char
 			  (marker-position action-key-release-prev-point)))
-		     (set-buffer obuf))))
-	     (cond
-	      ((>= (+ mode-ln 2) (frame-height))
-	       (error
-		"(hmouse-modeline-resize-window): Can't move bottom window in frame"))
-	      ((< (length (hypb:window-list 'no-minibuf)) 2)
-	       (error
-		"(hmouse-modeline-resize-window): Can't resize sole window in frame"))
-	      (t (unwind-protect
-		     (progn
-		       (select-window window)
-		       (shrink-window shrink-amount)
-		       ;; Keep redisplay from scrolling other window.
-		       (select-window (next-window nil 'no-mini))
-		       (condition-case ()
-			   (scroll-down shrink-amount)
-			 (error nil)))
-		   (select-window owind))))))))
+		     (set-buffer obuf))))))))
 
 (defun hmouse-clone-window-to-frame (&optional always-delete-flag)
   (let ((hycontrol-keep-window-flag t))
@@ -1094,13 +1117,8 @@ mode-line regardless of the setting of `hmouse-edge-sensitivity'."
   (let ((args (if assist-flag assist-key-release-args
 		 action-key-release-args))
 	window-left last-release-x)
-    (if (fboundp 'window-lowest-p) ;; XEmacs >= 19.12
-	(setq last-release-x (and args (eq (event-window args)
-					   (selected-window))
-				  (hmouse-x-coord args))
-	      window-left 0)
-      (setq window-left (car (window-edges))
-	    last-release-x (and args (hmouse-x-coord args))))
+    (setq window-left (car (window-edges))
+	  last-release-x (and args (hmouse-x-coord args)))
     (and last-release-x (< (- last-release-x window-left)
 			   hmouse-edge-sensitivity)
 	 (>= (- last-release-x window-left) 0))))
@@ -1112,13 +1130,8 @@ release must be."
   (let ((args (if assist-flag assist-key-release-args
 		 action-key-release-args))
 	window-right last-release-x)
-    (if (fboundp 'window-lowest-p) ;; XEmacs >= 19.12
-	(setq last-release-x (and args (eq (event-window args)
-					   (selected-window))
-				  (hmouse-x-coord args))
-	      window-right (window-width))
-      (setq window-right (nth 2 (window-edges))
-	    last-release-x (and args (hmouse-x-coord args))))
+    (setq window-right (nth 2 (window-edges))
+	  last-release-x (and args (hmouse-x-coord args)))
     (and last-release-x (>= (+ last-release-x hmouse-edge-sensitivity)
 			    window-right)
 	 (>= (- window-right last-release-x) 0))))

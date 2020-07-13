@@ -63,7 +63,7 @@
 
 # This ver setup won't work under any make except GNU make, so set it manually.
 #HYPB_VERSION = "`head -3 hversion.el | tail -1 | sed -e 's/.*|\(.*\)|.*/\1/'`"
-HYPB_VERSION = 7.0.6
+HYPB_VERSION = 7.1.2
 
 # Emacs executable used to byte-compile .el files into .elc's.
 # Possibilities include: emacs, infodock, etc.
@@ -116,7 +116,7 @@ SHELL = /bin/sh
 # Shell commands you may want to change for your particular system.
 CP = \cp -p
 ETAGS = \etags
-GNUFTP = \gnupload --to ftp.gnu.org:hyperbole
+GNUFTP = \gnupload --to ftp.gnu.org:hyperbole --replace
 GPG = \gpg
 GZIP = \gzip -c
 INSTALL = \install -m 644 -c
@@ -174,7 +174,8 @@ ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.
 	     hpath.elc hrmail.elc hsettings.elc hsmail.elc hsys-org.elc hsys-www.elc htz.elc \
 	     hycontrol.elc hui-jmenu.elc hui-menu.elc hui-mini.elc hui-mouse.elc hui-select.elc \
 	     hui-treemacs.elc hui-window.elc hui.elc hvar.elc hversion.elc hvm.elc hypb.elc hyperbole.elc \
-	     hyrolo-demo.elc hyrolo-logic.elc hyrolo-menu.elc hyrolo.elc hywconfig.elc set.elc
+	     hyrolo-demo.elc hyrolo-logic.elc hyrolo-menu.elc hyrolo.elc hywconfig.elc \
+	     set.elc kprop-em.elc
 
 ELC_KOTL = kotl/kexport.elc kotl/kfile.elc kotl/kfill.elc kotl/kimport.elc kotl/klabel.elc \
 	   kotl/klink.elc kotl/kmenu.elc kotl/knode.elc kotl/kotl-mode.elc \
@@ -259,7 +260,7 @@ elc-init:
 src: autoloads tags
 
 # Remove and then rebuild all byte-compiled .elc files, even those .elc files
-# which do not yet exist, plus built TAGS file.
+# which do not yet exist, plus build TAGS file.
 bin: src
 	$(RM) *.elc kotl/*.elc
 	$(EMACS) $(BATCHFLAGS) $(PRELOADS) -f batch-byte-compile $(EL_KOTL) $(EL_COMPILE)
@@ -274,7 +275,7 @@ clean:
 version: doc
 	@ echo ""
 	@ echo "Any fgrep output means the version number has not been updated in that file."
-	fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-NEWS README.md hversion.el hyperbole.el man/hyperbole.texi man/version.texi
+	fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-NEWS README.md hversion.el hyperbole.el man/hyperbole.texi man/version.texi; [ $$? -eq 0 ] || exit 1
 	@ echo ""
 
 # Build the Info, HTML and Postscript versions of the user manual and README.md.html.
@@ -326,7 +327,7 @@ elpa-test: package
 
 # Send compressed tarball for uploading to GNU ftp site; this must be done from the directory
 # containing the tarball to upload.
-ftp: package
+ftp: package $(pkg_dir)/hyperbole-$(HYPB_VERSION).tar.gz
 	cd $(pkg_dir) && $(GNUFTP) hyperbole-$(HYPB_VERSION).tar.gz
 
 # Autoloads
