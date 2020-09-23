@@ -2,6 +2,63 @@
 				 by Bob Weiner
 
 ===========================================================================
+*                                   V7.1.3
+===========================================================================
+
+  SMART (ACTION AND ASSIST) KEYS
+
+    - Global Org Link Activation: The Action Key now activates Org links in
+      non-Org buffers if 'inhibit-hsys-org' is nil (the default).  The Assist
+      Key shows help.
+
+    - Org Agenda Item Display: The Action Key displays the Org node
+      associated with Agenda items such as TODOs in another window.  The
+      Assist Key shows help.
+
+    - Org Mode: Raised to near top priority in implicit button types so that
+      pathnames, URLs, etc. within Org links are handled by Org rather than
+      Hyperbole.
+
+    - Smart Dired Sidebar: Smart Key support for the dired-sidebar
+      package.  See "(hyperbole)Smart Key - Dired Sidebar Mode".
+
+    - Helm Mode:  The Smart Keys do all sorts of things in helm completion buffers
+      and the associated minibuffer.  See "(hyperbole)Smart Key - Helm Mode".
+
+    - Magit Mode: Action Key expands/collapses like {TAB} and Assist Key
+      jumps to items like {RET}.  See "(hyperbole)Smart Key - Magit Mode".
+
+  BUTTON TYPES
+
+    - {Key Series} Button Support for Helm and Counsel: Key series buttons
+      with M-x commands now work properly when counsel-mode or helm-mode are
+      enabled and M-x is rebound.
+
+    - Markdown In-file Links: With point on the link title, in-file links are
+      now activated properly (previously point had to be on the link itself).
+
+    - Git#directory Buttons: New flag, hibtypes-git-use-magit-flag, which if
+      set to t and Magit is available, then when activating a git directory
+      button, such as git#/hyperbole, use Magit rather than Dired.
+
+    - Explicit Buttons Work Immediately: Previously you had to save the buffer
+      in which you created an explicit button before it would work.  Now they
+      work immediately after creation.
+
+  DOCUMENTATION
+
+    - Helm Mode: Added Hyperbole Manual section, "Smart Key - Helm Mode"
+      that works on helm completions.  See "(hyperbole)Smart Key -
+      Helm Mode".
+
+    - Hyperbole Slides: Slides used in a talk by the author on the history
+      and capabilities of Hyperbole, see "HY-TALK/HY-TALK.org".
+
+    - Magit Mode: Added Hyperbole Manual section, "Smart Key - Magit Mode"
+      that expands/collapses/jumps to Magit items.  See "(hyperbole)Smart Key -
+      Magit Mode".
+
+===========================================================================
 *                                   V7.1.2
 ===========================================================================
 

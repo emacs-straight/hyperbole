@@ -634,7 +634,10 @@ its buttons, the label is simply inserted at point."
 	  (ibut
 	   (save-excursion
 	     (when ibut-start
-	       (goto-char ibut-start))
+	       (goto-char ibut-start)
+	       ;; Skip over any non-whitespace or symbol chars to move
+	       ;; back past any opening delimiter
+	       (skip-syntax-backward "^-_"))
 	     (save-excursion
 	       ;; Check if ibut has an existing preceding label
 	       (skip-chars-backward "][:=<>a-zA-Z0-9#@!$%^&* -")
@@ -882,7 +885,8 @@ within."
 		     (call-interactively 'hui:ebut-unmark)
 		     (message "Button deleted."))
 		 (hui:ebut-unmark but-key key-src))
-	       (when (hmail:reader-p) (hmail:msg-narrow)))
+	       (when (hmail:reader-p) (hmail:msg-narrow))
+	       (message "Button '%s' deleted." (ebut:key-to-label but-key)))
       (hypb:error "(ebut-delete): You may not delete buttons from this buffer"))))
 
 (defun hui:ebut-delimit (start end instance-str)
@@ -1039,7 +1043,10 @@ Optional NO-SORT means display in decreasing priority order (natural order)."
 	      (names (htype:names htype-sym))
 	      (term (hargs:read-match
 		     (concat (capitalize tstr)
-			     " to describe (RET for all): ")
+			     (format " to describe (RET for all%s): "
+				     (if (eq htype-sym 'ibtypes)
+					 " in priority order"
+				       "")))
 		     (mapcar 'list (cons "" names))
 		     nil t nil htype-sym))
 	      nm-list
@@ -1091,9 +1098,8 @@ within."
 	    (hypb:error "(ibut-delete): No valid %s button in %s"
 		   (ibut:key-to-label but-key) buf)))
 	(progn (set-buffer buf)
-	       (when interactive
-		 (message "Button deleted."))
-	       (when (hmail:reader-p) (hmail:msg-narrow)))
+	       (when (hmail:reader-p) (hmail:msg-narrow))
+	       (message "Button '%s' deleted." (ibut:key-to-label but-key)))
       (hypb:error "(ibut-delete): You may not delete buttons from this buffer"))))
 
 (defun hui:ibut-message (but-modify-flag)

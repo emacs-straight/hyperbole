@@ -995,6 +995,11 @@ represent the output of particular document formatters."
 	 src)
 	((file-readable-p (setq src (hpath:symlink-referent src)))
 	 (set-buffer (find-file-noselect src))
+	 src)
+	;; Buffer may be newly created with an attached file that has
+	;; not yet been saved, so it can't be read.
+	((get-file-buffer src)
+	 (set-buffer (get-file-buffer src))
 	 src)))
 
 (defun    hbut:key-to-label (lbl-key)
@@ -1400,7 +1405,7 @@ Return symbol for button deleted or nil."
       (when (and start end)
 	(save-excursion
 	  (set-buffer (if (bufferp loc) loc (find-file-noselect loc)))
-	  (when (ibut:to but-sym)
+	  (when (ibut:to (ibut:key but-sym))
 	    (let (buffer-read-only)
 	      (if (< (point) start)
 		  ;; Find beginning of button named label delimiter and delete

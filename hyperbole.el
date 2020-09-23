@@ -5,8 +5,8 @@
 ;; Author:           Bob Weiner
 ;; Maintainer:       Bob Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:          06-Oct-92 at 11:52:51
-;; Released:         01-Mar-20
-;; Version:          7.1.2
+;; Released:         21-Sep-20
+;; Version:          7.1.3
 ;; Keywords:         comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:          hyperbole
 ;; Package-Requires: ((emacs "24.4"))
@@ -212,8 +212,16 @@ Entry format is: (key-description key-sequence key-binding)."
   (mapcar (lambda (key) (hkey-binding-entry key))
 	  (hkey-bindings-keys hkey-previous-bindings)))
 
+(defun hkey-define-key (keymap key command &optional no-add)
+  "Same as `define-key' except saves prior binding for later restoration unless optional 4rd argument NO-ADD is given as a non-nil value."
+  (unless no-add
+    (add-to-list 'hkey-previous-bindings (hkey-binding-entry key)))
+  (define-key keymap key command))
+
 (defun hkey-global-set-key (key command &optional no-add)
-  (or no-add (add-to-list 'hkey-previous-bindings (hkey-binding-entry key)))
+  "Same as `global-set-key' except saves prior binding for later restoration unless optional 3rd argument NO-ADD is given as a non-nil value."
+  (unless no-add
+    (add-to-list 'hkey-previous-bindings (hkey-binding-entry key)))
   (global-set-key key command))
 
 (defun hkey-initialize ()
@@ -225,18 +233,18 @@ Entry format is: (key-description key-sequence key-binding)."
     (unless (where-is-internal 'hkey-either)
       (hkey-global-set-key "\M-\C-m" 'hkey-either))
     ;;
-    ;; Bind a key, {C-h A}, for Action Key help and {C-u C-h A} for Assist key
+    ;; Typically bind the key, {C-h A}, for Action Key help and {C-u C-h A} for Assist key
     ;; help.
     (or (where-is-internal 'hkey-help)
-	(hkey-global-set-key "\C-hA" 'hkey-help))
+	(hkey-define-key help-map "A" 'hkey-help))
     ;;
     ;; Setup so Hyperbole menus can be accessed from a key.  If not
-    ;; already bound to a key, binds the function `hyperbole' to {C-h h}.
+    ;; already bound to a key, this typically binds the command `hyperbole' to {C-h h}.
     (or (where-is-internal 'hyperbole)
 	;; In GNU Emacs, this binding replaces a command that shows
 	;; the word hello in foreign languages; this binding makes this
 	;; key much more useful.
-	(hkey-global-set-key "\C-hh" 'hyperbole))
+	(hkey-define-key help-map "h" 'hyperbole))
     ;;
     ;; Provides a site standard way of emulating most Hyperbole mouse drag
     ;; commands from the keyboard.  This is most useful for rapidly creating
@@ -592,10 +600,12 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
   (defun outline-invisible-in-p (beg end)
     "Return t if there is an invisible character between BEG and END, else nil."
     (catch 'result
-      (delq nil (mapcar (lambda (o)
-			  (if (eq 'outline (overlay-get o 'invisible))
-			      (throw 'result t)))
-			(overlays-in beg end))))))
+      (let ((p beg))
+	(while (< p end) 
+	  (when (eq (get-char-property p 'invisible) 'outline)
+	    (throw 'result t))
+	  (setq p (1+ p))))
+      nil)))
 
 ;;; ************************************************************************
 ;;; Message System Support Configuration
@@ -679,10 +689,9 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
   ;; Conditionally initialize Hyperbole key bindings (when hkey-init is t).
   (hkey-initialize)
   ;;
-  ;; Abbreviate MSWindows mount point paths.
-  (when (or (file-exists-p "/mnt/c")
-	    (file-exists-p "/cygdrive"))
-    (add-to-list 'directory-abbrev-alist '("\\`\\(/mnt\\|/cygdrive\\)/" . "/")))
+  ;; Abbreviate MSWindows /cygdrive mount point paths.
+  (when (file-exists-p "/cygdrive")
+    (add-to-list 'directory-abbrev-alist '("\\`/cygdrive/" . "/")))
   ;; When running under a POSIX system with possible access to MSWindows servers,
   ;; cache valid MSWindows mount points.
   (hpath:cache-mswindows-mount-points)

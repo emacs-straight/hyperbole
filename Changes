@@ -1,3 +1,128 @@
+2020-09-21  Bob Weiner  <rsw@gnu.org>
+
+* hversion.el: Released 7.1.3.
+
+2020-09-06  Bob Weiner  <rsw@gnu.org>
+
+* hyperbole.el (hkey-define-key): Added to support help-map being
+    somewhere other than C-h.
+               (hkey-initialize): Updated to support the above.
+  hui-mini.el (hui:menu-doc): Updated to support the above.  Trigger an
+    error if the 'hyperbole' command is not bound to a key.
+
+* hmouse-drv.el (hkey-help): Fix to properly reflect and describe mouse
+    drags and only reflect mouse usage if last-command-event was a
+    mouse event.  Move clearing of action/assist key variables until
+    after the last specified action is recorded.
+
+* hib-kbd.el (kbd-key): Improve brace matching by temporarily tagging
+    braces with list delimiter syntax.
+
+* hypb.el (hypb:set-raw-syntax-descriptor): Add so can restore saved
+    syntax table entries.
+          (hypb:get-raw-syntax-descriptor): Add to get raw syntax
+    descriptors.  Emacs does not provide these functions.
+
+* hui-window.el (smart-coords-in-window-p): Ensure any window returned is
+    still valid and fix eventp condition to return window rather than t.
+
+2020-08-03  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:ebut-delete-op, hui:ibut-delete-op): Display deletion msg
+    when used in a key series or kbd macro.
+
+* hbut.el (ibut:delete): Fix to pass key instead of but symbol to ibut:to.
+
+2020-08-02  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:key-src-set-buffer): Fixed explicit button creation in a new
+    file that has not yet been saved.
+
+* hib-social.el (git-reference, hibtypes-git-use-magit-flag): Added this flag.
+    If Magit is available, when activating a git directory button, use Magit
+    rather than Dired.
+
+2020-08-01  Bob Weiner  <rsw@gnu.org>
+
+* hui-mini.el (hui:menu-get-keys): Cleared hui:menu-keys to prevent multiple
+    calls from concatenating results.
+
+* hmouse-drv.el (hkey-help): Added note that implicit button types are displayed
+    in highest priority first order when listing all of them.
+
+* man/hyperbole.texi (Smart Key - Helm Mode):
+                     (Smart Key - Magit Mode): Added new nodes to document these.
+
+* kotl/kotl-mode.el (kotl-mode): Used setq-local to ensure fill-paragraph-function
+    is set only for kotl-mode.
+
+* hmouse-drv.el (hkey-help): Fixed to not show 'OR' before first 'CALL' listing
+    and to only display Action/Assist Mouse Button contexts when last use was
+    ia mouse button and not keyboard.  Also, displayed whether showing mouse or
+    keyboard help.
+
+* hmouse-drv.el (hmouse-key-release-window): Required position of last action/assist
+     mouse key release event.  This fixed the problem of improperly registering a
+     drag to outside of an emacs frame because action/assist-key-release-window was not
+     set properly.
+                (hmouse-function): Sent action/assist-key-release-position as argument
+    to hmouse-key-release-window call.
+
+2020-07-29  Bob Weiner  <rsw@gnu.org>
+
+* man/hkey-help.txt: Added magit modes.
+  hui-mouse.el (smart-magit, smart-magit-assist): Added.
+               (hkey-alist): Added support for magit modes.
+
+* kotl/kotl-mode.el (kotl-mode:eolp): Added optional 'next-char-visible' arg.
+                    (kotl-mode:action-key, kotl-mode:assist-key):
+  hui-mouse.el (hkey-alist): In kotl-mode, matched to eol only if following
+    char is not invisible.  This allows Action Key to expand a tree when point
+    is on the ellipsis (invisible portion of tree).
+
+2020-07-28  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode): Set outline-regexp so outline-on-heading-p and
+    smart-outline-subtree-hidden-p use it and the Action Key expands cells properly.
+
+* hyperbole.el (outline-invisible-in-p): Fixed to detect if tree is collapsed anywhere.
+
+2020-07-27  Mats Lidell  <matsl@gnu.org>
+
+* hui-dired-sidebar.el: Added support for dired-sidebar.
+
+2020-07-26  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (hsys-org): Moved org links/refs to near top of priority list so things
+    like URLs embeded within Org links are handled by Org, not Hyperbole.
+              (markdown-follow-inline-link-p): Fixed to defer in-file links with
+    point on the link title to the `pathname' ibtype since
+    markdown-follow-link-at-point does not handle them properly.
+
+2020-07-25  Bob Weiner  <rsw@gnu.org>
+
+* hib-kbd.el (kbd-key:execute-special-series): Added and used in kbd-key:act
+    to make key series work properly when helm-mode is enabled.  Counsel-mode
+    works without any change.
+
+2020-07-23  Bob Weiner  <rsw@gnu.org>
+
+* hui.el (hui:ibut-label-create): Fixed to skip back past opening delimiter
+    before adding new label.
+
+2020-07-22  Bob Weiner  <rsw@gnu.org>
+
+* hsys-org.el (org-mode): Added support for global Org link activation
+    (Org links outside of Org buffers) and for Org Agenda item activation.
+
+2020-07-21  Bob Weiner  <rsw@gnu.org>
+
+* hyperbole.el (hkey-global-set-key): Documented.
+
+2020-07-19  Bob Weiner  <rsw@gnu.org>
+
+* hyperbole.el (hyperb:init): Remove WSL abbrev of /mnt/c as /c since may not exist.
+
 2020-07-08  Bob Weiner  <rsw@gnu.org>
 
 * hbut.el (hbut:delete, ibut:delete): Added.
@@ -19,7 +144,7 @@ V7.1.3 changes ^^^^:
     clickable Emacs buttons and proper highlighting when dragging mouse-1.  This also allowed
     for deletion of Info-mode-map mouse-1 bindings.
 
- 2020-07-05  Bob Weiner  <rsw@gnu.org>
+2020-07-05  Bob Weiner  <rsw@gnu.org>
 
 * hbut.el (ibut:to): Fix not handling ibut names by substituting ibut:label-p call for ibut:at-p.
 
@@ -62,6 +187,12 @@ V7.1.3 changes ^^^^:
 * kotl/kotl-mode.el (beginning-of-visual-line,
                      end-of-visual-line,
                      kill-visual-line): Overrode in kotl-mode-map.
+
+2020-03-25  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:yank): Fix hypb:replace-match-string call to use
+    a replacement function rather than a string containing "\\0" which doesn't
+    work.
 
 2020-03-11  Bob Weiner  <rsw@gnu.org>
 

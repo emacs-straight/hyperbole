@@ -16,7 +16,7 @@
 ;;; Other required Lisp Libraries
 ;;; ************************************************************************
 
-(eval-and-compile (mapc #'require '(delsel hsettings hmail kfile kvspec kcell)))
+(eval-and-compile (mapc #'require '(delsel hsettings hmail kfile kvspec kcell outline)))
 
 ;;; ************************************************************************
 ;;; Public variables
@@ -79,13 +79,14 @@ It provides the following keys:
       ;; Some package such as filladapt has overwritten the primitives
       ;; defined in kfill.el, so reload it.
       (load "kfill"))
-  (setq fill-paragraph-function #'kfill:fill-paragraph)
+  (setq-local fill-paragraph-function #'kfill:fill-paragraph)
   ;; Ensure that outline structure data is saved when save-buffer is called
   ;; from save-some-buffers, {C-x s}.
   (add-hook 'local-write-file-hooks #'kotl-mode:update-buffer)
   (mapc #'make-local-variable
 	'(kotl-previous-mode indent-line-function indent-region-function
 			     outline-isearch-open-invisible-function
+			     outline-regexp
 			     line-move-ignore-invisible minor-mode-alist
 			     selective-display-ellipses
 			     paragraph-separate paragraph-start))
@@ -102,7 +103,8 @@ It provides the following keys:
 				       minor-mode-alist)
 	  ;; Remove indication that buffer is narrowed.
 	  mode-line-format (copy-sequence mode-line-format)
-	  mode-line-format (set:remove "%n" mode-line-format)))
+	  mode-line-format (set:remove "%n" mode-line-format)
+	  outline-regexp (concat " *[0-9][0-9a-z.]*" kview:default-label-separator)))
   ;;
   (if (fboundp 'add-to-invisibility-spec)
       (add-to-invisibility-spec '(outline . t)))
@@ -1916,12 +1918,15 @@ If at tail cell already, do nothing and return nil."
 		  (kotl-mode:bocp))))
        (point)))
 
-(defun kotl-mode:eolp ()
-  "Return t if point is at the end of a visible line or the end of the buffer."
+(defun kotl-mode:eolp (&optional next-char-visible)
+  "Return t if point is at the end of a visible line or the end of the buffer.
+With optional NEXT-CHAR-VISIBLE, return t only if the following char is visible."
   (or (eobp)
       (and (eolp)
-	   (or (not (kview:char-invisible-p))
-	       (not (kview:char-invisible-p (1- (point)))))
+	   (if next-char-visible
+	       (not (kview:char-invisible-p))
+	     (or (not (kview:char-invisible-p))
+		 (not (kview:char-invisible-p (1- (point))))))
 	   t)))
 
 (defun kotl-mode:first-cell-p ()
@@ -1963,7 +1968,7 @@ If key is pressed:
      a windowful."
   (interactive)
   (cond	((kotl-mode:eobp) (kotl-mode:show-all))
-	((kotl-mode:eolp) (funcall action-key-eol-function))
+	((kotl-mode:eolp t) (funcall action-key-eol-function))
 	((not (kview:valid-position-p))
 	 (if (markerp action-key-depress-prev-point)
 	     (progn (select-window
@@ -1998,7 +2003,7 @@ If assist-key is pressed:
      a windowful."
   (interactive)
   (cond ((kotl-mode:eobp) (kotl-mode:overview))
-	((kotl-mode:eolp) (funcall assist-key-eol-function))
+	((kotl-mode:eolp t) (funcall assist-key-eol-function))
 	((not (kview:valid-position-p))
 	 (if (markerp assist-key-depress-prev-point)
 	     (progn (select-window

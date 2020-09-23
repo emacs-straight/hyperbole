@@ -120,7 +120,6 @@ a menu item should be shown rather than display of a menu.  DOC-FLAG
 non-nil means show documentation for any item that is selected by the
 user.  HELP-STRING-FLAG non-nil means show only the first line of the
 documentation, not the full text."
-
   (setq hui:menu-keys "")
   (let ((set-menu '(or (and menu (symbolp menu)
 			    (setq menu-alist
@@ -171,10 +170,11 @@ Return nil when already in a Hyperbole mini-menu."
 Optional second argument MENU-LIST is a Hyperbole menu list structure from
 which to extract MENU.  It defaults to `hui:menus'.  See its definition for
 the menu list structure."
+  (setq hui:menu-keys "")
   (let ((set-menu '(or (and menu (symbolp menu)
 			    (setq menu-alist
 				  (cdr (assq menu (or menu-list hui:menus)))))
-		       (hypb:error "(hui:menu-act): Invalid menu symbol arg: `%s'"
+		       (hypb:error "(hui:menu-get-keys): Invalid menu symbol arg: `%s'"
 			      menu)))
 	(show-menu t)
 	menu-alist act-form)
@@ -211,11 +211,13 @@ With optional HELP-STRING-FLAG, instead returns the one line help string for the
   (when (and (stringp key-sequence)
 	     (not (eq key-sequence ""))
 	     (kbd-key:hyperbole-mini-menu-key-p key-sequence))
-    (let ((hargs:reading-p 'hmenu-help))
+    (let ((hargs:reading-p 'hmenu-help)
+	  (hmenu-key-seq (car (where-is-internal #'hyperbole))))
+      (unless hmenu-key-seq
+	(hypb:error "(hui:menu-doc): The 'hyperbole' command must be bound to a key"))
       (setq unread-command-events
 	    (nconc unread-command-events
-		   (mapcar 'identity (substring key-sequence
-						(length (or (car (where-is-internal #'hyperbole)) "\C-hh"))))))
+		   (mapcar 'identity (substring key-sequence (length hmenu-key-seq)))))
       (prog1 (hui:menu-act 'hyperbole nil t help-string-flag)
 	;; Ignore any keys past the first menu item activation.
 	(discard-input)))))

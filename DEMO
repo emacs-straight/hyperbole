@@ -222,7 +222,7 @@ There are two submodes of HyControl: one for controlling windows and one for
 controlling frames, although a number of commands are available in both modes
 where they are useful.
 
-Hyperbole binds {C-c \\} to invoke HyControl windows control; otherwise, the
+Hyperbole binds {C-c \ } to invoke HyControl windows control; otherwise, the
 Hyperbole minibuffer menu item, Screen/WindowsControl {C-h h s w}, will do
 the same thing.
 
@@ -419,7 +419,7 @@ Hyperbole provides a history command that returns you to previous button
 locations in the reverse order of the way you traverse them.  It actually
 restores your complete frame and window configuration at the time of the
 button press.  You access it by selecting the Hist command from the top-level
-Hyperbole menu, C-h h h.  Remember this because you will want to use that
+Hyperbole menu, {C-h h h}.  Remember this because you will want to use that
 command to return to this DEMO later.
 
 

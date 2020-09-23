@@ -29,6 +29,7 @@
 ;;; ************************************************************************
 
 (require 'hactypes)
+(require 'seq)
 
 (defvar kbd-key:named-key-list
   '("add" "backspace" "begin" "bs" "clear" "decimal" "delete" "del"
@@ -78,33 +79,42 @@ Any key sequence must be a string of one of the following:
   or a valid key sequence together with its interactive arguments."
   (unless (or (br-in-browser)
 	      (and (looking-at "[{}]") (/= ?\\ (preceding-char))))
-    ;; handle long series, e.g. eval-elisp actions
-    (let* ((hbut:max-len (max 3000 (hbut:max-len)))
-	   (seq-and-pos (or (hbut:label-p t "{`" "'}" t)
-			    (hbut:label-p t "{" "}" t)
-			    ;; Regular dual single quotes (Texinfo smart quotes)
-			    (hbut:label-p t "``" "''" t)
-			    ;; Typical GNU manual key sequences; note
-			    ;; these are special quote marks, not the
-			    ;; standard ASCII characters.
-			    (hbut:label-p t "‘" "’" t)))
-	   ;; This excludes delimiters
-	   (key-series (car seq-and-pos))
-	   (start (cadr seq-and-pos))
-	   binding)
-      ;; Match only when start delimiter is preceded by whitespace,
-      ;; double quotes or is the 1st buffer character, so do not
-      ;; match to things like ${variable}.
-      (when (memq (char-before start) '(nil ?\ ?\t ?\n ?\j ?\f ?\"))
-	(when (and (stringp key-series)
-		   (not (eq key-series "")))
-	  (setq key-series (kbd-key:normalize key-series)
-		binding (kbd-key:binding key-series)))
-	(and (stringp key-series)
-	     (or (and binding (not (integerp binding)))
-		 (kbd-key:special-sequence-p key-series))
-	     (ibut:label-set seq-and-pos)
-	     (hact 'kbd-key key-series))))))
+    ;; Temporarily make open and close braces have list syntax for
+    ;; matching purposes.
+    (let ((open-brace-syntax (hypb:get-raw-syntax-descriptor ?\{))
+	  (close-brace-syntax (hypb:get-raw-syntax-descriptor ?\})))
+      (unwind-protect
+	  (progn (modify-syntax-entry ?\{ "(\}" (syntax-table))
+		 (modify-syntax-entry ?\} ")\}" (syntax-table))
+		 ;; Handle long series, e.g. eval-elisp actions
+		 (let* ((hbut:max-len (max 3000 (hbut:max-len)))
+			(seq-and-pos (or (hbut:label-p t "{`" "'}" t)
+					 (hbut:label-p t "{" "}" t)
+					 ;; Regular dual single quotes (Texinfo smart quotes)
+					 (hbut:label-p t "``" "''" t)
+					 ;; Typical GNU manual key sequences; note
+					 ;; these are special quote marks, not the
+					 ;; standard ASCII characters.
+					 (hbut:label-p t "‘" "’" t)))
+			;; This excludes delimiters
+			(key-series (car seq-and-pos))
+			(start (cadr seq-and-pos))
+			binding)
+		   ;; Match only when start delimiter is preceded by whitespace,
+		   ;; double quotes or is the 1st buffer character, so do not
+		   ;; match to things like ${variable}.
+		   (when (memq (char-before start) '(nil ?\ ?\t ?\n ?\j ?\f ?\"))
+		     (when (and (stringp key-series)
+				(not (eq key-series "")))
+		       (setq key-series (kbd-key:normalize key-series)
+			     binding (kbd-key:binding key-series)))
+		     (and (stringp key-series)
+			  (or (and binding (not (integerp binding)))
+			      (kbd-key:special-sequence-p key-series))
+			  (ibut:label-set seq-and-pos)
+			  (hact 'kbd-key key-series)))))
+	(hypb:set-raw-syntax-descriptor ?\{ open-brace-syntax)
+	(hypb:set-raw-syntax-descriptor ?\} close-brace-syntax)))))
 
 ;;; ************************************************************************
 ;;; Public functions
@@ -117,10 +127,8 @@ Returns t if KEY-SERIES has a binding, else nil."
   (setq current-prefix-arg nil) ;; Execution of the key-series may set it.
   (let ((binding (kbd-key:binding key-series)))
     (cond ((null binding)
-	   ;; If this is a special key seqence, execute it by adding
-	   ;; its keys to the stream of unread command events.
 	   (when (kbd-key:special-sequence-p key-series)
-             (kbd-key:key-series-to-events key-series)
+	     (kbd-key:execute-special-series key-series)
 	     t))
 	  ((memq binding '(action-key action-mouse-key hkey-either))
 	   (beep)
@@ -128,9 +136,35 @@ Returns t if KEY-SERIES has a binding, else nil."
 	   t)
 	  (t (call-interactively binding) t))))
 
+(defun kbd-key:execute-special-series (key-series)
+  "Execute key series."
+  (if (memq (key-binding [?\M-x]) #'(execute-extended-command counsel-M-x))
+      (kbd-key:key-series-to-events key-series)
+    ;; Disable helm while processing M-x commands; helm
+    ;; gobbles final RET key.  Counsel works without modification.
+    (let ((orig-binding (global-key-binding [?\M-x]))
+	  (helm-flag (and (boundp 'helm-mode) helm-mode))
+	  (minibuffer-completion-confirm))
+      (unwind-protect
+	  (progn
+	    (when helm-flag (helm-mode -1))
+	    (global-set-key [?\M-x] 'execute-extended-command)
+	    (kbd-key:key-series-to-events key-series))
+	(kbd-key:key-series-to-events
+	 (format "M-: SPC (kbd-key:maybe-enable-helm SPC %s SPC #'%S) RET"
+		 helm-flag orig-binding))))))
+
+(defun kbd-key:maybe-enable-helm (helm-flag orig-M-x-binding)
+  "Enable helm-mode if HELM-FLAG is non-nil.  Restore M-x binding to ORIG-M-X-BINDING."
+  (when helm-flag (helm-mode 1))
+  (global-set-key [?\M-x] orig-M-x-binding))
+
 (defun kbd-key:key-series-to-events (key-series)
-  "Insert the key-series as a series of keyboard events into Emacs' unread input stream."
-  (setq unread-command-events (nconc unread-command-events (listify-key-sequence (kbd-key:kbd key-series)))))
+  "Insert the key-series as a series of keyboard events into Emacs' unread input stream.
+Emacs then executes them when its command-loop regains control."
+  (setq unread-command-events (nconc unread-command-events
+				     (listify-key-sequence
+				      (kbd-key:kbd key-series)))))
 
 (defun kbd-key:doc (key-series &optional full)
   "Show first line of doc for binding of keyboard KEY-SERIES in minibuffer.
@@ -231,7 +265,7 @@ keyboad input queue, as if they had been typed by the user."
 ;;; ************************************************************************
 
 (defun kbd-key:binding (key-series)
-  "Return any existing key binding for KEY-SERIES or nil."
+  "Return key binding for KEY-SERIES if it is a single key sequence or nil."
   ;; This custom function is used to prevent the (kbd) call from
   ;; mistakenly removing angle brackets from Hyperbole implicit button
   ;; names, like: <[td]>.
@@ -263,12 +297,13 @@ For an approximate inverse of this, see `key-description'."
 	  (setq times (string-to-number (substring word 0 (match-end 1))))
 	  (setq word (substring word (1+ (match-end 1)))))
 	(cond ((string-match "^<<.+>>$" word)
-	       (setq key (vconcat (if (eq (key-binding [?\M-x])
-					  'execute-extended-command)
-				      [?\M-x]
-				    (or (car (where-is-internal
-					      'execute-extended-command))
-					[?\M-x]))
+	       (setq key (vconcat (cond ((memq (key-binding [?\M-x])
+					       kbd-key:extended-command-binding-list)
+					 [?\M-x])
+					((seq-filter
+					  (lambda (elt) (car (where-is-internal elt)))
+					  kbd-key:extended-command-binding-list)
+					 [?\M-x]))
 				  (substring word 2 -2) "\r")))
 	      ((and (string-match "^\\(\\([ACHMsS]-\\)*\\)<\\(.+\\)>$" word)
 		    (progn
@@ -409,8 +444,11 @@ a M-x extended command,
 ;;; ************************************************************************
 
 (defconst kbd-key:extended-command-prefix
-  (kbd-key:normalize (key-description (where-is-internal 'execute-extended-command (current-global-map) t)))
-  "Normalized prefix string that invokes an extended command; typically ESC x.")
+  (format "\\_<%s\\_>" (kbd-key:normalize "M-x"))
+  "Normalized prefix regular expression that invokes an extended command; by default, M-x.")
+
+(defconst kbd-key:extended-command-binding-list '(execute-extended-command helm-M-x counsel-M-x)
+  "List of commands that may be bound to M-x to invoke extended/named commands.")
 
 (defvar kbd-key:mini-menu-key nil
   "The key sequence that invokes the Hyperbole minibuffer menu.")
