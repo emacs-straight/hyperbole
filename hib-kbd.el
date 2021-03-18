@@ -56,8 +56,8 @@ Group 1 matches to the set of modifier keys.  Group 3 matches to the unmodified 
 ;;; ************************************************************************
 
 (defact kbd-key (key-series)
-  "Execute a normalized key sequence without curly braces, {}.
-KEY-SERIES must be a string of one of the following:
+  "Execute a normalized KEY-SERIES (series of key sequences) without curly braces, {}.
+Each key sequence within KEY-SERIES must be a string of one of the following:
   a Hyperbole minibuffer menu item key sequence,
   a HyControl key sequence,
   a M-x extended command,
@@ -68,7 +68,7 @@ Return t if the sequence appears to be valid, else nil."
   (kbd-key:act key-series))
 
 (defib kbd-key ()
-  "Execute a key sequence found around point, delimited by curly braces, {}, if any.
+  "Execute a key series (series of key sequences) around point, delimited by curly braces, {}.
 Key sequences should be in human readable form, e.g. {C-x C-b}, or what `key-description' returns.
 Forms such as {\C-b}, {\^b}, and {^M} will not be recognized.
 
@@ -143,7 +143,7 @@ Returns t if KEY-SERIES has a binding, else nil."
     ;; Disable helm while processing M-x commands; helm
     ;; gobbles final RET key.  Counsel works without modification.
     (let ((orig-binding (global-key-binding [?\M-x]))
-	  (helm-flag (and (boundp 'helm-mode) helm-mode))
+	  (helm-flag (when (boundp 'helm-mode) helm-mode))
 	  (minibuffer-completion-confirm))
       (unwind-protect
 	  (progn
@@ -197,6 +197,41 @@ With optional prefix arg FULL, display full documentation for command."
   (let ((kbd-key (hbut:key-to-label (hattr:get but 'lbl-key))))
     (when kbd-key
       (kbd-key:doc kbd-key t))))
+
+(defun kbd-key:is-p (str)
+  "If STR is a curly-brace {} delimited key series, return the non-delimited, normalized form, else nil.
+Key sequences should be in human readable form, e.g. {C-x C-b}, or what `key-description' returns.
+Forms such as {\C-b}, {\^b}, and {^M} will not be recognized.
+
+Any key sequence must be a string of one of the following:
+  a Hyperbole minibuffer menu item key sequence,
+  a HyControl key sequence,
+  a M-x extended command,
+  or a valid key sequence together with its interactive arguments."
+  ;; Temporarily make open and close braces have list syntax for
+  ;; matching purposes.
+  (let ((open-brace-syntax (hypb:get-raw-syntax-descriptor ?\{))
+	(close-brace-syntax (hypb:get-raw-syntax-descriptor ?\})))
+    ;; Handle long series, e.g. eval-elisp actions
+    (let* ((hbut:max-len (max 3000 (hbut:max-len)))
+	   ;; STR must include delimiters but they are stripped from `key-series'.
+	   (key-series (or (kbd-key:remove-delimiters str "{`" "'}")
+			   (kbd-key:remove-delimiters str "{" "}")
+			   ;; Regular dual single quotes (Texinfo smart quotes)
+			   (kbd-key:remove-delimiters str "``" "''")
+			   ;; Typical GNU manual key sequences; note
+			   ;; these are special quote marks, not the
+			   ;; standard ASCII characters.
+			   (kbd-key:remove-delimiters str "‘" "’")))
+	   binding)
+      (when (and (stringp key-series)
+		 (not (eq key-series "")))
+	(setq key-series (kbd-key:normalize key-series)
+	      binding (kbd-key:binding key-series)))
+      (and (stringp key-series)
+	   (or (and binding (not (integerp binding)))
+	       (kbd-key:special-sequence-p key-series))
+	   key-series))))
 
 (defun kbd-key:normalize (key-series)
   "Normalize a human-readable string of keyboard keys, KEY-SERIES (without any surrounding {}).
@@ -259,6 +294,12 @@ keyboad input queue, as if they had been typed by the user."
 	       (hypb:mark-object norm-key-series))
 	     norm-key-series)))
 	(t (error "(kbd-key:normalize): requires a string argument, not `%s'" key-series))))
+
+(defun kbd-key:remove-delimiters (str start-delim end-delim)
+  "Return STR sans START-DELIM and END-DELIM (strings) iff it starts and ends with these delimiters."
+  (when (and (string-match (format "\\`%s" (regexp-quote start-delim)) str)
+	     (string-match (format "%s\\'"  (regexp-quote end-delim)) str))
+    (string-trim str start-delim end-delim)))
 
 ;;; ************************************************************************
 ;;; Private functions

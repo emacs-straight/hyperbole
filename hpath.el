@@ -4,7 +4,7 @@
 ;;
 ;; Orig-Date:     1-Nov-91 at 00:44:23
 ;;
-;; Copyright (C) 1991-2019  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2020  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -252,29 +252,42 @@ possible suffixes."
 							  "open"))
   "*An alist of (FILENAME-REGEXP . DISPLAY-PROGRAM-STRING-OR-LIST) elements for the macOS window system.
 See the function `hpath:get-external-display-alist' for detailed format documentation."
-  :type 'regexp
+  :type '(alist :key-type regexp :value-type string)
   :group 'hyperbole-commands)
 
-(defvar hpath:external-display-alist-mswindows (list '("\\.vba$" . "/c/Windows/System32/cmd.exe //c start \"${@//&/^&}\"")
-						     (cons (format "\\.\\(%s\\)$" hpath:external-open-office-suffixes)
-							   "openoffice.exe"))
-    "*An alist of (FILENAME-REGEXP . DISPLAY-PROGRAM-STRING-OR-LIST) elements for MS Windows.
-See the function `hpath:get-external-display-alist' for detailed format documentation.")
+;; (defvar hpath:external-display-alist-mswindows (list '("\\.vba$" . "/c/Windows/System32/cmd.exe //c start \"${@//&/^&}\"")
+;; 						     (cons (format "\\.\\(%s\\)$" hpath:external-open-office-suffixes)
+;; 							   "openoffice.exe"))
 
-(defvar hpath:external-display-alist-x (list '("\\.e?ps$" . "ghostview")
-					     '("\\.dvi$"  . "xdvi")
-					     (cons (format "\\.\\(%s\\)$" hpath:external-open-office-suffixes) "openoffice")
-					     '("\\.pdf$"  . ("xpdf" "acroread"))
-					     '("\\.ps\\.g?[zZ]$" . "zcat %s | ghostview -")
-					     '("\\.\\(gif\\|tiff?\\|xpm\\|xbm\\|xwd\\|pm\\|pbm\\|jpe?g\\)"  . "xv")
-					     '("\\.ra?s$" . "snapshot -l"))
+(defcustom hpath:external-display-alist-mswindows (list '("\\.vba$" . "/c/Windows/System32/cmd.exe //c start \"${@//&/^&}\"")
+							(cons (format "\\.\\(%s\\)$" hpath:external-open-office-suffixes)
+							      "openoffice.exe"))
+  "*An alist of (FILENAME-REGEXP . DISPLAY-PROGRAM-STRING-OR-LIST) elements for MS Windows.
+See the function `hpath:get-external-display-alist' for detailed format documentation."
+  :type '(alist :key-type regexp :value-type string)
+  :group 'hyperbole-commands)
+
+
+;; (defvar hpath:external-display-alist-x (list '("\\.e?ps$" . "ghostview")
+;; 					     '("\\.dvi$"  . "xdvi")
+;; 					     (cons (format "\\.\\(%s\\)$" hpath:external-open-office-suffixes) "openoffice")
+;; 					     '("\\.pdf$"  . ("xpdf" "acroread"))
+;; 					     '("\\.ps\\.g?[zZ]$" . "zcat %s | ghostview -")
+;; 					     '("\\.\\(gif\\|tiff?\\|xpm\\|xbm\\|xwd\\|pm\\|pbm\\|jpe?g\\)"  . "xv")
+;; 					     '("\\.ra?s$" . "snapshot -l"))
+
+(defcustom hpath:external-display-alist-x (list (cons (format "\\.\\(xcf\\|%s\\)$"
+							      hpath:external-open-office-suffixes)
+						      "setsid -w xdg-open"))
   "*An alist of (FILENAME-REGEXP . DISPLAY-PROGRAM-STRING-OR-LIST) elements for the X Window System.
-See the function `hpath:get-external-display-alist' for detailed format documentation.")
+See the function `hpath:get-external-display-alist' for detailed format documentation."
+  :type '(alist :key-type regexp :value-type string)
+  :group 'hyperbole-commands)
 
 (defvar hpath:info-suffix "\\.info\\(-[0-9]+\\)?\\(\\.gz\\|\\.Z\\|-z\\)?\\'"
   "Regexp matching to the end of Info manual file names.")
 
-(defvar hpath:internal-display-alist
+(defcustom hpath:internal-display-alist
   (let ((info-suffix "\\.info\\(-[0-9]+\\)?\\(\\.gz\\|\\.Z\\|-z\\)?\\'"))
     (delq
      nil
@@ -313,7 +326,9 @@ See the function `hpath:get-external-display-alist' for detailed format document
       )))
   "*Alist of (FILENAME-REGEXP . EDIT-FUNCTION) elements for calling special
 functions to display particular file types within Emacs.  See also
-the function (hpath:get-external-display-alist) for external display program settings.")
+the function (hpath:get-external-display-alist) for external display program settings."
+  :type '(alist :key-type regexp :value-type sexp)
+  :group 'hyperbole-commands)
 
 (defvar hpath:display-buffer-alist
   (list
@@ -762,7 +777,8 @@ With optional INCLUDE-POSITIONS, returns a triplet list of (path start-pos
 end-pos) or nil."
   ;; Prevents MSWindows to Posix path substitution
   (let ((hyperb:microsoft-os-p t))
-    (or (hargs:delimited "\"" "\"" nil nil include-positions "[`'’]")
+    (or (hargs:delimited "file://" "\\s-" nil t include-positions)
+	(hargs:delimited "\"" "\"" nil nil include-positions "[`'’]")
 	;; Filenames in Info docs or Python files
 	(hargs:delimited "[`'‘]" "[`'’]" t t include-positions "\"")
 	;; Filenames in TexInfo docs
@@ -1104,7 +1120,7 @@ See also `hpath:internal-display-alist' for internal, `window-system' independen
 			     (cons "next" hpath:external-display-alist-macos)))))))
 
 (defun hpath:is-p (path &optional type non-exist)
-  "Return normalized PATH as a URL if PATH is a Posix or MSWindows path, else nil.
+  "Return normalized PATH if PATH is a Posix or MSWindows path, else nil.
 If optional TYPE is the symbol 'file or 'directory, then only that path type
 is accepted as a match.  The existence of the path is checked only for
 locally reachable paths (Info paths are not checked).  With optional NON-EXIST,
@@ -1147,7 +1163,9 @@ path form is what is returned for PATH."
 					     suffix)
 				suffix nil)
 			  t)
-		 (setq path (hpath:substitute-value path)))
+		 (setq path (hpath:substitute-value path))
+		 (unless (string-empty-p path)
+		   path))
 	     t)
 	   (not (string-match "[\t\n\r\"`'|{}\\]" path))
 	   (let ((rtn-path path))
@@ -1209,8 +1227,8 @@ path form is what is returned for PATH."
 		      ;; Quote any % except for one %s at the end of the
 		      ;; path part of rtn-path (immediately preceding a #
 		      ;; or , character or the end of string).
-		      (setq rtn-path (hypb:replace-match-string "%" rtn-path "%%")
-			    rtn-path (hypb:replace-match-string "%%s\\([#,]\\|\\'\\)" rtn-path "%s\\1"))
+		      (setq rtn-path (hypb:replace-match-string "%" rtn-path "%%" nil t)
+			    rtn-path (hypb:replace-match-string "%%s\\([#,]\\|\\'\\)" rtn-path "%s\\1" nil t))
 		      ;; Return path if non-nil return value.
 		      (if (stringp suffix) ;; suffix could = t, which we ignore
 			  (if (string-match (concat (regexp-quote suffix) "%s") rtn-path)
@@ -1297,8 +1315,8 @@ in-buffer path will not match."
 		 ;; orig point and return (start . end).
 		 (setq start (match-beginning 0) end (match-end 0)
 		       found (and (<= start opoint) (>= end opoint)))))
-      (if found
-	  (list start end)))))
+      (when found
+	(list start end)))))
 
 (defun hpath:substitute-value (path)
   "Substitute matching value for Emacs Lisp variables and environment variables in PATH and return PATH."
@@ -1330,7 +1348,7 @@ in-buffer path will not match."
 			   (hpath:substitute-dir var-name rest-of-path)
 			 (error rest-of-path)))
 	    var-group)))
-      t)))
+      t t)))
 
 (defun hpath:substitute-var (path)
   "Replace up to one match in PATH with the first variable from `hpath:variables' whose value contain a string match to PATH.
@@ -1343,22 +1361,21 @@ After any match, the resulting path will contain a varible reference like ${vari
 	  result var val)
       (while (and vars (null new-path))
 	(setq var (car vars) vars (cdr vars))
-	(if (boundp var)
-	    (progn (setq val (symbol-value var))
-		   (cond ((stringp val)
-			  (if (setq result
-				    (hpath:substitute-var-name var val path))
-			      (setq new-path result)))
-			 ((null val))
-			 ((listp val)
-			  (while (and val (null new-path))
-			    (if (setq result
-				    (hpath:substitute-var-name var (car val) path))
-				(setq new-path result))
-			    (setq val (cdr val))))
-			 (t (error "(hpath:substitute-var): `%s' has invalid value for hpath:variables" var))))))
-      (or new-path path)
-      )))
+	(when (boundp var)
+	  (setq val (symbol-value var))
+	  (cond ((stringp val)
+		 (if (setq result
+			   (hpath:substitute-var-name var val path))
+		     (setq new-path result)))
+		((null val))
+		((listp val)
+		 (while (and val (null new-path))
+		   (when (setq result
+			       (hpath:substitute-var-name var (car val) path))
+		     (setq new-path result))
+		   (setq val (cdr val))))
+		(t (error "(hpath:substitute-var): `%s' has invalid value for hpath:variables" var)))))
+      (or new-path path))))
 
 ;;
 ;; The following function recursively resolves all POSIX links to their
@@ -1423,7 +1440,12 @@ Returns LINKNAME unchanged if it is not a symbolic link but is a pathname."
 
 (defun hpath:trim (path)
   "Return PATH with any [\" \t\n\r] characters trimmed from its start and end."
-  (string-trim path "[\" \t\n\r]+" "[\" \t\n\r]+"))
+  ;; Trim only matching starting and ending quoted double quotes (must
+  ;; be a single line string).
+  (setq path (string-trim path))
+  (when (string-match "\\`\".*\"\\'" path)
+    (setq path (string-trim path "\"" "\"")))
+  path)
 
 (defun hpath:normalize (filename)
   "Normalize and return PATH if PATH is a valid, readable path, else signal error."
@@ -1776,13 +1798,22 @@ local pathname."
 		      (concat "$\{" var-name "\}/" rest-of-path)))))
 	  (t (error "(hpath:substitute-dir): Value of VAR-NAME, \"%s\", must be a string or list" var-name)))))
 
-(defun hpath:substitute-match-value (regexp str newtext &optional literal)
+(defun hpath:substitute-match-value (regexp str newtext &optional literal fixedcase)
   "Replace all matches for REGEXP in STR with NEWTEXT string and return the result.
+
 Optional LITERAL non-nil means do a literal replacement.
 Otherwise treat \\ in NEWTEXT string as special:
   \\& means substitute original matched text,
   \\N means substitute match for \(...\) number N,
   \\\\ means insert one \\.
+
+If optional fifth arg FIXEDCASE is non-nil, do not alter the case of
+the replacement text.  Otherwise, maybe capitalize the whole text, or
+maybe just word initials, based on the replaced text.  If the replaced
+text has only capital letters and has at least one multiletter word,
+convert NEWTEXT to all caps.  Otherwise if all words are capitalized
+in the replaced text, capitalize each word in NEWTEXT.
+
 NEWTEXT may instead be a function of one argument (the string to replace in)
 that returns a replacement string."
   (unless (stringp str)
@@ -1804,7 +1835,7 @@ that returns a replacement string."
 	      (cond ((functionp newtext)
 		     (hypb:replace-match-string
 		      regexp (substring str match start)
-		      (funcall newtext str) literal))
+		      (funcall newtext str) literal fixedcase))
 		    (literal newtext)
 		    (t (mapconcat
 			 (lambda (c)
@@ -1814,8 +1845,7 @@ that returns a replacement string."
 					((eq c ?&)
 					 (match-string 0 str))
 					((and (>= c ?0) (<= c ?9))
-					 (if (> c (+ ?0 (length
-							 (match-data))))
+					 (if (> c (+ ?0 (length (match-data))))
 					     ;; Invalid match num
 					     (error "(hypb:replace-match-string) Invalid match num: %c" c)
 					   (setq c (- c ?0))
@@ -1831,13 +1861,13 @@ that returns a replacement string."
 (defun hpath:substitute-var-name (var-symbol var-dir-val path)
   "Replace with VAR-SYMBOL any occurrences of VAR-DIR-VAL in PATH.
 Replacement is done iff VAR-DIR-VAL is an absolute path.
-If PATH is modified, returns PATH, otherwise returns nil."
+If PATH is modified, return PATH, otherwise return nil."
   (when (and (stringp var-dir-val) (file-name-absolute-p var-dir-val))
     (let ((new-path (hypb:replace-match-string
 		     (regexp-quote (file-name-as-directory
 				    (or var-dir-val default-directory)))
 		     path (concat "$\{" (symbol-name var-symbol) "\}/")
-		     t)))
+		     t t)))
       (if (equal new-path path) nil new-path))))
 
 

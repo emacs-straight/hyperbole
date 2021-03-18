@@ -1,3 +1,388 @@
+2021-03-14  Mats Lidell  <matsl@gnu.org>
+
+* test/hy-test-dependencies.el (package-installed-p): Check if
+    with-simulated-input is installed.
+
+* test/demo-tests.el (demo-smart-scrolling-non-proportional-test): Make
+    test more robust
+
+* test/hibtypes-tests.el (ibtypes::pathname-env-variable-test): Use env
+    for HOME to not depend on machine or OS specifics
+
+2021-03-14  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Smart Key - Magit Mode):
+  hui-mouse.el (smart-magit, smart-magit-assist): With Action/Assist Mouse
+    Key press on a read-only header line, cycle visibility of diff/all
+    sections in the buffer.
+
+2021-03-14  Mats Lidell  <matsl@gnu.org>
+
+* test/hbut-tests.el (hbut-ib-link-to-file-with-label-variants): Test
+    variants of label separation chars and lengths
+    (hbut-ib-create-label): Test creation of label
+    (hbut-ib-create-label-fails-if-label-exists): Check creation fails
+    when label exists
+
+* test/hy-test-dependencies.el (package-installed-p): Add
+    with-simulated-input
+
+2021-03-13  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (defil): Improved to handle both symbol and string representations
+    of Hyperbole action types.
+
+2021-03-12  Mats Lidell  <matsl@gnu.org>
+
+* test/hbut-tests.el (hbut-verify-defal, hbut-defal-function): Test defal
+    with function.
+    (hbut-ib-link-to-file-with-label, hbut-ib-url-with-label): Test for
+    implicit buttons with labels.
+
+2021-03-11  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (defil, defal): If LINK-EXPR is a function and the button is
+    an Action Button, then the function receives just the text following
+    the action function name.
+
+2021-03-07  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (debugger-source): In Python tracebacks, may be on a line
+   just below the source reference line so if not on a Hyperbole button,
+   move back a line and check for a source line again.
+
+2021-03-06  Mats Lidell  <matsl@gnu.org>
+
+* test/hibtypes-tests.el (ibtypes::ctags-vgrind-test):
+    (ibtypes::etags-test): Updated since tags info changed
+
+* test/hbut-tests.el (hbut-defal-url, hbut-defal-key-sequence)
+    (hbut-defil-it, hbut-defil, hbut-defil-url, hbut-defil-key-sequence):
+    Added more tests for defal and defil.
+
+* test/hy-test-helpers.el
+    (hy-test-helpers:action-key-should-call-hpath:find): Add helper for
+    verifying hpath:find is called
+
+2021-02-28  Bob Weiner  <rsw@gnu.org>
+
+*  (hyrolo-grep-file): Disable magit-auto-revert-mode-enable-in-buffers
+      for hyrolo buffers; not needed and can slow/hang file loading. Fixes
+      issue reported by Gravitypost.
+
+2021-02-28  Mats Lidell  <matsl@gnu.org>
+
+* test/hpath-tests.el
+    (hpath:find-report-lisp-variable-path-name-when-not-exists): Verify
+    not found file name error message contains the expanded lisp variable.
+
+* hbut.el (defil): Use FIXEDCASE is non-nil to not alter the case of the
+    replacement text.
+
+* test/hbut-tests.el (hbut-defal, hbut-defal-fails-on-file-missing)
+    (hbut-defil): Test for defal and defil implicit button macros.
+
+* (demo-man-appropos-test, ibtypes::man-apropos-test): Mock call to man.
+
+2021-02-21  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (smart-magit-tab): Do what TAB does unless TAB does nothing
+    in the current mode, then do what RET does.
+               (smart-magit-listing-modes): Removed, no longer needed.
+	       (smart-magit-assist): Fixed RET invocation to not prompt.
+
+* hib-social.el (git-commit-reference): Relaxed matching to match to
+    commit <commit-number> wherever surrounded by whitespace.
+
+* hypb.el (hypb:fgrep-git-log-activate, hypb:fgrep-git-log-mode):
+          (hypb:fgrep-git-log): Improved to use its own major mode, allowing
+    for RET to use the Action Key (previously RET did not work).
+
+* DEMO (Action Buttons): Moved to after pathname implicit buttons and added
+    Defining New Action Button Types subsection.
+
+* hyperbole.el (hkey-define-key): Removed, had bug that did not use prefix
+    keymap properly; use hkey-global-set-key with a full key sequence instead.
+               (hkey-initialize): Replaced calls to above function.
+
+2021-02-20  Mats Lidell  <matsl@gnu.org>
+
+* test/hibtypes-tests.el (mail-address-at-p-test)
+  (mail-address-at-p-no-mail-should-fail-test, ibtypes::mail-address-test)
+  (ibtypes::pathname-test, ibtypes::pathname-lisp-variable-test)
+  (ibtypes::pathname-env-variable-test)
+  (ibtypes::pathname-emacs-lisp-file-test, ibtypes::annot-bib-test)
+  (ibtypes::ctags-vgrind-test, ibtypes::etags-test)
+  (ibtypes::text-toc-test, ibtypes::dir-summary-test, ibtypes::rfc-test)
+  (ibtypes::man-apropos-test, ibtypes::info-node-test): Tests for hibtypes.
+
+* test/hib-social-tests.el (hib-social-should-browse-twitter-url)
+  (hib-social-twitter-test, hib-social-should-browse-github-url)
+  (hib-github-user-default-test, hib-github-ignore-default-test): Test for
+    hib-social.
+
+* test/hy-test-dependencies.el: Load prerequisites for tests
+
+2021-02-18  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (grep-msg): Added UNIX shell error support.
+
+2021-02-15  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-window-link, hkey-ace-window-setup): Added Ace Window 'w' command to
+    use hui:link-directly to instantly create a link between the selected window and one
+    chosen via Ace Window.
+  hui.el (hui:hbut-label): Added optional label PROMPT override.
+         (hui:link-directly): Used PROMPT parameter here.
+  hmouse-drv.el (hmouse-choose-windows): Simplified prompts.
+  hui.el (hui:link-directly): Added optional depress-window and release-window params so
+    can be called with non-Action Key window pairs.  Also, made interactive with mouse
+    key selection of button and referent windows.
+  man/hyperbole.texi (Keyboard Drags):
+  DEMO (Creation via Ace Window):
+  HY-NEWS: Added {M-o w} command.
+
+* hypb.el (hypb:def-to-buffer): Added for quick def copying and insertion in another buffer.
+    Can be bound and used in key series.
+
+* hbut.el (defil): Fixed improper call of regexp-quote when link-expr was not a string.
+
+* hib-social.el (git-commit-reference): Added flash of button label
+
+2021-02-14  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Programmatic Button Creation): Documented ebut:program.
+
+* hib-social.el (git-commit-reference): Loosened to match to single line commit log
+    entries with text following the commit number.
+
+* hypb.el (hypb:fgrep-git-log, hypb:grep-git-log): Added to allow f/grepping over
+    repo changesets and listing associated commit log messages.
+
+2021-02-11  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (def-edebug-spec defib):
+  hact.el (def-edebug-spec defact): Added edebug-defun support for ibtypes and actypes
+    courtesy of Mats.
+
+2021-02-08  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Creating Implicit Button Types): Renamed from Implicit
+    Button Types Creation and added 2 new subsections on simplified link
+    type creation.
+
+2021-02-07  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (smart-magit-listing-modes): Added list of major modes for
+    which the Action Key should run RET instead of TAB.
+               (smart-magit): Applied this new custom variable.
+
+* hbut.el (defal): Greatly clarified use in doc string.
+
+* hibtypes.el (dir-summary): Fixed so point is left in file displayed by
+    action key press, not the MANIFEST.
+
+* hpath.el (hpath:delimited-possible-path): Added support for file:// URLs.
+
+2021-01-31  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-display-format-function): Separated records by 1
+    newline, not 2; unsure how 2 were ever added.
+            (hyrolo-fgrep):
+  hyrolo-logic.el (hyrolo-fgrep-logical, hyrolo-map-logic):
+  hyrolo-demo.el (hyrolo-demo-fgrep-logical): Changed default to not show
+    full hierarchy of records but just matching sub-levels, for more
+    intuitive logical expression matching.  Made rolo-logical searches in DEMO
+    work.
+
+2020-12-03  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (Info-node): Allowed for backslash double-quotes around node name, e.g. when in a doc string.
+2021-01-30  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (test-ert, test-all): Add ert test targets
+
+* test/hib-kbd-tests.el (kbd-key-hy-about-test)
+    (kbd-key-hy-demo-factorial-test): Added.
+* test/hactypes-tests.el (display-boolean-true-test)
+    (display-boolean-false-test): Added.
+* test/hy-test-helpers.el (hy-test-helpers:consume-input-events)
+    (hy-test-helpers:should-last-message): Added helper functions.
+* test/demo-tests.el (demo-smart-mouse-keys-ref-test)
+    (demo-smart-mouse-keys-ebut-test, demo-table-of-contents-test)
+    (demo-smart-scrolling-proportional-test)
+    (demo-smart-scrolling-non-proportional-test, demo-action-key-help)
+    (demo-assist-key-help, demo-window-grid-22-test)
+    (demo-window-grid-33-test, demo-hy-rolo-test, demo-hy-info-test)
+    (demo-hy-history-test, demo-implicit-button-test)
+    (demo-implicit-button-action-button-action-type-invocation-test)
+    (demo-implicit-button-action-button-function-calls-test)
+    (demo-implicit-button-action-button-variable-display-test)
+    (demo-implicit-button-hash-link-test)
+    (demo-implicit-button-line-and-column-test)
+    (demo-org-hide-header-test, demo-manifest-test)
+    (demo-mail-compose-test, demo-social-twitter-test, demo-www-test)
+    (demo-github-user-default-test, demo-github-ignore-default-test)
+    (demo-occur-test, demo-annotated-reference-test)
+    (demo-man-appropos-test, demo-factorial-test)
+    (demo-factorial-ebutton-test): Test cases
+    (demo-should-browse-url): Test helper
+
+2020-11-22  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:trim): Fixed to not trim trailing quoted double quote,
+    resolving bug#43644.
+
+* hibtypes.el (mail-address): When mail-address-mode-list is set to nil,
+    activated this ibtype in any major mode.
+
+2020-11-16  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kexport.el (kexport:html): Lowercased HTML tags for HTML5.
+
+2020-11-08  Bob Weiner  <rsw@gnu.org>
+
+* hsettings.el (hyperbole-toggle-messaging): Moved from hyperbole.el
+    to here to prevent unknown function error during package byte
+    compilation.
+
+* hibtypes.el (man-apropos): Prevented matches to log lines like:
+    WARNING: (func-name) - warning description
+
+2020-11-07  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:copy-absolute-klink-to-kill-ring):
+                    (kotl-mode:copy-relative-klink-to-kill-ring): Added new
+   commands to copy kcell refs to the kill ring.
+                    (kotl-mode:copy-absolute-klink-to-register):
+                    (kotl-mode:copy-relative-klink-to-register): Added new
+   commands to copy kcell refs to registers.
+
+* kotl/kview.el (kcell-view:reference): Updated doc to explain handling of
+    relative-dir = nil.
+    (kcell-view:absolute-reference): Added for kcell references with
+absolute paths.
+
+2020-11-02  Mats Lidell  <matsl@gnu.org>
+
+* hpath.el (hpath:external-display-alist-mswindows):
+           (hpath:internal-display-alist): Add customization.
+           (hpath:external-display-alist-x): Add customization. Use
+    xdg-open to use users preferred app in window system.
+
+2020-11-01  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ebut:program): Added a programmatic way to create explicit buttons.
+  hui.el (hui:ebut-create): Updated doc to highlight that this is for interactive use.
+  hbdata.el (hbdata:actype): Updated to handle programmatically created
+    explicit buttions whose action types may be regular Elisp functions.
+
+2020-10-27  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (defal, defil): Added to allow non-programmers who understand
+    simple regular expressions to create their own implicit button types.
+
+    ibtype:create-action-link-type is an alias for defal which creates
+    a new action button link type given a type symbol/name and a regular
+    expression that resolves into a key series, URL or path to display.
+
+    ibtype:create-regexp-link-type is an alias for defil; it behaves just
+    like defal but requires starting and ending delimiters as well as a
+    button text matching regexp and a link substitution regexp, allowing
+    for more complex regexp substitution, not just the simpler action
+    button formats.
+
+* hib-kbd.el (kbd-key:is-p): Added to test if a string is a delimited key series.
+
+2020-10-25  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el:
+  man/hyperbole.texi (Implicit Button Types): Updated doc.
+
+2020-10-22  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (symset:clear): Added to empty a symset like ibtypes to reset
+    ibtype priorities.
+  hibtypes.el: Changed require to load for all hibtype files so are always
+    added when the ibtype priority list is reset.
+
+* hibtypes.el (hib-org): Moved Org links to lowest priority so
+    all implicit button types can be used in Org mode.
+
+2020-10-18  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el  (hypb:replace-match-string):
+  hpath.el (hpath:substitute-match-value):
+    Added optional 5th arg, fixedcase, which can be used to prevent
+    case changes in replaced strings.
+           (hpath:substitute-var-name, hpath:is-p,
+            hpath:substitute-match-value): Used fixedcase arg in
+    hypb:replace-match-string calls.
+           (hpath:substitute-value): Used fixedcase arg in
+    hpath:substitute-match-value call.
+           (hpath:is-p): Handled empty string return value from
+    hpath:substitute-value call.
+    These changes fixed improper path variable subst where the path
+    contains mixed case characters.
+
+* kotl/kotl-mode.el (kotl-mode:action-key): Added Org table support.
+                    (kotl-mode): Automatically enabled orgtbl-mode
+    minor mode.  Forced load of org-table and kotl-orgtbl for this.
+                    (kotl-mode-map): Bound demotion and promotion of trees
+    to all of the following (inside Org Table is when orgtbl-mode minor
+    mode is active and point is in a table):
+
+    | Demotion Inside Org Table | Promotion Inside Org Table |
+    |---------------------------+----------------------------|
+    | C-c C-,                   | C-c C-.                    |
+    | C-c C-<                   | C-c C->                    |
+
+    | Demotion Outside Org Table | Promotion Outside Org Table |
+    |----------------------------+-----------------------------|
+    | TAB                        | Shift-TAB or M-TAB          |
+    | M-left-arrow               | M-right-arrow               |
+    | C-c C-,                    | C-c C-.                     |
+    | C-c C-<                    | C-c C->                     |
+
+2020-10-11  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (EL_KOTL, ELC_COMPILE): Added kotl/kotl-orgtbl.{el,elc}.
+  kotl/kotl-orgtbl.el (orgtbl-tab): Added to support Org Table minor-mode use
+    in Koutlines.
+  kotl/kotl-mode.el (hsys-orgtbl): Required this new library.
+                    (kotl-mode-map): Bound M- arrow keys to closely match those
+    in Org mode for tree promotion/demotion and moving text lines up and down.
+
+2020-10-10  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (orgtbl-tab): Updated Org minor-mode table use of {TAB} key to
+    allow promotion and demotion of koutline trees when given an explicit prefix
+    argument.  Otherwise, tabs through and justifies table fields normally.
+
+2020-10-04  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kexport.el (kexport:html-replacement-alist): Corrected \\0 with \0 so html
+    export works properly.
+
+* hibtypes.el (hsys-www): Moved to lower priority than pathname implicit buttons
+    so they can handle file:// links, especially with :line-number suffixes.
+    Fixes bug#43794.
+
+* hsys-org.el (hsys-org-mode-p): Added org-agenda-mode check.
+  hib-org.el (org-mode): Changed to apply inhibit-hsys-org to org-agenda-mode as well.
+
+* hibtypes.el (hib-debbugs): Raised priority above social and markdown links.
+              (org-link-outside-org-mode): Added to lower priority below
+    other Hyperbole link types and removed from hsys-org.el.
+
+* hib-org.el: Moved Org mode implicit button and action types to this new
+    file to allow for separate handling of Org links outside of Org mode.
+  Makefile (EL_COMPILE, ELC_COMPILE): Added hib-org.el{c}.
+
+==============================================================================
+V7.1.4 changes ^^^^:
+==============================================================================
+
 2020-09-21  Bob Weiner  <rsw@gnu.org>
 
 * hversion.el: Released 7.1.3.
@@ -449,7 +834,7 @@ V7.1.0 test release changes ^^^^:
     previously been done for actypes.
 
 * hpath.el (hpath:posix-to-mswindows-separators):
-           (hpath:mswindows-to-posix-separators)
+           (hpath:mswindows-to-posix-separators):
 	   (hpath:abbreviate-file-name): Added and called from the above functions.  Same as
     `abbreviate-file-name' but disables tramp-mode.  This prevents improper processing of hargs
      with colons in them, e.g. `actypes::link-to-file'."

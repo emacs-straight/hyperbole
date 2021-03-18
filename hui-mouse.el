@@ -1269,14 +1269,18 @@ selected buffer.
 If key is pressed:
  (1) on the last line, quit from the magit mode (\"q\" key binding);
  (2) at the end of a line, scroll up a windowful;
- (3) anywhere else, hide/show the thing at point (\"TAB\" key binding)."
+ (3) on an initial read-only header line, cycle visibility of diff sections;
+ (4) anywhere else, hide/show the thing at point (\"TAB\" key binding)
+     unless that does nothing in the mode, then jump to the thing at
+     point (\"RET\" key binding)."
   (interactive)
   (cond ((last-line-p)
 	 (call-interactively (key-binding "q")))
 	((eolp)
 	 (smart-scroll-up))
 	(t
-	 (call-interactively (key-binding "\t")))))
+	 (let ((magit-display-file-buffer-function #'hpath:display-buffer))
+	   (call-interactively #'smart-magit-tab)))))
 
 (defun smart-magit-assist ()
   "Use an assist key or mouse key to jump to source and to hide/show changes.
@@ -1289,16 +1293,44 @@ cursor to the selected buffer.
 If assist-key is pressed:
  (1) on the last line, quit from the magit mode (\"q\" key binding);
  (2) at the end of a line, scroll down a windowful;
- (3) anywhere else, jump to the thing at point (\"RET\" key binding)."
+ (3) on an initial read-only header line, cycle visibility of all sections;
+ (4) anywhere else, jump to the thing at point (\"RET\" key binding)."
   (interactive)
   (cond ((last-line-p)
 	 (call-interactively (key-binding "q")))
 	((eolp)
 	 (smart-scroll-down))
 	(t
-	 (setq current-prefix-arg 1)
-	 (let ((magit-display-file-buffer-function #'hpath:display-buffer))
-	   (call-interactively (key-binding "\r"))))))
+	 (let ((magit-display-file-buffer-function #'hpath:display-buffer)
+	       (current-prefix-arg)
+	       (non-text-area-p (and (eventp action-key-depress-args)
+				     (posn-area (event-start action-key-depress-args)))))
+	   (cond (non-text-area-p (magit-section-cycle-global))
+		 (t (call-interactively (key-binding "\r"))))))))
+
+;; Thanks to Jonas Bernoulli <tarsius>, magit author, for most of this
+;; next function.
+(defun smart-magit-tab (section)
+  ;; Usage: (define-key magit-section-mode-map "TAB" 'smart-magit-tab
+  "Toggle visibility of the body of the current section."
+  (interactive (list (magit-current-section)))
+  (let* ((non-text-area-p (and (eventp action-key-depress-args)
+			       (posn-area (event-start action-key-depress-args)))))
+    (cond (non-text-area-p (magit-section-cycle-diffs))
+	  ((eq section magit-root-section)
+	   (user-error "Cannot hide root section"))
+          ((or (oref section content)
+	       (oref section washer))
+	   (goto-char (oref section start))
+	   (if (oref section hidden)
+	       (magit-section-show section)
+	     (magit-section-hide section)))
+          (t
+	   (if-let ((command (key-binding (kbd "RET"))))
+	       (progn (setq last-command-event ?\()
+		      (setq this-command command)
+		      (call-interactively command))
+	     (user-error "Nothing to visit either"))))))
 
 ;;; ************************************************************************
 ;;; smart-man functions

@@ -38,6 +38,18 @@ e.g. to inhibit actions.")
 (defvar symtable:category-plist nil
   "Holds a property list of Hyperbole type category symbols ('actypes or 'ibtypes) and their associated symtables.")
 
+(defsubst symtable:hash-table (symtable)
+  "Return the hash-table containing symbol names and values from SYMTABLE."
+  (plist-get symtable 'hash-table))
+
+(defsubst symtable:name (symtable)
+  "Return the name of SYMTABLE as a string."
+  (plist-get symtable 'name))
+
+(defsubst symtable:select (type-category)
+  "Inline the return of the symtable for TYPE-CATEGORY, one of 'actypes or 'ibtypes."
+  (plist-get symtable:category-plist type-category))
+
 (defun  symtable:operate (operation symbol-or-name symtable)
   "Call hash-table function OPERATION with Hyperbole SYMBOL-OR-NAME as key upon SYMTABLE.
 Trigger an error if SYMBOL-OR-NAME cannot be mapped to an existing Elisp
@@ -77,10 +89,6 @@ symbol or if SYMTABLE is invalid."
        (gethash def-name  hash-table))
       (_ (error "(symtable:operate): Invalid operation request: %s" operation)))))
 
-(defsubst symtable:select (type-category)
-  "Inline the return of the symtable for TYPE-CATEGORY, one of 'actypes or 'ibtypes."
-  (plist-get symtable:category-plist type-category))
-
 (defun    symtable:create (name size)
   "Create and return a new Hyperbole type symbol table with NAME and SIZE.
 Also add it under the symbol for its NAME in `symtable:category-plist'."
@@ -88,14 +96,6 @@ Also add it under the symbol for its NAME in `symtable:category-plist'."
 			'hash-table (make-hash-table :test #'equal :size size))))
     (setq symtable:category-plist (plist-put symtable:category-plist (intern name) symtable))
     symtable))
-
-(defsubst symtable:hash-table (symtable)
-  "Return the hash-table containing symbol names and values from SYMTABLE."
-  (plist-get symtable 'hash-table))
-
-(defsubst symtable:name (symtable)
-  "Return the name of SYMTABLE as a string."
-  (plist-get symtable 'name))
 
 (defvar   symtable:actypes (symtable:create "actypes" 97)
   "Symbol table (hash table) of Hyperbole action type symbols.
@@ -159,6 +159,10 @@ Use `eq' for comparison."
 	 (set:equal-op 'eq)
 	 (new-set (set:add elt set)))
     (and new-set (put symbol property new-set))))
+
+(defun    symset:clear (symbol)
+  "Set SYMBOL's symset to nil."
+  (setf (symbol-plist symbol) nil))
 
 (defalias 'symset:delete 'symset:remove)
 
@@ -489,7 +493,7 @@ If no action body and actype is a bound function symbol, return that."
     (cond ((htype:body (or (symtable:actype-p actname) actype)))
 	  ((fboundp actype) actype))))
 
-(defmacro actype:create (type params doc &rest default-action)
+(defmacro defact (type params doc &rest default-action)
   "Create an action TYPE (an unquoted symbol) with PARAMS, described by DOC.
 The type uses PARAMS to perform DEFAULT-ACTION (list of the rest of the
 arguments).  A call to this function is syntactically the same as for
@@ -499,8 +503,19 @@ Return symbol created when successful, else nil."
      (symtable:add ',type symtable:actypes)
      (htype:create ,type actypes ,doc ,params ,default-action nil)))
 
-(defalias 'defact 'actype:create)
-(put      'actype:create 'lisp-indent-function 'defun)
+(defalias 'actype:create 'defact)
+(put      'defact 'lisp-indent-function 'defun)
+
+;; Support edebug-defun for interactive debugging of actypes
+(def-edebug-spec defact
+  (&define name lambda-list
+           [&optional stringp]   ; Match the doc string, if present.
+           def-body))
+
+(def-edebug-spec lambda-list
+  (([&rest arg]
+    [&optional ["&optional" arg &rest arg]]
+    &optional ["&rest" arg])))
 
 (defun    actype:delete (type)
   "Delete an action TYPE (a symbol).  Return TYPE's symbol if it existed."

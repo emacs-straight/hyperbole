@@ -63,7 +63,7 @@
 
 # This ver setup won't work under any make except GNU make, so set it manually.
 #HYPB_VERSION = "`head -3 hversion.el | tail -1 | sed -e 's/.*|\(.*\)|.*/\1/'`"
-HYPB_VERSION = 7.1.3
+HYPB_VERSION = 7.1.4
 
 # Emacs executable used to byte-compile .el files into .elc's.
 # Possibilities include: emacs, infodock, etc.
@@ -153,7 +153,7 @@ EL_SRC = hui-em-but.el
 
 EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hgnus.el hhist.el hib-debbugs.el hib-doc-id.el hib-kbd.el \
-	     hib-social.el hibtypes.el \
+	     hib-org.el hib-social.el hibtypes.el \
 	     hinit.el hload-path.el hmail.el hmh.el hmoccur.el hmouse-info.el \
 	     hmouse-drv.el hmouse-key.el hmouse-mod.el hmouse-sh.el hmouse-tag.el \
 	     hpath.el hrmail.el hsettings.el hsmail.el hsys-org.el hsys-www.el htz.el \
@@ -162,12 +162,12 @@ EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hyrolo-demo.el hyrolo-logic.el hyrolo-menu.el hyrolo.el hywconfig.el set.el
 
 EL_KOTL = kotl/kexport.el kotl/kfile.el kotl/kfill.el kotl/kimport.el kotl/klabel.el \
-	  kotl/klink.el kotl/kmenu.el kotl/knode.el kotl/kotl-mode.el \
+	  kotl/klink.el kotl/kmenu.el kotl/knode.el kotl/kotl-mode.el kotl/kotl-orgtbl.el \
           kotl/kcell.el kotl/kproperty.el kotl/kprop-em.el \
 	  kotl/kview.el kotl/kvspec.el
 
 ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.elc \
-	     hib-social.elc hact.elc \
+	     hib-org.el hib-social.elc hact.elc \
 	     hargs.elc hbdata.elc hbmap.elc hbut.elc hgnus.elc hhist.elc \
 	     hinit.elc hload-path.elc hmail.elc hmh.elc hmoccur.elc hmouse-info.elc \
 	     hmouse-drv.elc hmouse-key.elc hmouse-mod.elc hmouse-sh.elc hmouse-tag.elc \
@@ -178,7 +178,7 @@ ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.
 	     set.elc kprop-em.elc
 
 ELC_KOTL = kotl/kexport.elc kotl/kfile.elc kotl/kfill.elc kotl/kimport.elc kotl/klabel.elc \
-	   kotl/klink.elc kotl/kmenu.elc kotl/knode.elc kotl/kotl-mode.elc \
+	   kotl/klink.elc kotl/kmenu.elc kotl/knode.elc kotl/kotl-mode.elc kotl/kotl-orgtbl.elc \
            kotl/kcell.elc kotl/kproperty.elc \
            kotl/kview.elc kotl/kvspec.elc
 
@@ -374,3 +374,21 @@ packageclean:
 	if [ -d $(pkg_hyperbole)/man/im ]; then \
 	  cd $(pkg_hyperbole)/man/im && $(RM) -r .DS_Store core .place* ._* .*~ *~ \
 	    *.ps *\# *- *.orig *.rej .nfs* CVS .cvsignore; fi
+
+# Ert test
+.PHONY: test test-ert test-all
+test: test-ert
+
+BATCH=$(EMACS) $(BATCHFLAGS) $(PRELOADS)
+INTERACTIVE=$(EMACS) --quick $(PRELOADS)
+
+TEST_ERT_FILES=$(wildcard test/*tests.el)
+LOAD_TEST_ERT_FILES=$(patsubst %,(load-file \"%\"),${TEST_ERT_FILES})
+
+test-ert:
+	@echo "# Tests: $(TEST_ERT_FILES)"
+	$(BATCH) --eval "(load-file \"test/hy-test-dependencies.el\")" --eval "(progn $(LOAD_TEST_ERT_FILES) (ert-run-tests-batch-and-exit))"
+
+test-all:
+	@echo "# Tests: $(TEST_ERT_FILES)"
+	$(INTERACTIVE) --eval "(load-file \"test/hy-test-dependencies.el\")" --eval "(progn $(LOAD_TEST_ERT_FILES) (ert-run-tests-interactively t))"

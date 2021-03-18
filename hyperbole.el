@@ -5,8 +5,8 @@
 ;; Author:           Bob Weiner
 ;; Maintainer:       Bob Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:          06-Oct-92 at 11:52:51
-;; Released:         21-Sep-20
-;; Version:          7.1.3
+;; Released:         21-Feb-21
+;; Version:          7.1.4 (pre-release)
 ;; Keywords:         comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:          hyperbole
 ;; Package-Requires: ((emacs "24.4"))
@@ -121,32 +121,6 @@
 			    t)))
     (error "(Hyperbole): Startup failure: `hyperb:dir' must be manually added to `load-path' to fix")))
 
-;; This must be defined before the defcustom `inhbit-hyperbole-messaging'.
-;;;###autoload
-(defun hyperbole-toggle-messaging (&optional arg)
-  "Toggle Hyperbole support for explicit buttons in mail and news buffers.
-Toggles the boolean variable `inhibit-hyperbole-messaging’ and either
-adds hooks (nil value) or removes them (t value).
-
-With optional prefix ARG > 0, enables support.  If ARG <= 0,
-disables/inhibits support."
-  (interactive "P")
-  (setq inhibit-hyperbole-messaging (if (null arg)
-					(not inhibit-hyperbole-messaging)
-				      (<= (prefix-numeric-value arg) 0)))
-  (if inhibit-hyperbole-messaging
-      (var:remove-all)
-    (var:append-all)
-    ;; Add any hooks that were skipped when inhibit-hyperbole-messaging
-    ;; was nil.
-    (cond ((boundp 'hyperbole-loading))
-	  ((not after-init-time)
-	   (add-hook 'after-init-hook (lambda () (load "hyperbole"))))
-	  (t (load "hyperbole"))))
-  (if (called-interactively-p 'interactive)
-      (message "Hyperbole messaging button support is %s"
-	       (if inhibit-hyperbole-messaging "disabled" "enabled"))))
-
 (defgroup hyperbole-koutliner nil
   "Hyperbole multi-level autonumbered outliner customizations."
   :group 'hyperbole)
@@ -212,12 +186,6 @@ Entry format is: (key-description key-sequence key-binding)."
   (mapcar (lambda (key) (hkey-binding-entry key))
 	  (hkey-bindings-keys hkey-previous-bindings)))
 
-(defun hkey-define-key (keymap key command &optional no-add)
-  "Same as `define-key' except saves prior binding for later restoration unless optional 4rd argument NO-ADD is given as a non-nil value."
-  (unless no-add
-    (add-to-list 'hkey-previous-bindings (hkey-binding-entry key)))
-  (define-key keymap key command))
-
 (defun hkey-global-set-key (key command &optional no-add)
   "Same as `global-set-key' except saves prior binding for later restoration unless optional 3rd argument NO-ADD is given as a non-nil value."
   (unless no-add
@@ -236,7 +204,7 @@ Entry format is: (key-description key-sequence key-binding)."
     ;; Typically bind the key, {C-h A}, for Action Key help and {C-u C-h A} for Assist key
     ;; help.
     (or (where-is-internal 'hkey-help)
-	(hkey-define-key help-map "A" 'hkey-help))
+	(hkey-global-set-key [help ?A] 'hkey-help))
     ;;
     ;; Setup so Hyperbole menus can be accessed from a key.  If not
     ;; already bound to a key, this typically binds the command `hyperbole' to {C-h h}.
@@ -244,7 +212,7 @@ Entry format is: (key-description key-sequence key-binding)."
 	;; In GNU Emacs, this binding replaces a command that shows
 	;; the word hello in foreign languages; this binding makes this
 	;; key much more useful.
-	(hkey-define-key help-map "h" 'hyperbole))
+	(hkey-global-set-key [help ?h] 'hyperbole))
     ;;
     ;; Provides a site standard way of emulating most Hyperbole mouse drag
     ;; commands from the keyboard.  This is most useful for rapidly creating
@@ -298,8 +266,7 @@ Entry format is: (key-description key-sequence key-binding)."
     ;;
     ;; Store Hyperbole key bindings so can turn them on and off.
     (setq hkey-bindings (hkey-get-bindings)
-	  hkey-bindings-flag t)
-    ))
+	  hkey-bindings-flag t)))
 
 (defun hkey-maybe-global-set-key (key command &optional no-add)
   "Globally set KEY to COMMAND if KEY is unbound and COMMAND is not on any global key.

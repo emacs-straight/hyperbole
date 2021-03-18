@@ -16,7 +16,7 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
-(eval-and-compile (mapc #'require '(hversion hact locate)))
+(eval-and-compile (mapc #'require '(compile hversion hact locate)))
 
 ;;; ************************************************************************
 ;;; Public variables
@@ -184,6 +184,22 @@ Global keymap is used unless optional KEYMAP is given."
       ;; string.
       string)))
 
+;; Similar keyboard macro to next function, but less flexible: {C-x 1 M-o F M-o a C-x b *scratch* RET M-< M-o s C-@ C-M-h M-o t a C-u C-@ C-u C-@ M-o a C-M-p}
+
+;;;###autoload
+(defun hypb:def-to-buffer (&optional arg buffer)
+  "Copy next optional ARG (default = 1) code definitions to the start of BUFFER (default = *scratch*) and leave point at the start of the inserted text."
+  (interactive "p\nbDef insertion buffer (default *scratch*): ")
+  (let ((def (save-excursion
+	       (mark-defun arg)
+	       (deactivate-mark)
+	       (buffer-substring (region-beginning) (region-end)))))
+    (pop-to-buffer (or buffer "*scratch*"))
+    (goto-char (point-min))
+    (insert def)
+    (goto-char (point-min))
+    (forward-line 1)))
+
 (defun hypb:domain-name ()
   "Return current Internet domain name with '@' prepended or nil if none."
   (let* ((dname-cmd (or (file-exists-p "/usr/bin/domainname")
@@ -227,6 +243,23 @@ Global keymap is used unless optional KEYMAP is given."
 				    (mapcar #'hypb:format-quote (cdr args)))))))
     (put 'error 'error-message msg)
     (error msg)))
+
+(defun hypb:fgrep-git-log (string)
+  "Asynchronously list git log entries whose changesets include `string' for selection and display.
+The current commit entry may be displayed with a press of RET, the Action Key or the Assist Key."
+  (compile (format "git log -S'%s' --line-prefix='commit ' --oneline" string)
+	   #'hypb:fgrep-git-log-mode))
+
+(defun hypb:fgrep-git-log-activate (ignore1 &optional ignore2)
+  "Display git commit for the current line when `compile-goto-error' {RET} is used.
+Does not support use of next and previous error; simply displays the current one."
+  (interactive '(nil))
+  (hkey-either nil))
+
+(define-derived-mode hypb:fgrep-git-log-mode compilation-mode "Fgrep-Git-Log"
+  "Major mode (derived from `compilation-mode' for listing a matching set of git commits for selection and display.
+Turning on Fgrep-Git-Log mode runs the normal hook `compilation-mode-hook'."
+  (setq-local next-error-function #'hypb:fgrep-git-log-activate))
 
 (defun hypb:file-major-mode (file)
   "Return the major mode used by FILE.
@@ -366,6 +399,10 @@ If MARKER is invalid signal an error."
 		 (error "Marker position is outside accessible part of buffer: %s" marker)))
 	     (goto-char position)
 	     (switch-to-buffer buffer)))))
+
+(defun hypb:grep-git-log (regexp)
+  "Asynchronously list git log entries whose changesets include `regexp'."
+  (compile (format "git log -G'%s' --line-prefix='commit ' --oneline" regexp)))
 
 (defun hypb:help-buf-name (&optional suffix)
   "Return a Hyperbole help buffer name for current buffer.
@@ -523,13 +560,21 @@ WINDOW pixelwise."
 	((symbolp object)
 	 (get object 'hyperbole))))
 
-(defun hypb:replace-match-string (regexp str newtext &optional literal)
+(defun hypb:replace-match-string (regexp str newtext &optional literal fixedcase)
   "Replace all matches for REGEXP in STR with NEWTEXT string and return the result.
 Optional LITERAL non-nil means do a literal replacement.
 Otherwise treat \\ in NEWTEXT string as special:
   \\& means substitute original matched text,
   \\N means substitute match for \(...\) number N,
   \\\\ means insert one \\.
+
+If optional fifth arg FIXEDCASE is non-nil, do not alter the case of
+the replacement text.  Otherwise, maybe capitalize the whole text, or
+maybe just word initials, based on the replaced text.  If the replaced
+text has only capital letters and has at least one multiletter word,
+convert NEWTEXT to all caps.  Otherwise if all words are capitalized
+in the replaced text, capitalize each word in NEWTEXT.
+
 NEWTEXT may instead be a function of one argument (the string to replace in)
 that returns a replacement string."
   (unless (stringp str)
@@ -537,7 +582,7 @@ that returns a replacement string."
   (unless (or (stringp newtext) (functionp newtext))
     (error "(hypb:replace-match-string): 3rd arg must be a string or function: %s"
 	   newtext))
-  (replace-regexp-in-string regexp newtext str nil literal))
+  (replace-regexp-in-string regexp newtext str fixedcase literal))
 
 (defun hypb:return-process-output (program &optional infile &rest args)
   "Return as a string the output from external PROGRAM with INFILE for input.

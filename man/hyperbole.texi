@@ -52,7 +52,7 @@
 This manual is for GNU Hyperbole
 (Edition @value{EDITION}, Published @value{UPDATED}).
 
-Copyright @copyright{} 1989-2020  Free Software Foundation, Inc.
+Copyright @copyright{} 1989-2021  Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -142,7 +142,7 @@ Texinfo markup language.
 <CENTER><H3><A HREF="mailto:rsw@@gnu.org">Say thanks or send a testimonial if you like Hyperbole.</A></H3></CENTER>
 
 
-<P>Copyright &copy; 1989-2020  Free Software Foundation, Inc.</P>
+<P>Copyright &copy; 1989-2021  Free Software Foundation, Inc.</P>
 
 <P>GNU Hyperbole is available for use, modification, and distribution under
 the terms of the GNU General Public License (GPL) Version 3 or later,
@@ -154,8 +154,8 @@ WITHOUT ANY WARRANTY, without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</P>
 
 <PRE>
-Edition 7.1.3
-Printed August 1, 2020.
+Edition 7.1.4
+Printed March 14, 2021.
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -183,7 +183,7 @@ Printed August 1, 2020.
 
 @sp 2
 @noindent
-Copyright @copyright{} 1989-2020  Free Software Foundation, Inc.
+Copyright @copyright{} 1989-2021  Free Software Foundation, Inc.
 
 GNU Hyperbole is available for use, modification, and distribution
 under the terms of the GNU General Public License (GPL) Version 3 or
@@ -196,8 +196,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 @sp 2
 
 @example
-Edition 7.1.3
-August 1, 2020
+Edition 7.1.4
+March 14, 2021
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -382,8 +382,14 @@ Developing with Hyperbole
 
 Creating Types
 
-* Action Type Creation::
-* Implicit Button Type Creation::
+* Creating Action Types::
+* Creating Implicit Button Types::
+
+Creating Implicit Button Types
+
+* Action Button Link Types::
+* Implicit Button Link Types::
+* Programmatic Implicit Button Types::
 
 Explicit Button Technicalities
 
@@ -484,7 +490,7 @@ Smart Keyboard Keys
 @chapter Introduction
 
 This edition of the GNU Hyperbole Manual is for use with any version
-7.1.3 or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 24.3
+7.1.4 or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 24.3
 or higher.  It will trigger an error if your Emacs is older.
 
 This chapter summarizes the structure of the rest of the manual,
@@ -1528,6 +1534,7 @@ for @code{ace-window}, then just ensure it is initialized by calling
 @kindex M-o m <window-id>
 @kindex M-o r <window-id>
 @kindex M-o t <window-id>
+@kindex M-o w <window-id>
 @cindex insert item
 @cindex drag item
 @cindex replace window buffer
@@ -1535,20 +1542,26 @@ for @code{ace-window}, then just ensure it is initialized by calling
 @cindex throw item
 @cindex buffer replace
 @cindex buffers swap
+@cindex create link button
+@cindex window link button
+@cindex link button
 @cindex item drag
 @cindex item insert
 @cindex item throw
-After setup, the leftmost character or two of each window's modeline will show
-the ID to type to use that window as the drag destination.  Then whenever point
-is on an item you want displayed in another window, use @bkbd{M-o i
-<id-of-window-to-display-item-in>} and watch the magic happen.  If you
-want to display multiple items in different windows, instead use
-the @bkbd{M-o t <id-of-window-to-display-item-in>} key sequence to
-@emph{throw} the item to the window.  To @emph{replace}
-the selected window's buffer with that of another window, use
-@bkbd{M-o r <id-of-window-displaying-desired-buffer>}.  To instead
-@emph{swap} the selected window's buffer with that of another window,
-use @bkbd{M-o m <id-of-window-to-swap-with>}.
+After setup, the leftmost character or two of each window's modeline
+will show the ID to type to use that window as the drag destination.
+Then whenever point is on an item you want displayed in another
+window, use @bkbd{M-o i <id-of-window-to-display-item-in>} and watch
+the magic happen.  If you want to display multiple items in different
+windows, instead use the @bkbd{M-o t
+<id-of-window-to-display-item-in>} key sequence to @emph{throw} the
+item to the window.  To @emph{replace} the selected window's buffer
+with that of another window, use @bkbd{M-o r
+<id-of-window-displaying-desired-buffer>}.  To instead @emph{swap} the
+selected window's buffer with that of another window, use @bkbd{M-o m
+<id-of-window-to-swap-with>}.  And finally, to quickly create a link
+between the selected window and another window, use @bkbd{M-o w
+<id-of-referent-window>}.
 
 @cindex throw region
 @cindex region throw
@@ -1560,7 +1573,9 @@ t <window-id>} for the same effect.  The buffer in the target window
 must differ from the one in the source window.  With no region active,
 this command throws the source buffer to the target window.
 
+@noindent
 In summary:
+
 @table @asis
 @item M-o i <window>
 insert listing item at point into <window>; if not on a listing item,
@@ -1574,6 +1589,11 @@ replace the selected (current) window's buffer with that of <window>
 
 @item M-o t <window>
 throw region, listing item at point, or current buffer to <window>
+
+@item M-o w <window>
+window link, create a new explicit button in the selected (current)
+window, linking to point in the referent <window>, with the link type
+determined by the referent context via @code{hui:link-directly}.
 @end table
 
 @c -------
@@ -1917,10 +1937,10 @@ buffer behaves the same as the corresponding button in the original
 Within a mail or Usenet news composer window, make a Hyperbole
 support/discussion e-mail address insert Hyperbole environment and
 version information.  This is useful when sending mail to a Hyperbole
-discussion mail list.  See also the documentation
-for @code{actypes::hyp-config}.  For example, an Action Mouse Key
-click on <hyperbole-users@@gnu.org> in a mail composer window would
-activate this implicit button type.
+discussion mail list.  See also the documentation for
+@code{actypes::hyp-config}.  For example, a click of an Action Mouse
+Key on <hyperbole-users@@gnu.org> in a mail composer window
+would activate this implicit button type.
 
 @findex ibtypes Info-node
 @cindex Info node
@@ -1929,19 +1949,6 @@ Make a "(filename)nodename" button display the associated Info node.
 Also make a "(filename)itemname" button display the associated Info
 index item.  Examples are "(hyperbole)Implicit Buttons" and
 ``(hyperbole)C-c /''.
-
-@findex ibtypes www-url
-@cindex URL
-@cindex World-wide Web
-@cindex WWW
-@cindex Action Key, web browsing
-@kindex Action Key, web browsing
-@vindex browse-url-browser-function
-@item www-url
-When not in an Emacs web browser buffer, follow any non-ftp URL (link) at point.
-The variable, @code{browse-url-browser-function}, may be used to customize
-which URL browser is called.  Terse URLs which lack a protocol prefix,
-like www.gnu.org, are also recognized.
 
 @findex ibtypes gnus-push-button
 @cindex GNUS push-buttons
@@ -1986,9 +1993,8 @@ program.  Patch applies diffs to source code.
 @cindex Emacs Lisp compiler error
 @cindex compiler error
 @item elisp-compiler-msg
-Jump to the source code for a definition associated with an Emacs
-Lisp byte-compiler error message.  Works when activated anywhere
-within an error line.
+Jump to the source code for a definition associated with an Emacs Lisp
+byte-compiler error message.  This works anywhere within an error line.
 
 @findex ibtypes debugger-source
 @cindex gdb
@@ -2007,8 +2013,8 @@ recognized in any buffer.
 @cindex ripgrep
 @cindex match lines
 @item ripgrep-msg
-Jump to line associated with a ripgrep (rg) line numbered msg.
-Ripgrep outputs each pathname once followed by all matching lines in
+Jump to a line associated with a ripgrep (rg) line numbered msg.
+Ripgrep outputs each pathname once, followed by all matching lines in
 that pathname.  Messages are recognized in any buffer (other than a
 helm completion buffer).
 
@@ -2016,17 +2022,17 @@ helm completion buffer).
 @cindex ipython
 @cindex stack frame
 @item ipython-stack-frame
-Jump to line associated with an ipython stack frame line numbered msg.
-ipython outputs each pathname once followed by all matching lines in that
-pathname.  Messages are recognized in any buffer (other than a helm completion
-buffer).
+Jump to the line associated with an ipython stack frame line numbered
+msg.  ipython outputs each pathname once followed by all matching
+lines in that pathname.  Messages are recognized in any buffer (other
+than a helm completion buffer).
 
 @findex ibtypes grep-msg
 @cindex grep
 @cindex compiler error
 @cindex match lines
 @item grep-msg
-Jump to a line associated with a grep or compilation error message.
+Jump to the line associated with a grep or compilation error message.
 Messages are recognized in any buffer.
 
 @findex ibtypes ilink
@@ -2034,21 +2040,21 @@ Messages are recognized in any buffer.
 @cindex link to implicit button
 @cindex ilink
 @item link-to-ibut <ilink>
-At point, activate a link to an implicit button within the current buffer.
-Execute the implicit button's action in the context of the current buffer.
+At point, activate a link to an implicit button within the current
+buffer.  This executes the linked to implicit button's action in the
+context of the current buffer.
 
 Recognizes the format '<ilink:' button_label [':' button_file_path] '>',
 where button_file_path is given only when the link is to another file,
 e.g. <ilink: my series of keys: $@{hyperb:dir@}/HYPB>.
-
 
 @findex ibtypes glink
 @cindex global button link
 @cindex link to global button
 @cindex glink
 @item link-to-gbut <glink>
-At point, activate a link to a global button.
-Execulte the global button's action in the context of the current buffer.
+At point, activate a link to a global button.  This executes the
+linked to global button's action in the context of the current buffer.
 
 Recognizes the format '<glink:' button_label '>', e.g. <glink: open todos>.
 
@@ -2057,8 +2063,9 @@ Recognizes the format '<glink:' button_label '>', e.g. <glink: open todos>.
 @cindex link to explicit button
 @cindex elink
 @item link-to-ebut <elink>
-At point, activate a link to an explicit button within the current buffer.
-Execute The explicit button's action in the context of the current buffer.
+At point, activate a link to an explicit button within the current
+buffer.  This executes the linked to explicit button's action in the
+context of the current buffer.
 
 Recognizes the format '<elink:' button_label [':' button_file_path] '>',
 where : button_file_path is given only when the link is to another file,
@@ -2088,18 +2095,18 @@ when selected.
 @cindex remote file
 @cindex ftp
 @item rfc
-Retrieve and display an Internet rfc referenced at point.  The
-following formats are recognized: RFC822, rfc-822, and RFC 822.  The
-@code{hpath:rfc} variable specifies the location from which to
-retrieve RFCs.  Requires the Emacs builtin Tramp library for ftp file
-retrievals.
+Retrieve and display an Internet Request for Comments (RFC) standards
+document referenced at point.  The following formats are recognized:
+RFC822, rfc-822, and RFC 822.  The @code{hpath:rfc} variable specifies
+the location from which to retrieve RFCs.  Requires the Emacs builtin
+Tramp library for ftp file retrievals.
 
 @findex ibtypes kbd-key
 @cindex key sequence
 @cindex sequence of keys
 @item kbd-key
-Execute a key series (series of key sequences) found around point,
-delimited by curly braces, @{@}, if any.  Key series should be in
+Execute a key series (series of key sequences) around point,
+delimited by curly braces, @{@}.  Key series should be in
 human readable form, e.g.@: @bkbd{C-x C-b}.  Formats such as @{^x^b@}
 will not be recognized.
 
@@ -2124,14 +2131,14 @@ non-brace character.
 @cindex table of contents
 @cindex toc implicit button type
 @item text-toc
-Jump to the text file section referenced by a table of contents entry
-at point.  The filename of the current buffer must contain
+Jump to the text file section referenced by a table of contents (toc)
+entry at point.  The filename of the current buffer must contain
 @file{README} and there must be a `Table of Contents' or `Contents'
-label on a line by itself (it may begin with an asterisk), preceding the
-table of contents.  Each toc entry must begin with some whitespace
-followed by one or more asterisk characters.  Each line which begins a
-new file section must start with one or more asterisk characters at the
-very beginning of the line.
+label on a line by itself (it may begin with an asterisk), preceding
+the table of contents.  Each toc entry must begin with some whitespace
+followed by one or more asterisk characters.  Each section header
+linked to by the toc must start with one or more asterisk characters
+at the very beginning of the line.
 
 @findex ibtypes cscope
 @cindex C/C++ call trees
@@ -2347,12 +2354,12 @@ window.
 
 @findex ibtypes debbugs-gnu-query
 @item debbugs-gnu-query
-Debbugs queries may be issued by activating this implicit button type.
-It displays the results of a Gnu debbugs query based on the string at
-point and works in most kinds of buffers.  If the query includes a
-single id number, it displays the original message submission for that
-id and allows browsing of the followup discussion.  The following
-buffer text formats are accepted (with point prior to any attribute):
+Display the results of a Debbugs query based on a bug reference string
+around point.  This works in most types of buffers.  If the query
+includes a single id number, it displays the original message
+submission for that id and allows browsing of the followup discussion.
+The following buffer text formats are accepted (with point prior to
+any attribute):
 
 @smallexample
 bug#id-number, bug# id-number, bug #id-number or bug id-number
@@ -2375,7 +2382,7 @@ as the reference.  References must be delimited by square brackets, must
 begin with a word constituent character, and must not be in buffers
 whose names begin with a ` ' or `*' character.
 
-@c Handled instead by @xref{Smart Key - Identifier Menu Mode}.
+@c Handled instead by @pxref{Smart Key - Identifier Menu Mode}.
 @c @findex ibtypes imenu-item
 @c @vindex file, imenu.el
 @c @cindex identifier menu
@@ -2390,7 +2397,7 @@ whose names begin with a ` ' or `*' character.
 @cindex func-menu
 @item function-in-buffer
 Return the function name defined within this buffer that point is
-within or after, else @samp{nil}.  This triggers only when the
+within or after, else @code{nil}.  This triggers only when the
 func-menu library has been loaded and the current major mode is one
 handled by func-menu.
 
@@ -2399,11 +2406,10 @@ handled by func-menu.
 @cindex pathname, line and column
 @findex ibtypes pathname-line-and-column
 @item pathname-line-and-column
-Make a valid pathname:line-num[:column-num] pattern display the path
-at line-num and optional column-num.  Also works for remote pathnames.
-May also contain hash-style link references with the following format:
-@file{<path>[#<link-anchor>]:<line-num>[:<column-num>]}.
-
+Make a valid @file{pathname:line-num[:column-num]} pattern display the
+path at @emph{line-num} and optional @emph{column-num}.  Also works
+for remote pathnames.  May also contain hash-style link references
+with the following format: @file{<path>[#<link-anchor>]:<line-num>[:<column-num>]}.
 
 @findex ibtypes pathname
 @findex hpath:at-p
@@ -2439,6 +2445,19 @@ delimiters.  See the variable documentation for @code{hpath:suffixes} for
 suffixes that are added to or removed from the pathname when searching
 for a valid match.  See the function documentation for @code{hpath:find}
 for special file display options.
+
+@findex ibtypes www-url
+@cindex URL
+@cindex World-wide Web
+@cindex WWW
+@cindex Action Key, web browsing
+@kindex Action Key, web browsing
+@vindex browse-url-browser-function
+@item www-url
+When not in an Emacs web browser buffer, follow any non-ftp URL (link) at point.
+The variable, @code{browse-url-browser-function}, may be used to customize
+which URL browser is called.  Terse URLs which lack a protocol prefix,
+like www.gnu.org, are also recognized.
 
 @findex ibtypes org-mode
 @cindex Org-mode
@@ -2479,7 +2498,9 @@ the Org-mode standard binding of @bkbd{M-@key{RET}}, @code{org-meta-return}.
 To disable ALL Hyperbole support within Org major and minor modes, set
 the custom option @code{inhibit-hsys-org} to @code{t}.  Then in Org modes,
 the Action Key will simply invoke @code{org-meta-return}.
+
 @end table
+
 
 @node Action Buttons,  , Implicit Button Types, Implicit Buttons
 @subsection Action Buttons
@@ -3342,7 +3363,7 @@ Hy>  Act Butfile/ Cust/ Doc/ Ebut/ Find/ Gbut/ Hist Ibut/ Kotl/ Msg/ Rolo/ Scree
 @cindex selection, menu items
 @kindex @key{TAB}
 @kindex M-f
-@kindex Shift-
+@kindex Shift-@key{TAB}
 @kindex M-b
 All menu items are selected via the first character of their names (letter
 case does not matter), with presses of the Action Key or by using
@@ -4957,7 +4978,7 @@ The e-mail address of the person who created this cell.
 @item create-time
 The time at which the cell was created.  This is stored in a form that
 allows for easy data comparisons but is displayed in a human readable
-format, such as @samp{Jan 28 18:27:59 CST 2020}.
+format, such as @samp{Jan 28 18:27:59 CST 2021}.
 @end table
 
 @kindex koutliner, C-c C-i
@@ -5629,9 +5650,12 @@ is added.
 @node Developing with Hyperbole, Glossary, Window Configurations, Top
 @chapter Developing with Hyperbole
 
-This chapter is for people who are familiar with Emacs Lisp and
-wish to customize Hyperbole, to extend it, or to develop other systems
-using Hyperbole as a base.
+This chapter is for people who wish to customize Hyperbole, to extend
+it, or to develop other systems using Hyperbole as a base.  Most of it
+requires a basic level of familiarity with Emacs Lisp, though new
+implicit button types may be created with knowledge of only Emacs
+regular expressions.
+
 
 @menu
 * Hook Variables::
@@ -5794,12 +5818,12 @@ See the definitions of the standard types in @file{hactypes.el}
 and @file{hibtypes.el} for examples.
 
 @menu
-* Action Type Creation::
-* Implicit Button Type Creation::
+* Creating Action Types::
+* Creating Implicit Button Types::
 @end menu
 
-@node Action Type Creation, Implicit Button Type Creation, Creating Types, Creating Types
-@subsection  Action Type Creation
+@node Creating Action Types, Creating Implicit Button Types, Creating Types, Creating Types
+@subsection  Creating Action Types
 
 @findex actype:create
 @vindex file, hactypes.el
@@ -5910,8 +5934,182 @@ environment.  It takes a single parameter which should be the same type
 symbol used in the type definition call (not the Hyperbole symbol
 returned by the call).
 
-@node Implicit Button Type Creation,  , Action Type Creation, Creating Types
-@subsection  Implicit Button Type Creation
+@node Creating Implicit Button Types,  , Creating Action Types, Creating Types
+@subsection  Creating Implicit Button Types
+
+Implicit buttons leverage the same action types used by explicit and
+global buttons but each carries an additional implicit button type
+that defines the contexts in which it is active, e.g. major modes or
+surrounding text.  Once an implicit button type definition is loaded
+into Hyperbole, the Action and Assist Keys automatically recognize all
+buttons of that type.  The Action Key activates the buttons and the
+Assist Key summarizes their behavior and attributes.  With a single
+definition, you can bring your text to life, activating implicit
+hyperbuttons in thousands of documents with no other effort.
+
+There are three ways to create new implicit button types; the first
+two are meant to allow non-programmers to extend Hyperbole with
+simplified types.
+
+@table @b
+@item Action Button Link Types
+The first is very simple but can create only link buttons with a
+specific textual form, i.e. <action-type button-text>.
+
+@item Implicit Button Link Types
+The second is also limited to link buttons and requires regular expression
+knowledge; it allows for any string or regular expression button
+delimiters and regular expression or function link specifications.
+
+@item Programmatic Implicit Button Types
+The third requires ELisp programming knowledge but can create any implicit
+button type.
+@end table
+
+@noindent
+The sections below examine these three implicit button type creation
+techniques.
+
+@menu
+* Action Button Link Types::
+* Implicit Button Link Types::
+* Programmatic Implicit Button Types::
+@end menu
+
+@node Action Button Link Types, Implicit Button Link Types, Creating Implicit Button Types, Creating Implicit Button Types
+@subsubsection Action Button Link Types
+
+The simplest way to create a new implicit link type (from which any
+number of buttons can be recognized within text) is to create an
+@emph{action button link type}.
+
+@noindent
+A call to the @code{defal} macro of the form:
+
+@code{(defal TYPE LINK-EXPR &optional DOC)}
+
+@noindent
+will create a Hyperbole action button link TYPE (an unquoted symbol)
+whose buttons always take the form of: @code{<TYPE link-text>} where
+@code{link-text} is substituted into LINK-EXPR as grouping 1 (\\1)
+to form the link referent that is displayed for each button.
+Hyperbole automatically creates a doc string for the type but you can
+override this by providing an optional DOC string.
+
+When the Action Key is pressed in a buffer between the start and end
+delimiters and the text in-between matches to TEXT-REGEXP, then the
+button is activated and does one of four things with LINK-EXPR:
+
+@enumerate
+@item executes it as a brace-delimited key series;
+@item displays it in a web browser as a URL;
+@item displays it as a path (possibly with trailing colon-separated line and column numbers);
+@item invokes a function or action type of one argument, the button text sans the function name, to display it.
+@end enumerate
+
+For example, if you use Python and have a @samp{PYTHONPATH} environment
+variable, then pressing @bkbd{C-x C-e} @code{eval-last-sexp} after
+this expression:
+
+@code{(defal pylib "$@{PYTHONPATH@}/\\1")}
+
+@noindent
+defines a new action button link type called ’pylib’ whose buttons
+take the form of:
+
+@code{<pylib PYTHON-LIBRARY-NAME>}
+
+@noindent
+and display the associated Python libraries (typically Python source
+files).  Optional colon separated line and column numbers may be given
+as well.
+
+@noindent
+Therefore an Action Key press on:
+
+@code{<pylib string.py:5:7>}
+
+@noindent
+would display the source for @file{string.py} (wherever it is
+installed on your system) from the Python standard library with point
+on the fifth line at the seventh character.
+
+@xref{Implicit Button Link Types}, for more flexible regular
+expression-based link type creation.  @xref{Programmatic Implicit
+Button Types}, for the most general implicit button type creation.
+
+@node  Implicit Button Link Types, Programmatic Implicit Button Types, Action Button Link Types, Creating Implicit Button Types
+@subsubsection Implicit Button Link Types
+
+If you understand Emacs regular expressions (@pxref{Regexps,,Syntax of
+Regular Expressions,emacs,the GNU Emacs Manual}), you can create new
+implicit button types without understanding how to program in Emacs
+Lisp, aside from the instructions provided here.
+
+@noindent
+A call to the @code{defil} macro of the form:
+
+@code{(defil TYPE START-DELIM END-DELIM TEXT-REGEXP LINK-EXPR
+             &optional START-REGEXP-FLAG END-REGEXP-FLAG DOC)}
+
+@noindent
+will create a new Hyperbole implicit button link TYPE (an uquoted
+symbol), recognized in a buffer via START-DELIM and END-DELIM
+(strings) and the TEXT-REGEXP pattern between the delimiters.  With
+optional START-REGEXP-FLAG true, START-DELIM is treated as a regular
+expression.  Similarly, a true value of END-REGEXP-FLAG treats
+END-DELIM as a regular expression.  Hyperbole automatically creates a
+doc string for the type but you can override this by providing an
+optional DOC string.
+
+When the Action Key is pressed in a buffer between the start and end
+delimiters and the text in-between matches to TEXT-REGEXP, then the
+button is activated and does one of four things with LINK-EXPR:
+
+@enumerate
+@item executes it as a brace-delimited key series;
+@item displays it in a web browser as a URL;
+@item displays it as a path (possibly with trailing colon-separated line and column numbers);
+@item invokes a function or action type of one argument, the button text (sans the function name if an Action Button), to display it.
+@end enumerate
+
+Prior to activation, for the first three kinds of LINK-EXPR, a
+@code{replace-match} is done on the expression to generate the
+button-specific referent to display.  Thus, either the whole button
+text (@samp{\\&}) or any numbered grouping from TEXT-REGEXP,
+e.g. @samp{\\1}, may be referenced in the LINK-EXPR to form the
+link referent.
+
+Here is a sample use case.  Let's create a button type whose whose
+buttons perform a grep-like function over a current repo's git log
+entries.  The buttons use this format: [<text to match>].
+
+The following defines the button type called @code{search-git-log} with a 
+a key series action surrounded by braces:
+
+@code{(defil search-git-log "[<" ">]" ".*" "@{M-: (hypb:fgrep-git-log \"\\&\") RET@}")}
+
+@noindent
+or this simpler version skips the explicit text substitution (\\\\&)
+and instead uses the function that takes the button text as an argument:
+
+@code{(defil search-git-log "[<" ">]" ".*" #’hypb:fgrep-git-log)}
+
+Place point after one of the above expressions and evaluate it with
+@bkbd{C-x C-e} @code{eval-last-sexp} to define the implicit button
+type.  Then if you have cloned the Hyperbole repo and are in a
+Hyperbole source buffer, an Action Key press on a button of the form:
+
+@code{;; [<test release>]}
+
+@noindent
+will display one line per commit whose change set matches 'test
+release'.  An Action Key press on any such line will then display the
+commit changes.
+
+
+@node  Programmatic Implicit Button Types,  , Implicit Button Link Types, Creating Implicit Button Types
+@subsubsection Programmatic Implicit Button Types
 
 @cindex implicit button type
 @cindex ibtype
@@ -5936,15 +6134,20 @@ flash the button and then to perform one or more actions.  A call of the
 form: @code{(ibut:label-set label start-pos end-pos)} is used to setup
 the button flashing, if desired.  This is then typically immediately
 followed by an action invocation of the form:
-@code{(hact 'actype &rest actype-arguments)}.  It is imperative that all
-actions (non-predicate code) be invoked through the @code{(hact)}
-function or your ibtypes will not work properly.  (Hyperbole first tests
-to see if any ibtype matches the current context before activating any
-type, so it ensures that @code{(hact)} calls are disabled during this
-testing.)  Any action types used in the definition of an implicit button
-type may be created before or after the definition, but obviously, must
-be defined before any implicit buttons of the given type are activated;
-an error will result, otherwise.
+@code{(hact 'actype &rest actype-arguments)} where @code{actype} is a
+Hyperbole action type symbol or an Emacs Lisp function name or lambda;
+@code{actype-arguments} are the arguments fed to the action invocation
+when an implicit button of the type is activated.
+
+It is imperative that all actions (non-predicate code) be invoked
+through the @code{(hact)} function or your ibtypes will not work
+properly.  (Hyperbole first tests to see if any ibtype matches the
+current context before activating any type, so it ensures that
+@code{(hact)} calls are disabled during this testing.)  Any action
+types used in the definition of an implicit button type may be created
+before or after the definition, but obviously, must be defined before
+any implicit buttons of the given type are activated; an error will
+result, otherwise.
 
 If an implicit button type create is successful, the symbol that
 Hyperbole uses internally to reference the type is returned.  On
@@ -6061,7 +6264,7 @@ any Hyperbole client programming.
 @node Programmatic Button Creation,  , Operational and Storage Formats, Explicit Button Technicalities
 @subsection  Programmatic Button Creation
 
-@cindex explicit button, creation
+@cindex explicit button, programmatic creation
 A common need when developing with Hyperbole is to create or to modify
 explicit buttons without user interaction.  For example, an application
 might require the addition of an explicit summary button to a file for
@@ -6075,6 +6278,19 @@ quickly.
 @findex ebut:map
 The Hyperbole class @samp{ebut} supports programmatic access to explicit
 buttons.  Examine it within the @file{hbut.el} file for full details.
+
+@findex ebut:program
+The simplest way to create explicit buttons programmatically is to
+call @code{ebut:program}.  This generates an explicit button at point
+from LABEL, ACTYPE (action type) and any optional ACTYYPE ARGS.
+It inserts the LABEL text at point surrounded by <( )> delimiters, adding any
+necessary instance number of the button after the LABEL.  ACTYPE may
+be a Hyperbole action type name (from defact) or an Emacs Lisp
+function, followed by a list of arguments for the actype, aside from
+the button LABEL which is automatically provided as the first argument.
+
+For interactive explicit creation, use @code{hui:ebut-create} instead.
+
 The documentation for @code{(ebut:create)} explains the set of
 attributes necessary to create an explicit button.  For operations over
 the whole set of buttons within the visible (non-narrowed) portion of a
@@ -7232,7 +7448,10 @@ in @ref{HyControl}.
 Drag Operation: Keyboard emulation of the start and stop of mouse
 drags to invoke Smart Key actions.  This binding is made only if the
 key is not bound prior to loading Hyperbole and if Emacs is run under
-a window system.
+a window system.  If the Ace Window package is loaded, then Ace Window
+commands are typically bound to @bkbd{M-o} instead.  Then @bkbd{M-o w}
+may be used to quickly create an explicit link button in the selected window that
+links to any other window chosen via the Ace Window prompt.
 
 @cindex key binding, C-h h
 @kitem C-h h
@@ -9510,11 +9729,15 @@ If pressed within a Magit buffer and not on a button:
   ACTION KEY
      (1) on the last line, quit from the magit mode (@bkbd{q} key binding);
      (2) at the end of a line, scroll up a windowful;
-     (3) anywhere else, hide/show the thing at point (@bkbd{@key{TAB}} key binding).
+     (3) on an initial read-only header line, cycle visibility of diff sections;
+     (4) anywhere else, hide/show the thing at point (@bkbd{@key{TAB}} key binding)
+         unless that does nothing in the mode, then jump to the thing at point
+         (@bkbd{@key{RET}} key binding).
   ASSIST KEY
      (1) on the last line, quit from the magit mode (@bkbd{q} key binding);
      (2) at the end of a line, scroll down a windowful;
-     (3) anywhere else, jump to the thing at point (@bkbd{@key{RET}} key binding)."
+     (3) on an initial read-only header line, cycle visibility of all sections;
+     (4) anywhere else, jump to the thing at point (@bkbd{@key{RET}} key binding)."
 @end group
 @end format
 
