@@ -1,3 +1,21 @@
+2021-03-21  Mats Lidell  <matsl@gnu.org>
+
+* test/hbut-tests.el (hbut-defal-url-%s): Add test for %s format-style.
+
+2021-03-21  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (defal): Added support for use of %s format-style grouping 1 arg
+    substitution.
+  man/hyperbole.texi (Action Button Link Types): Documented.
+  DEMO (defal): Added new example of Google file type search button.
+
+2021-03-14  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Smart Key - Magit Mode):
+  hui-mouse.el (smart-magit, smart-magit-assist): With Action/Assist Mouse
+    Key press on a read-only header line, cycle visibility of diff/all
+    sections in the buffer.
+
 2021-03-14  Mats Lidell  <matsl@gnu.org>
 
 * test/hy-test-dependencies.el (package-installed-p): Check if
@@ -9,22 +27,13 @@
 * test/hibtypes-tests.el (ibtypes::pathname-env-variable-test): Use env
     for HOME to not depend on machine or OS specifics
 
-2021-03-14  Bob Weiner  <rsw@gnu.org>
-
-* man/hyperbole.texi (Smart Key - Magit Mode):
-  hui-mouse.el (smart-magit, smart-magit-assist): With Action/Assist Mouse
-    Key press on a read-only header line, cycle visibility of diff/all
-    sections in the buffer.
-
-2021-03-14  Mats Lidell  <matsl@gnu.org>
-
 * test/hbut-tests.el (hbut-ib-link-to-file-with-label-variants): Test
     variants of label separation chars and lengths
     (hbut-ib-create-label): Test creation of label
     (hbut-ib-create-label-fails-if-label-exists): Check creation fails
     when label exists
 
-* test/hy-test-dependencies.el (package-installed-p): Add
+* test/hy-test-dependencies.el (package-installed-p): Added
     with-simulated-input
 
 2021-03-13  Bob Weiner  <rsw@gnu.org>
