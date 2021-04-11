@@ -159,7 +159,7 @@ EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hpath.el hrmail.el hsettings.el hsmail.el hsys-org.el hsys-www.el htz.el \
 	     hycontrol.el hui-jmenu.el hui-menu.el hui-mini.el hui-mouse.el hui-select.el \
 	     hui-treemacs.el hui-window.el hui.el hvar.el hversion.el hvm.el hypb.el hyperbole.el \
-	     hyrolo-demo.el hyrolo-logic.el hyrolo-menu.el hyrolo.el hywconfig.el set.el
+	     hyrolo-demo.el hyrolo-logic.el hyrolo-menu.el hyrolo.el hywconfig.el set.el hypb-ert.el
 
 EL_KOTL = kotl/kexport.el kotl/kfile.el kotl/kfill.el kotl/kimport.el kotl/klabel.el \
 	  kotl/klink.el kotl/kmenu.el kotl/knode.el kotl/kotl-mode.el kotl/kotl-orgtbl.el \
@@ -167,7 +167,7 @@ EL_KOTL = kotl/kexport.el kotl/kfile.el kotl/kfill.el kotl/kimport.el kotl/klabe
 	  kotl/kview.el kotl/kvspec.el
 
 ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.elc \
-	     hib-org.el hib-social.elc hact.elc \
+	     hib-org.elc hib-social.elc hact.elc \
 	     hargs.elc hbdata.elc hbmap.elc hbut.elc hgnus.elc hhist.elc \
 	     hinit.elc hload-path.elc hmail.elc hmh.elc hmoccur.elc hmouse-info.elc \
 	     hmouse-drv.elc hmouse-key.elc hmouse-mod.elc hmouse-sh.elc hmouse-tag.elc \
@@ -175,7 +175,7 @@ ELC_COMPILE =  hactypes.elc hibtypes.elc hib-debbugs.elc hib-doc-id.elc hib-kbd.
 	     hycontrol.elc hui-jmenu.elc hui-menu.elc hui-mini.elc hui-mouse.elc hui-select.elc \
 	     hui-treemacs.elc hui-window.elc hui.elc hvar.elc hversion.elc hvm.elc hypb.elc hyperbole.elc \
 	     hyrolo-demo.elc hyrolo-logic.elc hyrolo-menu.elc hyrolo.elc hywconfig.elc \
-	     set.elc kprop-em.elc
+	     set.elc kprop-em.elc hypb-ert.elc
 
 ELC_KOTL = kotl/kexport.elc kotl/kfile.elc kotl/kfill.elc kotl/kimport.elc kotl/klabel.elc \
 	   kotl/klink.elc kotl/kmenu.elc kotl/knode.elc kotl/kotl-mode.elc kotl/kotl-orgtbl.elc \
