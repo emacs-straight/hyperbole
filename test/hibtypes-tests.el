@@ -137,13 +137,13 @@
     (kill-buffer "hypb.el")))
 
 (ert-deftest ibtypes::pathname-with-dash-loads-file-test ()
-  "Pathname with dash loads file.
-Bug: Fails with 'Invalid function: hact'."
-  :expected-result :failed
+  "Pathname with dash loads file."
   (with-temp-buffer
     (insert "\"-${hyperb:dir}/test/hy-test-dependencies.el\"")
     (goto-char 2)
-    (ibtypes::pathname)))
+    (ibtypes::pathname)
+    (hy-test-helpers:should-last-message "Loading")
+    (hy-test-helpers:should-last-message "hy-test-dependencies.el")))
 
 (ert-deftest ibtypes::pathname-directory-test ()
   "Pathname with directory opens dired."
@@ -177,6 +177,17 @@ Bug: Fails with 'Invalid function: hact'."
       (hkey-help)
       (set-buffer help-buffer)
       (should (string-match "actype:.*link-to-file" (buffer-string))))))
+
+(ert-deftest ibtypes::pathname-path-variable-test ()
+  "Goto file at point in path variable."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "\"/var/lib:/bar:/tmp:/foo\"")
+        (goto-char 16)
+        (ibtypes::pathname)
+        (should (string= "tmp" (buffer-name)))
+        (should (eq major-mode 'dired-mode)))
+    (kill-buffer "tmp")))
 
 ;; Function in buffer XEmac functionality. Is there somethign similar in Emacs?
 
@@ -313,7 +324,7 @@ Bug: Fails with 'Invalid function: hact'."
 
 ;; info-node
 (ert-deftest ibtypes::info-node-test ()
-  "Should work with ibtypes::pathname but does not. Works with action-key!?"
+  "Go to info node."
   (unwind-protect
       (with-temp-buffer
         (insert "\"(emacs)top\"")
