@@ -1,3 +1,41 @@
+2021-04-21  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (exec-shell-cmd, exec-window-cmd): Couple 'cd' and command
+    with '&&' rather than semicolon.  Also, expand default-directory to
+    eliminate '~' home dir refs.   Both of these for better Windows
+    compatibility.
+
+2021-04-20  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (tests, all-tests): Add these target aliases.
+
+* hui-mouse.el (hkey-alist): Move smart-magit-mode handling to a higher priority
+    than Hyperbole button handling so implicit pathname buttons don't trigger.
+    This makes behavior across magit lines consistent and pathnames can still
+    be displayed using the Assist Key (invokes magit {RET} key).
+
+* hyrolo.el (hyrolo-to-entry-end): Default to using entire hyrolo-entry-regexp
+    to determine the outline depth when no hyrolo-entry-group-number is
+    included in the expression.  Fixes issue that could call (goto-char nil).
+
+* hib-doc-id.el (doc-id-online-regexp): Tighten matching to disallow any type
+    of whitespace besides spaces within the document link.
+                (link-to-doc, doc-id:help): Fix bug in hyrolo-grep call not
+    using 'no-display argument causing invalid return type.
+                (doc-id-p): Regexp-quote delimiters and allow for whitespace
+    within them.
+
+* kotl/kotl-autoloads.el: Remove reference to unreleased kexport-menu.el
+    to fix bug#47916.
+
+2021-04-20  Mats Lidell  <matsl@gnu.org>
+
+* test/hpath-tests.el (hpath:find-exec-shell-cmd-test,
+    hpath:find-exec-window-cmd-test): Path prefix tests.
+
+* test/hbut-tests.el (hbut-find-exec-shell-cmd-test,
+    hbut-find-exec-window-cmd-test): Path prefix tests.
+
 2021-04-19  Bob Weiner  <rsw@gnu.org>
 
 * hsys-org.el (hsys-org-link-at-p): Change to use org-link-bracket-re so match
