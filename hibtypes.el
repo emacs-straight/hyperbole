@@ -83,6 +83,17 @@
 ;; them.  Use load instead to ensure are reloaded when resetting
 ;; ibtype priorities.
 
+(defib python-tb-previous-line ()
+  "If no other implicit button type triggered, move to prior line with potential Python line ref.
+In Python, tracebacks may be on a line just below the source
+reference line so since not on a Hyperbole button, move back a
+line and check for a source reference line again."
+  (save-excursion
+    (unless (/= (forward-line -1) 0)
+      ;; Don't wrap this next line in (hact) since has hact call
+      ;; in the function itself.
+      (hib-python-traceback))))
+
 ;;; ========================================================================
 ;;; Runs Hyperbole tests
 ;;; ========================================================================
@@ -208,12 +219,29 @@ display options."
                                   (string-match substring (format-mode-line mode-name)))
                                 '("Buffer Menu" "IBuffer" "Dired"))))
     (let ((path (hpath:at-p))
+	  elisp-suffix
           full-path)
       (if path
-          (progn (when (string-match "\\`file://" path)
-                   (setq path (substring path (match-end 0))))
-                 (apply #'ibut:label-set path (hpath:start-end path))
-                 (hact 'link-to-file path))
+	  (cond ((and (not (string-empty-p path))
+ 		      (= (aref path 0) ?-)
+		      (or (setq elisp-suffix (string-match "\\`[^\\\\/~]+\\.el[cn]?\\(\\.gz\\)?\\'" path))
+			  (string-match "\\`[^.\\/\t\n\r\f]+\\'" path))
+		      (string-match hpath:prefix-regexp path))
+                 (setq path (substring path (match-end 0))
+		       full-path (locate-library path elisp-suffix))
+                 (cond (full-path
+			(setq path (concat "-" path))
+			(apply #'ibut:label-set path (hpath:start-end path))
+			(hact 'hpath:find path))
+		       (elisp-suffix
+			(hact 'error "(pathname): \"%s\" not found in `load-path'" path))
+		       ;; Don't match as a pathname ibut; could be a Lisp
+		       ;; symbol or something else starting with a '-'.
+		       (t nil)))
+		(t (when (string-match "\\`file://" path)
+                     (setq path (substring path (match-end 0))))
+                   (apply #'ibut:label-set path (hpath:start-end path))
+                   (hact 'link-to-file path)))
         ;;
         ;; Match PATH-related Environment and Lisp variable names and
 	;; Emacs Lisp and Info files without any directory component.
@@ -230,15 +258,20 @@ display options."
 			     (and (string-match "\\`\\s-*\\([^; 	]+\\)" path)
 				  (executable-find (match-string 1 path))))
 		   (hact 'link-to-file path)))
-		((string-match "\\`[^\\\\/~]+\\.el[cn]?\\(\\.gz\\)?\\'" path)
-                 (apply #'ibut:label-set path (hpath:start-end path))
-                 (if (string-match hpath:prefix-regexp path)
-                     (hact 'hpath:find path)
-                   (setq full-path (locate-library path t))
-                   (if full-path
-                       (hact 'link-to-file full-path)
-                     (hact 'error "(pathname): \"%s\" not found in `load-path'"
-                           path))))
+		((setq elisp-suffix (string-match "\\`[^\\\\/~]+\\.el[cn]?\\(\\.gz\\)?\\'" path))
+                 (cond ((string-match hpath:prefix-regexp path)
+			(apply #'ibut:label-set path (hpath:start-end path))
+			(hact 'hpath:find path))
+                       ((setq full-path
+			      (let ((load-suffixes '(".el")))
+				(locate-library path elisp-suffix)))
+			(apply #'ibut:label-set path (hpath:start-end path))
+			(hact 'link-to-file full-path))
+		       (elisp-suffix
+			(hact 'error "(pathname): \"%s\" not found in `load-path'" path))
+		       ;; Don't match as a pathname ibut; could be a Lisp
+		       ;; symbol or something else starting with a '-'.
+		       (t nil)))
                 ;; Match only if "(filename)" references a valid Info file
                 ;; and point is within the filename, not on any delimiters
                 ;; so that delimited thing matches trigger later.
@@ -914,6 +947,17 @@ in grep and shell buffers."
 ;;; lines.  Supports gdb, dbx, and xdb.
 ;;; ========================================================================
 
+(defun hib-python-traceback ()
+"Test for and jump to line referenced in Python pdb, traceback, or pytype error."
+  (when (or (looking-at "\\(^\\|.+ \\)File \"\\([^\"\n\r]+\\)\", line \\([0-9]+\\)")
+            (looking-at ">?\\(\\s-+\\)\\([^\"()\n\r]+\\)(\\([0-9]+\\))\\S-"))
+    (let* ((file (match-string-no-properties 2))
+           (line-num (match-string-no-properties 3))
+           (but-label (concat file ":" line-num)))
+      (setq line-num (string-to-number line-num))
+      (ibut:label-set but-label (match-beginning 2) (match-end 2))
+      (hact 'link-to-file-line file line-num))))
+
 (defib debugger-source ()
   "Jump to source line associated with stack frame or breakpoint lines.
 This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines are recognized in any buffer."
@@ -921,14 +965,9 @@ This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines
     (beginning-of-line)
     (cond
      ;; Python pdb or traceback, pytype error
-     ((or (looking-at "\\(^\\|.+ \\)File \"\\([^\"\n\r]+\\)\", line \\([0-9]+\\)")
-          (looking-at ">?\\(\\s-+\\)\\([^\"()\n\r]+\\)(\\([0-9]+\\))\\S-"))
-      (let* ((file (match-string-no-properties 2))
-             (line-num (match-string-no-properties 3))
-             (but-label (concat file ":" line-num)))
-        (setq line-num (string-to-number line-num))
-        (ibut:label-set but-label (match-beginning 2) (match-end 2))
-        (hact 'link-to-file-line file line-num)))
+     ;; Don't wrap this next line in (hact) since has hact call
+     ;; in the function itself.
+     ((hib-python-traceback))
 
      ;; JavaScript traceback
      ((or (looking-at "[a-zA-Z0-9-:.()? ]+? +at \\([^() \t]+\\) (\\([^:, \t()]+\\):\\([0-9]+\\):\\([0-9]+\\))$")
@@ -998,16 +1037,7 @@ This works with JavaScript and Python tracebacks, gdb, dbx, and xdb.  Such lines
              (but-label (concat file ":" line-num)))
         (setq line-num (string-to-number line-num))
         (ibut:label-set but-label)
-        (hact 'link-to-file-line file line-num)))
-
-     ((not (boundp 'debugger-source-prior-line))
-      ;; In Python tracebacks, may be on a line just below the source
-      ;; reference line so if not on a Hyperbole button, move back a
-      ;; line and check for a source line again.
-      (let ((debugger-source-prior-line t))
-	(unless (or (hbut:at-p)	(/= (forward-line -1) 0))
-	  ;; Don't wrap this next line in (hact) or will break things.
-	  (ibtypes::debugger-source)))))))
+        (hact 'link-to-file-line file line-num))))))
 
 ;;; ========================================================================
 ;;; Displays files at specific lines and optional column number
