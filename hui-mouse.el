@@ -52,9 +52,13 @@
   "*Command that sets point to the mouse cursor position.")
 
 (defun action-key-error ()
-  (hypb:error "(Hyperbole Action Key): No action defined for this context; try another location"))
+  (if (hsys-org-mode-p)
+      (hact 'org-meta-return current-prefix-arg)
+    (hypb:error "(Hyperbole Action Key): No action defined for this context; try another location")))
 (defun assist-key-error ()
-  (hypb:error "(Hyperbole Assist Key): No action defined for this context; try another location"))
+  (if (hsys-org-mode-p)
+      (hact 'org-meta-return current-prefix-arg)
+    (hypb:error "(Hyperbole Assist Key): No action defined for this context; try another location")))
 
 (defcustom action-key-default-function #'action-key-error
   "*Function run by the Action Key in an unspecified context.
@@ -988,7 +992,7 @@ If assist-key is pressed within:
 
 (defun smart-helm-line-has-action ()
   "Mark and return the actions for the helm selection item at the point of Action Key depress, or nil if line lacks any action.
-Assumes Hyperbole has already checked that helm is active."
+Assume Hyperbole has already checked that helm is active."
   (let ((helm-buffer (if (equal helm-action-buffer (buffer-name)) helm-buffer (buffer-name))))
     (save-excursion
       (with-helm-buffer
@@ -1023,7 +1027,7 @@ Assumes Hyperbole has already checked that helm is active."
   "Return non-nil iff Smart Mouse DEPRESS-EVENT was on a helm section header, candidate separator or at eob or eol.
 If non-nil, returns a property list of the form: (section-header <bool> separator <bool> eob <bool> or eol <bool>).
 If a section-header or separator, selects the first following candidate line.
-Assumes Hyperbole has already checked that helm is active."
+Assume Hyperbole has already checked that helm is active."
   (and (eventp depress-event)
        ;; Nil means in the buffer text area
        (not (posn-area (event-start depress-event)))
@@ -1593,13 +1597,6 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 	   (hact 'org-meta-return current-prefix-arg)
 	   ;; Ignore any further Smart Key non-Org contexts
 	   t)
-	  ((hbut:at-p)
-	   ;; Activate/Assist with any Hyperbole button at point
-	   (if (not assist-flag)
-	       (hact 'hbut:act)
-	     (hact 'hkey-help))
-	   ;; Ignore any further Smart Key non-Org contexts
-	   t)
 	  ((eq hsys-org-enable-smart-keys t)
 	   (let (start-end)
 	     (cond ((hsys-org-agenda-item-at-p)
@@ -1622,23 +1619,46 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 			       (hact 'org-link))
 		      (hact 'hkey-help))
 		    t)
-		   ((org-at-heading-p)
+		   ((hsys-org-block-start-at-p)
+		    (hact 'org-ctrl-c-ctrl-c)
+		    t)
+		   ((hbut:at-p)
+		    ;; Activate/Assist with any Hyperbole button at point
+		    (if (not assist-flag)
+			(hact 'hbut:act)
+		      (hact 'hkey-help))
+		    ;; Ignore any further Smart Key non-Org contexts
+		    t)
+		   ((hsys-org-heading-at-p)
 		    (if (not assist-flag)
 			(hact 'hsys-org-cycle)
 		      (hact 'hsys-org-global-cycle))
 		    t)
-		   ((hsys-org-block-start-at-p)
-		    (hact 'org-ctrl-c-ctrl-c)
-		    t)
 		   (t
 		    ;; Continue with any further Smart Key non-Org contexts
 		    nil))))
+	  ((eq hsys-org-enable-smart-keys 'buttons)
+	   (cond ((hsys-org-radio-target-def-at-p)
+		  (hact 'org-radio-target)
+		  t)
+		 ((setq start-end (hsys-org-link-at-p))
+		  (if (not assist-flag)
+		      (progn (hsys-org-set-ibut-label start-end)
+			     (hact 'org-link))
+		    (hact 'hkey-help))
+		  t)
+ 		 ((hbut:at-p)
+		  ;; Activate/Assist with any Hyperbole button at point
+		  (if (not assist-flag)
+		      (hact 'hbut:act)
+		    (hact 'hkey-help)))
+		 (t (hact 'org-meta-return current-prefix-arg)))
+	   ;; Ignore any further Smart Key non-Org contexts
+	   t)
 	  (t
-	   ;; hsys-org-enable-smart-keys is set to 'buttons or some
-	   ;; invalid value (treat it just like 'buttons) and 
-	   ;; ignore any further Smart Key non-Org contexts
-	   t))))
-
+	   ;; hsys-org-enable-smart-keys is set to t, so try other Smart
+	   ;; contexts
+	   nil))))
 
 ;;; ************************************************************************
 ;;; smart-outline functions
