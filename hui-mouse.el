@@ -102,6 +102,57 @@ Its default value is #'smart-scroll-down.  To disable it, set it to
   :group 'hyperbole-keys)
 
 ;;; ************************************************************************
+;;; Public declarations
+;;; ************************************************************************
+
+(declare-function todotxt-archive "ext:todotxt")
+(declare-function todotxt-bury "ext:todotxt")
+(declare-function todotxt-complete-toggle "ext:todotxt")
+(declare-function todotxt-edit-item "ext:todotxt")
+
+(declare-function magit-current-section "magit-selection")
+(declare-function magit-diff-visit-file "etx:magit-diff")
+(declare-function magit-diff-visit-file--internal "etx:magit-diff")
+(declare-function magit-file-at-point "etx:magit-git")
+(declare-function magit-section-cycle-diffs "etx:magit-diff")
+(declare-function magit-section-cycle-global "etx:magit-selection")
+(declare-function magit-section-hide "etx:magit-selection")
+(declare-function magit-section-show "etx:magit-selection")
+
+(declare-function -flatten "ext:dash")
+
+(declare-function imenu--make-index-alist "imenu")
+
+(declare-function image-dired-thumbnail-display-external "image-dired")
+(declare-function image-dired-display-thumbnail-original-image "image-dired")
+(declare-function image-dired-mouse-select-thumbnail "image-dired")
+
+(declare-function helm-action-window "ext:helm-lib")
+(declare-function helm-buffer-get "ext:helm-lib")
+;; (declare-function helm-get-current-action "ext:helm-?")
+(declare-function helm-get-selection "ext:helm")
+(declare-function helm-mark-current-line "ext:helm")
+(declare-function helm-next-line "ext:helm")
+(declare-function helm-pos-candidate-separator-p "ext:helm")
+(declare-function helm-pos-header-line-p "ext:helm")
+(declare-function helm-resume "ext:helm")
+(declare-function helm-window "ext:helm-lib")
+(declare-function with-helm-buffer "ext:helm-lib")
+
+(declare-function ibuffer-mark-for-delete "ibuffer")
+(declare-function ibuffer-unmark-forward "ibuffer")
+(declare-function ibuffer-unmark-all "ibuffer")
+(declare-function ibuffer-do-view "ibuffer")
+(declare-function ibuffer-mark-forward "ibuffer")
+(declare-function ibuffer-do-kill-on-deletion-marks "ibuffer")
+(declare-function ibuffer-get-marked-buffers "ibuffer")
+(declare-function ibuffer-current-buffer "ibuffer")
+
+(declare-function br-buffer-menu-select "ext:br")
+
+(declare-function gnus-topic-read-group "gnus-topic")
+
+;;; ************************************************************************
 ;;; Hyperbole context-sensitive keys dispatch table
 ;;; ************************************************************************
 
@@ -302,10 +353,6 @@ Its default value is #'smart-scroll-down.  To disable it, set it to
     ((smart-imenu-item-at-p)
      . ((smart-imenu-display-item-where (car hkey-value) (cdr hkey-value)) .
 	(imenu-choose-buffer-index)))
-    ;;
-    ;; Function menu listing mode in XEmacs
-    ((eq major-mode 'fume-list-mode) .
-     ((fume-list-mouse-select current-mouse-event) . (fume-prompt-function-goto)))
     ;;
     ((and (eq major-mode 'c-mode)
 	  buffer-file-name (smart-c-at-tag-p)) .
@@ -643,8 +690,8 @@ If key is pressed:
  (3) if a mouse event on a widget, activate the widget or display a menu;
  (4) anywhere else, execute the command bound to {RETURN}."
   (interactive)
-  (cond ((last-line-p) (Custom-buffer-done)
-	((eolp) (smart-scroll-up)))
+  (cond ((last-line-p) (Custom-buffer-done))
+	((eolp) (smart-scroll-up))
 	((mouse-event-p last-command-event)
 	 (widget-button-click action-key-release-args))
 	 ;; Handle widgets in Custom-mode
@@ -664,8 +711,8 @@ If key is pressed:
  (3) if a mouse event on a widget, activate the widget or display a menu;
  (4) anywhere else, execute the command bound to {RETURN}."
   (interactive)
-  (cond ((last-line-p) (Custom-buffer-done)
-	((eolp) (smart-scroll-down)))
+  (cond ((last-line-p) (Custom-buffer-done))
+	((eolp) (smart-scroll-down))
 	((mouse-event-p last-command-event)
 	 (widget-button-click action-key-release-args))
 	 ;; Handle widgets in Custom-mode
@@ -1603,13 +1650,13 @@ will simply invoke `org-meta-return'.
 Org links may be used outside of Org mode buffers.  Such links are
 handled by the separate implicit button type, `org-link-outside-org-mode'."
   (when (funcall hsys-org-mode-function)
-    (cond ((not hsys-org-enable-smart-keys)
-	   (when (hsys-org-meta-return-shared-p)
-	     (hact 'org-meta-return current-prefix-arg))
-	   ;; Ignore any further Smart Key non-Org contexts
-	   t)
-	  ((eq hsys-org-enable-smart-keys t)
-	   (let (start-end)
+    (let (start-end)
+      (cond ((not hsys-org-enable-smart-keys)
+	     (when (hsys-org-meta-return-shared-p)
+	       (hact 'org-meta-return current-prefix-arg))
+	     ;; Ignore any further Smart Key non-Org contexts
+	     t)
+	    ((eq hsys-org-enable-smart-keys t)
 	     (cond ((hsys-org-agenda-item-at-p)
 		    (if (not assist-flag)
 			(progn (hsys-org-set-ibut-label (cons (line-beginning-position) (line-end-position)))
@@ -1647,31 +1694,31 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 		    t)
 		   (t
 		    ;; Continue with any further Smart Key non-Org contexts
-		    nil))))
-	  ((eq hsys-org-enable-smart-keys 'buttons)
-	   (cond ((hsys-org-radio-target-def-at-p)
-		  (hact 'org-radio-target)
-		  t)
-		 ((setq start-end (hsys-org-link-at-p))
-		  (if (not assist-flag)
-		      (progn (hsys-org-set-ibut-label start-end)
-			     (hact 'org-link))
-		    (hact 'hkey-help))
-		  t)
- 		 ((hbut:at-p)
-		  ;; Activate/Assist with any Hyperbole button at point
-		  (if (not assist-flag)
-		      (hact 'hbut:act)
-		    (hact 'hkey-help)))
-		 (t
-		  (when (hsys-org-meta-return-shared-p)
-		    (hact 'org-meta-return current-prefix-arg))
-		  ;; Ignore any further Smart Key non-Org contexts
-		  t)))
-	  (t
-	   ;; hsys-org-enable-smart-keys is set to t, so try other Smart
-	   ;; contexts
-	   nil))))
+		    nil)))
+	    ((eq hsys-org-enable-smart-keys 'buttons)
+	     (cond ((hsys-org-radio-target-def-at-p)
+		    (hact 'org-radio-target)
+		    t)
+		   ((setq start-end (hsys-org-link-at-p))
+		    (if (not assist-flag)
+			(progn (hsys-org-set-ibut-label start-end)
+			       (hact 'org-link))
+		      (hact 'hkey-help))
+		    t)
+ 		   ((hbut:at-p)
+		    ;; Activate/Assist with any Hyperbole button at point
+		    (if (not assist-flag)
+			(hact 'hbut:act)
+		      (hact 'hkey-help)))
+		   (t
+		    (when (hsys-org-meta-return-shared-p)
+		      (hact 'org-meta-return current-prefix-arg))
+		    ;; Ignore any further Smart Key non-Org contexts
+		    t)))
+	    (t
+	     ;; hsys-org-enable-smart-keys is set to t, so try other Smart
+	     ;; contexts
+	     nil)))))
 
 ;;; ************************************************************************
 ;;; smart-outline functions
