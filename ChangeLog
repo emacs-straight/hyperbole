@@ -1,3 +1,13 @@
+2021-05-16  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (version): Do version number check in a portable way.
+
+* hyperbole.el (hyperb:maybe-load-autoloads, hyperb:maybe-load-autoloads):
+    Only load autoloads if present.
+
+* hypb.el (hypb:function-copy): Remove XEmacs compatibility code for
+    bytecode objects.
+
 2021-05-16  Bob Weiner  <rsw@gnu.org>
 
 * hyperbole.el (hyperb:maybe-load-autoloads): Add and call from hyperb:init.
