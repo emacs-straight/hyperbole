@@ -1,4 +1,18 @@
+2021-05-16  Mats Lidell  <matsl@gnu.org>
+
+* hyrolo.el (google-contacts-oauth-token, xml-node-child-string)
+    (xml-node-get-attribute-type, hyrolo-fgrep-logical, google-contacts)
+    (google-contacts-add-margin-to-text, google-contacts-build-node-list)
+    (google-contacts-data, google-contacts-make-buffer)
+    (google-contacts-margin-element): Add external dependencies.
+
 2021-05-15  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kview.el (kcell-view:line):
+  kotl/kotl-mode.el (kotl-mode): Where possible change 'if' to 'when'
+    and '(or (not ...))' to 'unless'.
+                    (cl-lib): Require for cl-remprop.
+                    (kotl-previous-mode): Declare this variable.
 
 * hyperbole.el (make-directory-autoloads): Fix definition for Emacs 27.
 
