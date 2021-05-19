@@ -1,4 +1,42 @@
+2021-05-18  Bob Weiner  <rsw@gnu.org>
+
+
+* kotl/kotl-mode.el (kotl-mode:example): Update to allow for
+    an optional directory or absolute file path.  Prompt for
+    the path when interactive and given a prefix argument,
+    archive any existing file and start with a fresh EXAMPLE.kotl
+    file.  Programmatically, give a 2nd arg of t to force
+    archiving of any existing file and starting with a fresh
+    EXAMPLE.kotl file.
+  test/kotl-mode-tests.el (kotl-mode-move-between-cells,
+                           kotl-mode-indent-cell-changes-level):
+    Update to use new kotl-mode:example arguments.
+
+* hrmail.el (rmail:msg-to-p): Alias to Rmail-msg-to-p for use in
+    in hactypes.el.
+            (require 'hvar): Add, used in Rmail-init.
+
+* hpath.el (hpath:to-markup-anchor): Add support for path#anchor
+    links in programming, text and outlining major modes.
+
+* hactypes.el (link-to-ebut): Fix bug that always triggered an error
+    if key-file was not given.  Also remove interactive conditional
+    that prevented normalized-file from being set.
+
+2021-05-18  Mats Lidell  <matsl@gnu.org>
+
+* test/kotl-mode-tests.el (setup-kotl-mode-example-test)
+    (smart-menu-loads-kotl-example, kotl-mode-example-loads-kotl-example)
+    (kotl-mode-move-between-cells, kotl-mode-indent-cell-changes-level):
+    Add kotl-mode tests.
+
 2021-05-17  Mats Lidell  <matsl@gnu.org>
+
+* kotl/kotl-mode.el (hypb):
+  hyperbole.el (hypb): Use compatibility macro.
+
+* hypb.el (hypb-with-suppressed-warnings): Add compatibility macro for
+    suppressing warnings
 
 * Makefile (kotl/kotl-autoloads.el): Remove PRELOADS for generating
     autoloads. Patch from Stefan Monnier. Thank you Stefan.
@@ -6,6 +44,8 @@
 * kotl/kotl-mode.el (kotl-mode):
   hyperbole.el (fboundp): Do not use with-suppressed-warnings since not
     available in Emacs 26
+
+2021-05-17  Mats Lidell  <matsl@gnu.org>
 
 * kotl/kmenu.el (id-menubar-set): Add external dependency.
 
