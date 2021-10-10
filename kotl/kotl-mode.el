@@ -1,10 +1,10 @@
-;;; kotl-mode.el ---  Major mode for editing koutlines and associated commands
+;;; kotl-mode.el ---  Major mode for editing koutlines and associated commands  -*- lexical-binding: t; -*-
 ;;
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
 ;;
-;; Copyright (C) 1993-2019  Free Software Foundation, Inc.
+;; Copyright (C) 1993-2021  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -2545,7 +2545,7 @@ the current cell."
     ;; delete any preceding whitespace
     (skip-chars-backward " \t\n\r" start)
     (delete-region (max start (point)) (kcell-view:end-contents))
-    (kotl-mode:add-cell arg new-cell-contents (kcell-view:plist))))
+    (kotl-mode:add-cell arg new-cell-contents)))
 
 (defun kotl-mode:transpose-cells (arg)
   "Exchange current and previous visible cells, leaving point after both.

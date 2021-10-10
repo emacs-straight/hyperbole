@@ -1,3 +1,73 @@
+2021-09-26  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (bin): Hide docstring warnings.
+
+2021-09-26  Robert Weiner  <bk@bka-iMac.lan>
+
+* hbut.el (ebut:operate): Rewrote to handle label modification properly and thereby
+    fixed hui-ebut-modify-link-to-www-url-keeping-all-values-should-not-modify-buffer-or-ebut
+    test.
+
+* hmail.el (hmail:hbdata-to-p): Update doc string and generalize to handle button
+    data embedded in non-mail buffers, e.g. temp buffers for testing.
+  test/hbut-tests.el (hypb:program-create-ebut-in-buffer):
+    Above fix resolved bug that hbut:at-p did not recognize a button created
+    within a buffer without a file attached, causing this test to fail.
+    Also fixed ebut-delete-removes-ebut-and-returns-button-data test.
+
+2021-09-26  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kexport.el (kexport:html): Improve vertical alignment of expand/collapse
+    chevrons and kcell text.
+
+* hsettings.el (hyperbole-web-search-browser-function): Use 'function type.
+
+* hui-mini.el (hui:menu-item-keys): Fix bug in catch fallthrough that returned
+    the item rather than nil, causing numbers and non-ASCII chars to not work.
+
+2021-09-20  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (bin-warn): Control what warning messages to get when byte
+    compiling.
+
+2021-09-18  Mats Lidell  <matsl@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:split-cell): Create new plist for split cell.
+
+* test/kotl-mode-tests.el (kotl-mode-split-cell): Add test for split-cell
+
+2021-09-14  Mats Lidell  <matsl@gnu.org>
+
+* hbut.el (defib, defil, defal): Use declare notation for making macros
+    possible to debug. Patch from Stefan Monnier. Thank you Stefan.
+
+2021-09-12  Mats Lidell  <matsl@gnu.org>
+
+* Part three of patch from Stefam Monnier. Thank you Stefan.
+  Incluces updates:
+  - Use lexical scoping
+  - Update copyright notice
+  - Use #'-syntax for functions
+
+2021-09-11  Mats Lidell  <matsl@gnu.org>
+
+* hsettings.el (hyperbole-web-search-browser-function): Use
+    browse-url--browser-defcustom-type for customization.
+
+2021-09-05  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kexport.el (kexport:html): Fix export-from parameter checks to
+    allow only Koutline buffers and files.  Stop centering title since
+    often places it too far right.
+
+2021-09-05  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-demo-show-overview)
+    (hyrolo-demo-move-to-beginning-and-end-of-file)
+    (hyrolo-demo-move-between-entries-on-same-level)
+    (hyrolo-demo-no-following-same-level-heading): Add tests for rolo keys.
+    (hyrolo-demo-toggle-visibility): Update to test key 's'.
+
 2021-08-19  Mats Lidell  <matsl@gnu.org>
 
 * test/hbut-tests.el (hbut-tests:should-match-tmp-folder): Add check for
