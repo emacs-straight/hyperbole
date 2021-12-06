@@ -70,6 +70,7 @@
 
 ;; Smart scrolling
 (ert-deftest demo-smart-scrolling-proportional-test ()
+  (skip-unless (not noninteractive))
   (unwind-protect
       (progn
         (hypb:display-file-with-logo (expand-file-name "DEMO" hyperb:dir))
