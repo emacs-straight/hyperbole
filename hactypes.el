@@ -327,7 +327,7 @@ Interactively, KEY-FILE defaults to the current buffer's file name."
 (defact link-to-file (path &optional point)
   "Display a file given by PATH scrolled to optional POINT.
 If POINT is given, display the buffer with POINT at the top of
-the window."
+the window or as close as possible."
   (interactive
    (let ((prev-reading-p hargs:reading-p)
 	 (existing-buf t)
@@ -615,7 +615,7 @@ FILE may be a string or nil, in which case the current buffer is used."
   (interactive "fTexinfo file to link to: \nsNode within file to link to: ")
   (let (node-point)
     (if file
-        (set-buffer (find-file-noselect file))
+        (set-buffer (find-find-noselect (hpath:substitute-value file)))
       (setq file buffer-file-name))
     (save-excursion
       (goto-char (point-min))
