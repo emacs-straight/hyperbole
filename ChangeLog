@@ -1,3 +1,46 @@
+2022-01-02  Bob Weiner  <rsw@gnu.org>
+
+* test/hpath-tests.el (hpath:should-exist-paths, hpath:should-not-exist-paths):
+    Add these two ert tests to check hpath expansion code.  Each test reports
+    any failures from a whole list of test paths.
+                      (hpath--should-exist-paths, hpath--should-not-exist-paths,
+                       hpath--should-exist-p, hpath--should-not-exist-p):
+    Support code for above two tests.
+
+* hypb.el (hypb:string-count-matches): Add to count regexp matches in a string.
+
+* hpath.el (hpath:is-p): Replace most string-match with string-match-p for performance.
+
+* hpath.el (hpath:variable-regexp): Add new constant representing Hyperbole pathname
+    variable format and use throughout hpath.el.
+
+2022-01-02  Mats Lidell  <matsl@gnu.org>
+
+* test/hui-tests.el (hui-ebut-create-link-to-info-index-using-completion):
+    Link to emacs info index.
+
+* test/hy-test-helpers.el (hy-test-helpers:action-key-should-call-hpath:find)
+    (hy-test-helpers:hypb-function-should-call-hpath:find): Do a string
+    match and expand-file-name match.
+
+* test/hui-tests.el (hui-ebut-create-link-to-info-index-using-completion):
+    New test case.
+
+2022-01-01  Bob Weiner  <rsw@gnu.org>
+
+* test/hpath-tests.el (hpath:prepend-ls-directory-test):
+  hpath.el (hpath:prepend-ls-directory): Make work under MS Windows with Git bash or
+    cmd.exe.  Fix to prepend dir after an 'ls kotl' type command.
+
+* hpath.el (hpath:expand): Fix to use locate-library only if filename contains ".el".
+    This prevents improperly finding non-Elisp files within the load-path, e.g. an
+    INSTALL file.
+
+* hpath.el (hpath:substitute-dir): Fix to handle when part of the directory is
+    included in 'rest-of-path' in which case only the preceding part of the dir
+    should be returned.  Also, account for when "./" or "../" is removed from
+    'rest-of-path', thereby lengthening the directory to return.
+
 2021-12-31  Mats Lidell  <matsl@gnu.org>
 
 * Makefile (EL_SRC): Remove EL_SRC, compile all el-files.
@@ -141,7 +184,7 @@
 
 * test/hpath-tests.el (hypb-run-shell-test-command): Test helper for
     running shell commands.
-    (hpath:prepend-ls-directory-test): Test for "ls R" listing.
+    (hpath:prepend-ls-directory-test): Test for "ls -R" listing.
 
 2021-12-05  Bob Weiner  <rsw@gnu.org>
 

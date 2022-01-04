@@ -36,8 +36,7 @@
   (let ((was-called nil))
     (cl-letf (((symbol-function 'hpath:find)
                (lambda (filename)
-		 (setq filename (hpath:mswindows-to-posix filename)
-                       was-called (should (string= str filename))))))
+		 (setq was-called (should (or (string= str filename) (string= str (expand-file-name filename))))))))
       (action-key)
       (should was-called))))
 
@@ -46,7 +45,7 @@
   (let ((was-called nil))
     (cl-letf (((symbol-function 'hpath:find)
                (lambda (filename)
-                 (setq was-called (should (string= str filename))))))
+                 (setq was-called (should (or (string= str filename) (string= str (expand-file-name filename))))))))
       (funcall function)
       (should was-called))))
 

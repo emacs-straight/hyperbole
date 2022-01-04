@@ -136,6 +136,22 @@ Modifying the button but keeping the label creates a dubbel label."
           (should (equal (hattr:get (hbut:at-p) 'lbl-key) "label")))
       (delete-file file))))
 
+(ert-deftest hui-ebut-create-link-to-info-index-using-completion ()
+  "Create an ebut with link to Info index using completion for the index item."
+  (skip-unless (not noninteractive))
+  (let ((file (make-temp-file "hypb_" nil ".txt")))
+    (unwind-protect
+        (progn
+          (find-file file)
+          (should (hact 'kbd-key "C-h h e c emacs-package-button RET RET link-to-Info-index-item RET (emacs)packag TAB RET"))
+          (hy-test-helpers:consume-input-events)
+          (should (eq (hattr:get (hbut:at-p) 'actype) 'actypes::link-to-Info-index-item))
+          (should (equal (hattr:get (hbut:at-p) 'args) '("(emacs)Package")))
+          (should (equal (hattr:get (hbut:at-p) 'lbl-key) "emacs-package-button")))
+      (progn
+        (kill-buffer "*info*")
+        (delete-file file)))))
+
 ;; This file can't be byte-compiled without `with-simulated-input' which
 ;; is not part of the actual dependencies, so:
 ;;   Local Variables:
