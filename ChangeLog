@@ -1,3 +1,36 @@
+2022-01-09  Mats Lidell  <matsl@gnu.org>
+
+* test/hyperbole-tests.el (hyperbole-keymap-tests)
+    (hyperbole-hkey-init-controls-tests)
+    (hyperbole-global-key-binding-tests): Keybinding tests.
+
+2022-01-09  Bob Weiner  <rsw@gnu.org>
+
+* topwin.py: Update to Python 3.7 or greater.
+
+* Makefile (EL_TAGS): Add test functions to tags file.
+
+* test/hpath-tests.el (hpath:auto-variable-alist-load-path-test):
+    Ensure directories without final slashes and .el files without double
+    quotes are handled properly.
+
+* hypb.el (hypb:string-count-matches): Rewrite to handle start and end properly.
+
+* hypb.el (hypb:insert-hyperbole-banner): Rename from 'hypb:display-file-with-logo-emacs'
+    and remove unused 'file' parameter.
+
+* hypb.el: Use lexical binding and remove any lexical binding errors.
+
+* hypb-ert.el: Rewrite to improve naming and to load tests once only using require.
+
+* test/hmouse-drv-tests.el (hbut-defal): Generalize to prevent failures.
+
+2022-01-08  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:return-one-value): Complete rewrite to handle complex
+    multi-variable paths like:  "${load-path}/../hyperbole/$DOT/hypb.el")
+    where DOT = ".".
+
 2022-01-06  Mats Lidell  <matsl@gnu.org>
 
 * hsmail.el: Cleanup patch from Stefan Monnier. Thank you Stefan.
