@@ -191,7 +191,7 @@ but-start-position, but-end-position.  Positions include
 delimiters.  With TWO-LINES-FLAG non-nil, constrain label search
 to two lines."
   (let ((opoint (point))
-	(quoted "\\(^\\|[^\\{]\\)")
+	(quoted "\\(^\\|[^\\{$]\\)")
 	(hbut:max-len hbut:max-len)
 	npoint start lbl-key end but-start but-end start-regexp end-regexp)
     (unless start-delim (setq start-delim ebut:start))
@@ -855,7 +855,35 @@ Default is 'hbut:current."
 	 (let ((orig-point (point-marker))
 	       text-point)
 	   (when (ibut:is-p hbut)
-	     (ibut:to-text (hattr:get hbut 'lbl-key)))
+	     ;; Determine whether point is already within hbut; if
+	     ;; not, it is moved there.
+	     ;;
+	     ;; The next line returns the lbl-key of the current
+	     ;; button only if point is within the optional name,
+	     ;; otherwise, nil.
+	     (let* ((lbl-key-start-end (ibut:label-p nil nil nil t t))
+		    (lbl-key (nth 0 lbl-key-start-end))
+		    (delim-text-start (or (nth 1 lbl-key-start-end)
+					  (hattr:get hbut 'lbl-start)))
+		    (delim-text-end (or (nth 2 lbl-key-start-end)
+				       (hattr:get hbut 'lbl-end))))
+	       (if (and lbl-key
+			(or (equal (hattr:get hbut 'loc) (current-buffer))
+			    (equal (hattr:get hbut 'loc) buffer-file-name))
+			(equal lbl-key (hattr:get hbut 'lbl-key)))
+		   (unless (and delim-text-start delim-text-end
+				(< delim-text-start (point))
+				(>= delim-text-end (point)))
+		     (goto-char delim-text-start)
+		     (skip-chars-forward "^-_a-zA-Z0-9"))
+		 ;; Here handle when there is no name preceding the
+		 ;; implicit button.
+		 (unless (and (or (equal (hattr:get hbut 'loc) (current-buffer))
+				  (equal (hattr:get hbut 'loc) buffer-file-name))
+			      delim-text-start delim-text-end
+			      (< delim-text-start (point))
+			      (>= delim-text-end (point)))
+		   (ibut:to-text (hattr:get hbut 'lbl-key))))))
 	   (setq text-point (point-marker))
 	   (prog1 (apply hrule:action
 			 (hattr:get hbut 'actype)

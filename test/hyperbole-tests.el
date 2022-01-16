@@ -23,7 +23,7 @@
 ;; that failed show up in ERT's output. -- Copied from edebug-tests.el
 
 (defun hyperbole-key-bindings (set)
-  "If SET is t verify keys are bound and if nil they are not bound."
+  "If SET is t, verify keys are bound and if nil, verify they are unbound."
   (let ((hyperbole-mode-map (make-sparse-keymap))
         (hkey-init set))
     (cl-letf (((symbol-function 'where-is-internal) (lambda (_func &optional _map) nil))
