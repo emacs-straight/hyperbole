@@ -1,8 +1,21 @@
 2022-01-23  Bob Weiner  <rsw@gnu.org>
 
+* Makefile (TAGS): Include ert-deftest definitions in TAGS file.
+           (TEST_ERT_FILES): Add hy-test-*.el so indexed in TAGS file.
+
+* hbut.el (gbut:label-p): Add to return global button label point is on if nay.
+    Use in 'hui:gbut-modify'.
+
 * Makefile (test-all): Add conditionals to always run GUI Emacs if DISPLAY is set.
 
-* hui.el (hui:gbut-create, hui:gibut-create): Move position of 'set-buffer' call after
+* hui-menu.el (infodock-hyperbole-menu): Add Implicit-Button/{Edit, Modify}.
+  hui-mini.el (hui:menus): Add named Ibut/{Edit, Modify} (do the same thing).
+  hui.el (hui:ebut-modify, hui:gbut-modify): Interactively if on a button, still allow
+    choice of another button.
+         (hui:ibut-modify): Add named ibut modification.
+         (hui:ebut-modify, hui:gbut-modify): Add 2nd save-excursion so point does
+    not move within the source buffer.
+         (hui:gbut-create, hui:gibut-create): Move position of 'set-buffer' call after
     'hui:buf-writable-err' call so they do not interfere with each other, causing buttons
     to be written to the wrong buffer.
 
