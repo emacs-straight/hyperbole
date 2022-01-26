@@ -507,6 +507,7 @@ Return symbol created when successful, else nil."
   (([&rest arg]
     [&optional ["&optional" arg &rest arg]]
     &optional ["&rest" arg])))
+
 (defalias 'actype:create #'defact)
 
 (defun    actype:delete (type)
