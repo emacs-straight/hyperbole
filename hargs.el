@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    31-Oct-91 at 23:17:35
-;; Last-Mod:      5-Feb-22 at 13:06:32 by Bob Weiner
+;; Last-Mod:      5-Feb-22 at 21:48:56 by Bob Weiner
 ;;
 ;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
@@ -26,10 +26,10 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
+(require 'etags)                        ; For `find-tag--default'
 (require 'hpath)
 (require 'hypb)
 (require 'set)
-(require 'etags)                        ;For `find-tag--default'
 
 ;;; ************************************************************************
 ;;; Public variables
