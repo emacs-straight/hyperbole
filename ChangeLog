@@ -1,3 +1,16 @@
+2022-02-22  Mats Lidell  <matsl@gnu.org>
+
+* test/kcell-tests.el (kcell-tests--ref-to-id): Add test for
+    kcell:ref-to-id.
+
+2022-02-13  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (elisp-compiler-msg): Add Action Key support for Elisp
+    symbols in ERT output lines like:
+       passed   39/219  gbut-program-calls-ebut-program (0.004310 sec)
+
+* kotl/kotl-mode.el (kotl-mode-map): Add more tab related bindings.
+
 2022-02-13  Mats Lidell  <matsl@gnu.org>
 
 * Silence warnings about unused lexical arguments by prefixing names with
