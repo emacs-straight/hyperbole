@@ -450,8 +450,10 @@ else
 	$(EMACS) --quick $(PRELOADS) --eval "(load-file \"test/hy-test-dependencies.el\")" --eval "(let ((auto-save-default)) $(LOAD_TEST_ERT_FILES) (ert-run-tests-interactively t))"
 endif
 
+batch-tests: test-all-output
 test-all-output:
 	$(EMACS) --quick $(PRELOADS) --eval "(load-file \"test/hy-test-dependencies.el\")" --eval "(let ((auto-save-default) (ert-quiet t)) $(LOAD_TEST_ERT_FILES) (ert-run-tests-interactively t) (with-current-buffer \"*ert*\" (append-to-file (point-min) (point-max) \"ERT-OUTPUT\")) (kill-emacs))"
+	@echo "# Results written to file: ERT-OUTPUT"
 
 # Hyperbole install tests - Verify that hyperbole can be installed
 # using different sources. See folder "install-test"
