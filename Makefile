@@ -3,7 +3,7 @@
 # Author:       Bob Weiner
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
-# Last-Mod:      9-Mar-22 at 21:25:34 by Mats Lidell
+# Last-Mod:     13-Mar-22 at 10:56:50 by Bob Weiner
 #
 # Copyright (C) 1994-2021  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
@@ -42,8 +42,8 @@
 #               To release a Hyperbole Emacs package to ELPA and ftp.gnu.org:
 #		     make release
 #
-#		Generate the web site sources prepared for upload:
-#		    make web-site         - generate web site in folder $(HYPB_WEB_REPO_LOCATION)"
+#		Generate the website sources prepared for upload:
+#		    make website         - generate web site in folder $(HYPB_WEB_REPO_LOCATION)"
 #
 #               To setup Hyperbole to run directly from the latest test source
 #               code, use:
@@ -237,7 +237,7 @@ help:
 	@ echo "     make release"
 	@ echo ""
 	@ echo "  Generate we site sources prepared for upload:"
-	@ echo "    make web-site         - generate web site in folder $(HYPB_WEB_REPO_LOCATION)"
+	@ echo "    make website         - generate web site in folder $(HYPB_WEB_REPO_LOCATION)"
 
 	@ echo ""
 	@ echo "The Hyperbole Manual is included in the package in four forms:"
@@ -353,16 +353,25 @@ pdf: $(man_dir)/hyperbole.pdf
 $(man_dir)/hyperbole.pdf: $(TEXINFO_SRC)
 	cd $(man_dir) && $(TEXI2PDF) hyperbole.texi
 
-# github-markdown is an npm, installed with: npm install markdown-to-html -g
-#   Documentation is here: https://www.npmjs.com/package/markdown-to-html
+# md2html is a Python package that comes from the md2html-phuker repo on github.
+#   Documentation is here: https://github.com/Phuker/md2html
+#   Need the GNU sed call below because md2html generates ids with the wrong case and leaves URL encoded chars in ids.
+#   To test links in the generated html:
+#     Run a Python directory web browser in this directory: python -m http.server 8000
+#     Open the page in a web browser:                       http://localhost:8000/README.md.html
+#
+# Used to use github-markdown is an npm, installed with: npm install markdown-to-html -g
+#   But then it's links broke.  Documentation is here: https://www.npmjs.com/package/markdown-to-html
+#	github-markdown README.md > README.md.html
 README.md.html: README.md
-	github-markdown README.md > README.md.html
+	md2html README.md -f -o - | sed - -e 's/\(id="[^%]*\)\(%[A-Z0-9][A-Z0-9]\)/\1/g' -e 's/\(id="[^"]*"\)/\L\1/g' > README.md.html
+	md2html README.md -f -o README.md.html
 
-# web-site maintenance: "https://www.gnu.org/software/hyperbole/"
-web-site:
+# website maintenance: "https://www.gnu.org/software/hyperbole/"
+website:
 	$(EMACS_BATCH) --debug -l hypb-maintenance --eval '(let ((hypb:web-repo-location $(HYPB_WEB_REPO_LOCATION))) (hypb:web-repo-update))'
 	@ echo
-	@ echo "Web site source created ..."
+	@ echo "Website source created ..."
 	@ echo "Goto \"$(HYPB_WEB_REPO_LOCATION)\" and run \"cvs commit -m <comment>\" to upload it."
 	@ echo
 

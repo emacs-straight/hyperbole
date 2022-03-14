@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    31-Mar-21 at 21:11:00
-;; Last-Mod:      5-Mar-22 at 16:14:59 by Mats Lidell
+;; Last-Mod:     12-Mar-22 at 15:14:34 by Bob Weiner
 ;;
 ;; Copyright (C) 1991-2021  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
@@ -93,7 +93,11 @@ Point `hypb:web-repo-location' to where the web repo is located."
     (kexport:html hy-why-src-name (concat hypb:web-repo-location "HY-WHY.html") nil)
     (with-current-buffer (get-file-buffer hy-why-src-name)
       (set-buffer-modified-p nil)
-      (kill-buffer))))
+      (kill-buffer))
+    (kexport:html hy-why-src-name (concat hypb:web-repo-location "HY-WHY.html") nil))
+
+  (message "Local copy of Hyperbole website updated successfully."))
+
 
 (provide 'hypb-maintenance)
 ;;; hypb-maintenance.el ends here
