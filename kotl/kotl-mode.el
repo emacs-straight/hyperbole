@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
-;; Last-Mod:     13-Feb-22 at 10:08:36 by Bob Weiner
+;; Last-Mod:     20-Mar-22 at 22:34:26 by Bob Weiner
 ;;
 ;; Copyright (C) 1993-2021  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
@@ -2395,6 +2395,39 @@ If ARG is a non-positive number, nothing is done."
 	     (kview:add-cell "1" 1)))
       (kotl-mode:to-valid-position))))
 
+(defun kotl-mode:move-tree-backward (&optional num-trees)
+  "Move current cell before prefix arg `num-trees' at the same level.
+If arg is 0, make it 1; if arg is negative, move to before that number of trees."
+  (interactive "p")
+  (unless (and (integerp num-trees)
+	       (/= num-trees 0))
+    (setq num-trees 1))
+  (kotl-mode:move-tree-forward (- num-trees)))
+
+(defun kotl-mode:move-tree-forward (&optional num-trees)
+  "Move current tree after prefix arg `num-trees' at the same level.
+If arg is 0, make it 1; if arg is negative, move prior to that number of trees."
+  (interactive "p")
+  (unless (and (integerp num-trees)
+	       (/= num-trees 0))
+    (setq num-trees 1))
+  (let* ((n num-trees)
+	 (to-func   (if (> n 0) #'kcell-view:forward #'kcell-view:backward))
+	 (move-func (if (> n 0) #'kotl-mode:move-after #'kotl-mode:move-before))
+	 (increment (if (> n 0) -1 1))
+	 (from-tree (kcell-view:label))
+	 (point-offset (- (point) (kcell-view:start)))
+	 to-tree)
+    (save-excursion (while (and (/= n 0)
+				(funcall to-func))
+		      (setq n (+ n increment))
+		      (when (zerop n)
+			(setq to-tree (kcell-view:label)))))
+    (if to-tree
+	(goto-char (+ (funcall move-func from-tree to-tree nil)
+		      point-offset))
+      (error "(kotl-mode:move-tree): Cannot move past %d trees at the same level" num-trees))))
+
 (defun kotl-mode:promote-tree (arg)
   "Move current tree a maximum of prefix ARG levels higher in current view.
 Each cell is refilled iff its `no-fill' attribute is nil and
@@ -3488,10 +3521,10 @@ Leave point at end of line now residing at START."
   (define-key kotl-mode-map "\C-c\C-u"  'kotl-mode:up-level)
   (define-key kotl-mode-map "\C-c\C-v"  'kvspec:activate)
   (define-key kotl-mode-map "\C-x\C-w"  'kfile:write)
-  (define-key kotl-mode-map [M-up]              'kotl-mode:transpose-lines-up)
-  (define-key kotl-mode-map (kbd "ESC <up>")    'kotl-mode:transpose-lines-up)
-  (define-key kotl-mode-map [M-down]            'kotl-mode:transpose-lines-down)
-  (define-key kotl-mode-map (kbd "ESC <down>")  'kotl-mode:transpose-lines-down)
+  (define-key kotl-mode-map [M-up]              'kotl-mode:move-tree-backward)
+  (define-key kotl-mode-map (kbd "ESC <up>")    'kotl-mode:move-tree-backward)
+  (define-key kotl-mode-map [M-down]            'kotl-mode:move-tree-forward)
+  (define-key kotl-mode-map (kbd "ESC <down>")  'kotl-mode:move-tree-forward)
   (mapc (lambda (key)
 	  (define-key kotl-mode-map key         'kotl-mode:promote-tree))
 	(list (kbd "M-<left>") (kbd "ESC <left>") (kbd "C-c C-<") (kbd "C-c C-,")))
