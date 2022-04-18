@@ -1,3 +1,46 @@
+2022-04-17  Bob Weiner  <rsw@gnu.org>
+
+* hsys-www.el (www-url-expand-file-name): Fix to expand non-remote, non-url paths.
+
+* hpath.el (hpath:call): Remove unused 'orig-path' local binding.
+
+* hibtypes.el (action:help): Fix interactive call to use any hbut at point.
+
+* hib-kbd.el (kbd-key:is-p): Remove unused open/close-brace-syntax local vars.
+
+* hbdata.el (hbdata:build): Fix 'actype' ref by changing let to let*.
+
+* kotl/kview.el (kview:map-siblings): Add let of 'cell-indent' so is local.
+
+* kotl/kfill.el (kfill:forward-line): Correct doc that this always returns 0 and remove
+    unused local var 'opoint'.
+
+* hinit.el (hui-menu-remove): Remove set of 'keymap' to 'global-map' when 'keymap' is null;
+    just use one or the other for the menubar binding.  Return value is never used, so
+    ignore it.
+
+* hypb.el (hypb:copy-to-register): Remove improper let definition of 'start' and 'end'
+    since are given as function parameters.
+          (hypb:selectable-thing-and-bounds): Fix to properly return a list.
+
+* hui-window.el (hmouse-modeline-resize-window): Remove all unused local variables.
+
+* HY-NEWS (Klink Copy): Updated with latest key bindings.
+
+2022-04-16  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:kill-region): Handle when called under alias
+    kotl-mode:completion-kill-region.
+
+* kotl/kview.el (kcell-view:remove-attr): Replace invalid 'kcell' with 'mod-cell'.
+
+* man/hyperbole.texi (Web Search Engines): Document option to use an Emacs command.
+                     (Klinks): Rename from Links.
+		     (Klinks): Reorder descriptions and add doc for {M-w}, {C-y},
+    {C-x r s} and {C-x r i} use with klinks and kcell references.
+
+* hui-mini.el (hui:menus): Update formatting to improve readability.
+
 2022-04-15  Mats Lidell  <matsl@gnu.org>
 
 * test/MANIFEST: Add hui-select.el
