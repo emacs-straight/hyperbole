@@ -1,3 +1,45 @@
+2022-04-24  Mats Lidell  <matsl@gnu.org>
+
+* test/hui-tests.el (hui--delimited-selectable-thing--in-cell-return-ref)
+    (hui--delimited-selectable-thing--in-ibut-return-ibut-text)
+    (hui--delimited-selectable-thing--ibut-label-return-ibut-text)
+    (hui--delimited-selectable-thing--in-ebut-return-ebut-text)
+    (hui--delimited-selectable-thing--start-of-paired-delimiter)
+    (hui--delimited-selectable-thing--in-kcell-link-return-link): Add
+    tests for hui:delimited-selectable-thing.
+
+2022-04-24  Bob Weiner  <rsw@gnu.org>
+
+* FAST-DEMO (Introduction, Hyperbole Explicit and Global Buttons): Add.
+
+* Makefile (help): Update Hyperbole maintainer Makefile doc
+           (git-tag-release): Re-enable these commands which were
+    commented out for testing.
+           (website): Change so pushes website to production.  Use
+    'website-local' to update local CVS website files from the
+    hyperbole distribution.
+
+2022-04-24  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (website-push): Add push of website.
+    (release): Use website-push.
+    (CVS): Add cvs command as macro and use it in website-push.
+
+2022-04-24  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ebut:get): Add 2 more params: start-delim and end-delim used
+    in ebut:get.  Add button attributes lbl-start and lbl-end when button
+    is at point, used by 'hui:delimited-selectable-thing'. This fixes
+    capturing the text of explicit buttons using {M-w} or {C-x r s} when
+    no region is selected.
+          (ebut:at-p): Send start-delim and end-delim to ebut:get call.
+
+* hui.el (hui:link-create): Remove 'hypb:assert-same-start-and-end-buffer'
+    macro call as this may be called from hkey-operate via {M-o} which
+    when called a second time can leave point in a buffer different than
+    the start buffer, triggering an error when trying to create a button
+    even though buttton creation would otherwise work properly: bug#55058.
+
 2022-04-19  Mats Lidell  <matsl@gnu.org>
 
 * Makefile (elpa, elpa_hypb_dir): Remove elpa target. ELPA picks up latest
