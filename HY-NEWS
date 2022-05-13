@@ -2,6 +2,28 @@
 				 by Bob Weiner
 
 ===========================================================================
+*                                   V8.0.1pre
+===========================================================================
+
+** HYPERBOLE SYSTEM
+
+*** Native Comp Autoloads: Work around Emacs bug where async native comp of
+    a package being installed does not load hyperbole-autoloads.el (require
+    libraries to eliminate all Error-level messages).
+
+
+** SMART (ACTION AND ASSIST) KEYS  (See "(hyperbole)Smart Keys").
+
+*** Smart Dired: Action Key subdirectory selection at point now works on
+    any dired header line, not just the first one.  Use {i} to insert
+    multiple subdirectories in Dired mode.
+
+*** Compilation and Grep Error Lines: Error lines in the Emacs Regression
+    Test buffer, *ert*, are now supported, as well as the 'Compiling <file>',
+    'Loading <file>' and 'In <function>' lines from Emacs Lisp native
+    compilation.
+
+===========================================================================
 *                                   V8.0.0
 ===========================================================================
 
