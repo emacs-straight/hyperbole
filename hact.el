@@ -1,9 +1,9 @@
-;;; hact.el --- GNU Hyperbole button action handling  -*- lexical-binding: t; -*-
+;;; hact.el --- GNU Hyperbole button action handling  -*- lexical-binding: t; -let*-
 ;;
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     21-Jul-22 at 08:58:11 by Mats Lidell
+;; Last-Mod:     24-Jul-22 at 10:58:30 by Bob Weiner
 ;;
 ;; Copyright (C) 1991-2021  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
@@ -266,8 +266,10 @@ When optional SYM is given, returns the name for that symbol only, if any."
 
 (defun   htype:symbol (type type-category)
   "Return possibly new Hyperbole type symbol composed from TYPE and TYPE-CATEGORY.
-TYPE and TYPE-CATEGORY are both symbols."
-  (intern (concat (symbol-name type-category) "::" (symbol-name type))))
+TYPE and TYPE-CATEGORY are both symbols.  TYPE-CATEGORY must be one of
+`actypes' or `ibtypes'; if not, return nil."
+  (when (memq type-category '(actypes ibtypes))
+    (intern (concat (symbol-name type-category) "::" (symbol-name type)))))
 
 ;;; ========================================================================
 ;;; action class
