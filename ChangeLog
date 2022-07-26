@@ -1,3 +1,8 @@
+2022-07-25  Mats Lidell  <matsl@gnu.org>
+
+* kotl/kimport.el:
+* kotl/kfill.el: Shorten docs strings to be within 80 char limit.
+
 2022-07-24  Bob Weiner  <rsw@gnu.org>
 
 * hypb.el (hypb:require-package): Prompt user with y/n query before
