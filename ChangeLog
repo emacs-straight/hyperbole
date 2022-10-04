@@ -1,3 +1,19 @@
+2022-10-03  Mats Lidell  <matsl@gnu.org>
+
+* hypb.el:
+* hycontrol.el:
+* hui-select.el:
+* hpath.el:
+* hibtypes.el:
+* hyrolo-logic.el:
+* hyperbole.el:
+* hversion.el:
+* hui-window.el:
+* hmouse-key.el:
+* hmouse-drv.el:
+* hload-path.el:
+* hinit.el: Shorten docs strings to be within 80 char limit.
+
 2022-09-19  Mats Lidell  <matsl@gnu.org>
 
 * hypb.el (hypb:replace-match-string): Remove unused function.
@@ -6,6 +22,7 @@
 
 2022-09-14  Mats Lidell  <matsl@gnu.org>
 
+* hmouse-sh.el:
 * hywconfig.el:
 * htz.el:
 * hmouse-mod.el:
