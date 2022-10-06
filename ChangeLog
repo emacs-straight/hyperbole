@@ -1,3 +1,14 @@
+2022-10-05  Mats Lidell  <matsl@gnu.org>
+
+* hui.el:
+* kotl/kotl-mode.el:
+* hib-social.el
+* hmail.el:
+* hmouse-tag.el:
+* hsettings.el:
+* hsys-org.el:
+* hui-mini.el: Shorten docs strings to be within 80 char limit.
+
 2022-10-04  Mats Lidell  <matsl@gnu.org>
 
 * hui.el (hui-copy-to-register): Use hui-register-struct-at-point if on a
