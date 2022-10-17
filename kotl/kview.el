@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
-;; Last-Mod:     10-Oct-22 at 23:43:43 by Mats Lidell
+;; Last-Mod:     16-Oct-22 at 18:32:03 by Mats Lidell
 ;;
 ;; Copyright (C) 1993-2022  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
@@ -209,13 +209,20 @@ Any cell that is invisible is also collapsed as indicated by a call to
 			    (overlays-in start end)))
       t)))
 
-(defun kcell-view:contents (&optional pos)
-  "Return contents of cell at optional POS or point."
+(defun kcell-view:contents (&optional pos prefix-flag)
+  "Return text of cell at optional POS or point.
+Remove indentation from all but first line in the returned text.
+
+With optional PREFIX-FLAG non-nil, include back to the start of the
+first line, i.e. include the autonumber prefix and indent."
   (save-excursion
     (when pos
       (goto-char pos))
     (let ((indent (kcell-view:indent))
-	  (start (kcell-view:start))
+	  (start (if prefix-flag
+		     (progn (goto-char (kcell-view:start))
+			    (line-beginning-position))
+		   (kcell-view:start)))
 	  (end (kcell-view:end-contents)))
       ;; Remove indentation from all but first line.
       (replace-regexp-in-string
@@ -804,10 +811,10 @@ On success, return t, else nil."
     (when (kotl-mode:goto-cell permanent-id)
       (kcell-view:label))))
 
-(defun kview:insert-contents (kcell contents no-fill fill-prefix)
+(defun kview:insert-contents (kcell contents no-fill cell-fill-prefix)
   "Insert KCELL's CONTENTS into view at point and fill resulting paragraphs.
 Do not fill if NO-FILL is non-nil.
-FILL-PREFIX is the indentation string for the current cell.  If
+CELL-FILL-PREFIX is the indentation string for the current cell.  If
 CONTENTS is nil, get contents from the cell at point.  Return contents
 inserted (this value may differ from the value passed in) due to
 filling."
@@ -830,7 +837,7 @@ filling."
 	    (narrow-to-region start end)
 	    (goto-char (point-min))
 	    (while (re-search-forward "[\n\r]" nil t)
-	      (insert fill-prefix))
+	      (insert cell-fill-prefix))
 	    (goto-char (point-max)))
 	;;
 	;; Filling cell will insert proper indent on all lines.
@@ -838,15 +845,15 @@ filling."
 	  (goto-char start)
 	  (beginning-of-line)
 	  (narrow-to-region (point) end)
-	  ;; Add fill-prefix to all but paragraph separator lines, so
+	  ;; Add cell-fill-prefix to all but paragraph separator lines, so
 	  ;; filling is done properly.
 	  (while (re-search-forward "[\n\r][^\n\r]" nil t)
-	    (forward-char -1) (insert fill-prefix))
+	    (forward-char -1) (insert cell-fill-prefix))
 	  (kview:fill-region start end kcell)
 	  (goto-char (point-min))
-	  ;; Now add fill-prefix to paragraph separator lines.
+	  ;; Now add cell-fill-prefix to paragraph separator lines.
 	  (while (re-search-forward "[\n\r][\n\r]" nil t)
-	    (forward-char -1) (insert fill-prefix))
+	    (forward-char -1) (insert cell-fill-prefix))
 	  ;;
 	  (goto-char (point-max))))))
   contents)
@@ -933,6 +940,19 @@ See also `kview:map-region', `kview:map-siblings' and `kview:map-tree'."
 		    (>= (- (kcell-view:indent nil lbl-sep-len) cell-indent)
 			(kview:level-indent kview))))
 	(nreverse results)))))
+
+(defun kview:map-cells (func kview cell-ref-list)
+  "Apply FUNC within KVIEW to each valid cell reference in CELL-REFERENCE-LIST.
+Return a list of the results of calling FUNC, nil for each
+invalid cell reference.
+
+FUNC takes no arguments and operates on the cell at point."
+  (with-current-buffer (kview:buffer kview)
+    (save-excursion
+      (mapcar (lambda (cell-ref)
+		(when (kview:goto-cell-id cell-ref)
+		  (funcall func)))
+	      cell-ref-list))))
 
 (defun kview:map-region (func kview &optional visible-p start end)
   "Apply FUNC to each cell in the region within KVIEW and return results as a list.
@@ -1395,8 +1415,7 @@ new outlines is also set to this new value."
 				  (- sep-len-increase) ?\ )))
 		   (while (re-search-forward indent nil t)
 		     (delete-region
-		      (+ (match-beginning 0) 2) (match-end 0)))))))
-	 pos)
+		      (+ (match-beginning 0) 2) (match-end 0))))))))
     (save-excursion
       (goto-char (point-min))
       (kproperty:replace-separator pos label-separator old-sep-len)
