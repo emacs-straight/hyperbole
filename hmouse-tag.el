@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    24-Aug-91
-;; Last-Mod:      8-Jan-23 at 13:02:53 by Bob Weiner
+;; Last-Mod:     28-Jan-23 at 23:51:50 by Bob Weiner
 ;;
 ;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
@@ -159,6 +159,7 @@ Keyword matched is grouping 1.  Referent is grouping 2.")
 (defvar br-lang-prefix)
 (defvar buffer-tag-table)
 (defvar jedi-mode)
+(defvar jedi:find-file-function) ;; FIXME: RSW customization?
 (defvar java-class-def-name-grpn)
 (defvar java-class-def-regexp)
 
@@ -738,9 +739,12 @@ Return matching Elisp tag name that point is within, else nil."
 		   ;; If tag is preceded by an 'hact' call, then treat as a Hyperbole actype.
 		   (or (symtable:actype-p tag) tag))
 		  (tag
-		   (if (intern-soft tag)
-		       tag
-		     (or (symtable:ibtype-p tag) (symtable:actype-p tag) tag)))))
+		   (let ((tag-sym (intern-soft tag)))
+		     ;; The partial names of htypes will be interned
+		     ;; but not fboundp or boundp.
+		     (if (and tag-sym (or (fboundp tag-sym) (boundp 'tag-sym)))
+			 tag
+		       (or (symtable:ibtype-p tag) (symtable:actype-p tag) tag))))))
   (cond ((or (null tag) (stringp tag))
 	 tag)
 	((symbolp tag)

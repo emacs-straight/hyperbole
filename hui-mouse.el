@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    04-Feb-89
-;; Last-Mod:      3-Dec-22 at 00:21:51 by Bob Weiner
+;; Last-Mod:     29-Jan-23 at 03:47:20 by Bob Weiner
 ;;
 ;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
@@ -48,11 +48,6 @@
 (require 'imenu)
 
 (eval-when-compile (require 'tar-mode))
-
-;;; ************************************************************************
-;;; Public declarations
-;;; ************************************************************************
-(defvar magit-root-section)
 
 ;;; ************************************************************************
 ;;; Public variables
@@ -128,6 +123,8 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
 (declare-function magit-section-cycle-global "etx:magit-selection")
 (declare-function magit-section-hide "etx:magit-selection")
 (declare-function magit-section-show "etx:magit-selection")
+(defvar magit-root-section)
+(defvar magit-display-buffer-function)
 
 (declare-function -flatten "ext:dash")
 
@@ -139,7 +136,6 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
 
 (declare-function helm-action-window "ext:helm-lib")
 (declare-function helm-buffer-get "ext:helm-lib")
-;; (declare-function helm-get-current-action "ext:helm-?")
 (declare-function helm-get-selection "ext:helm")
 (declare-function helm-mark-current-line "ext:helm")
 (declare-function helm-next-line "ext:helm")
@@ -151,6 +147,7 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
 (defvar helm-action-buffer)
 (defvar helm-alive-p)
 (defvar helm-buffer)
+(defvar helm-saved-action)
 
 (declare-function ibuffer-mark-for-delete "ibuffer")
 (declare-function ibuffer-unmark-forward "ibuffer")
@@ -166,10 +163,9 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
 (declare-function gnus-topic-read-group "gnus-topic")
 
 (declare-function company-show-doc-buffer "ext:company")
-;; (declare-function company-quick-help-manual-begin "ext:company?")
+(declare-function company-quickhelp-manual-begin "ext:company-quickhelp")
 (declare-function company-show-location "ext:company")
 (declare-function company-select-mouse "ext:company")
-
 
 ;;; ************************************************************************
 ;;; Hyperbole context-sensitive keys dispatch table
@@ -548,17 +544,6 @@ smart keyboard keys.")
   "Offer completion help for current minibuffer argument, if any."
   (if (where-is-internal 'minibuffer-completion-help (current-local-map))
       (minibuffer-completion-help)))
-
-(defun smart-symlink-expand (path)
-  "Return referent for possible symbolic link, PATH."
-  (if (not (fboundp 'symlink-referent))
-      path
-    (let ((start 0) (len (length path)) (ref) (part))
-      (while (and (< start len) (setq part (string-match "/[^/]*" path start)))
-	(setq part (concat ref
-			   (substring path start (setq start (match-end 0))))
-	      ref (symlink-referent part)))
-      ref)))
 
 ;;; ************************************************************************
 ;;; smart-buffer-menu functions
@@ -1075,6 +1060,15 @@ a helm section header."
 	   (eq (posn-area (event-start action-key-depress-args))
 	       'header-line))))
 
+(defun smart-helm-get-current-action (&optional action)
+  "Return the helm default action.
+Get it from optional ACTION, the helm saved action or from the selected helm item."
+  (helm-get-default-action (or action
+                               helm-saved-action
+                               (if (get-buffer helm-action-buffer)
+                                   (helm-get-selection helm-action-buffer)
+                                 (helm-get-actions-from-current-source)))))
+
 (defun smart-helm-line-has-action ()
   "Mark and return the actions for the helm selection item at the point.
 Point is where Action Key was depress.  Return nil if line lacks
@@ -1091,7 +1085,7 @@ active."
 		       (helm-pos-candidate-separator-p)))
 	  (let ((helm-selection-point (point)))
 	    (helm-mark-current-line)
-	    (helm-get-current-action)))))))
+	    (smart-helm-get-current-action)))))))
 
 (defun smart-helm-alive-p ()
   ;; Handles case where helm-action-buffer is visible but helm-buffer
@@ -1249,7 +1243,7 @@ Locations are:
 				 (princ "The current helm selection item is:\n\t")
 				 (princ (helm-get-selection (helm-buffer-get)))
 				 (princ "\nwith an action of:\n\t")
-				 (princ (helm-get-current-action)))
+				 (princ (smart-helm-get-current-action)))
 			       nil)))))
 	     (if hkey-debug
 		 (message "(HyDebug): In smart-helm-assist, key to execute is: {%s}; binding is: %s"
@@ -1549,7 +1543,7 @@ If key is pressed:
   (interactive)
   (if (last-line-p)
       (scroll-other-window)
-    (unix-apropos-get-man)))
+    (unix-apropos-get-man)))            ;; FIXME - Deprecated?
 
 (defun smart-apropos-assist ()
   "Move through UNIX man apropos listings by using assist-key or mouse assist-key.
@@ -1586,10 +1580,10 @@ local variable containing its pathname."
     (if (not (or (if (string-match "Manual Entry\\|\\*man "
 				   (buffer-name (current-buffer)))
 		     (progn (and (boundp 'man-path) man-path
-				 (setq ref (smart-symlink-expand man-path)))
+				 (setq ref (hpath:symlink-referent man-path)))
 			    t))
 		 (if buffer-file-name
-		     (string-match "/man/" (setq ref (smart-symlink-expand
+		     (string-match "/man/" (setq ref (hpath:symlink-referent
 						      buffer-file-name))))))
 	(setq ref nil)
       (or (setq ref (or (smart-man-file-ref)
