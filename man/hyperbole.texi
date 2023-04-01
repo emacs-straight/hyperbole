@@ -7,7 +7,7 @@
 @c Author:       Bob Weiner
 @c
 @c Orig-Date:     6-Nov-91 at 11:18:03
-@c Last-Mod:      7-Mar-23 at 22:08:27 by Bob Weiner
+@c Last-Mod:     29-Mar-23 at 23:11:38 by Bob Weiner
 
 @c %**start of header (This is for running Texinfo on a region.)
 @setfilename hyperbole.info
@@ -156,7 +156,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</P>
 
 <PRE>
 Edition 8.0.1pre
-Printed March 7, 2023.
+Printed March 29, 2023.
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -198,7 +198,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 @example
 Edition 8.0.1pre
-March 7, 2023
+March 29, 2023
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -2035,23 +2035,27 @@ Manual}, for details on bookmarks.
 @cindex button, implicit
 @cindex implicit button
 @findex link-to-file
-@dfn{Implicit buttons} are virtual buttons recognized within the natural
-structure of a document.  For example, a web URL button that displays its link
-or an email address button that starts a mail message to the associated
-address.  Implicit buttons are identified by implicit button type contextual
-pattern matchers that identify appropriate textual patterns at point.
+Hyperbole can recognize and activate @dfn{implicit buttons} within
+documents that require no special markup, e.g. pathnames or URLs, and
+many other types.  For example, an Action Key press on a web URL will
+display its link in a browser, regardless of the format of the
+document.  Similarly, an Action Key press on an email address starts
+composing mail to that address.
 
 @cindex implicit button type
-An @dfn{implicit button type} utilizes Emacs Lisp to identify a pattern or
-state that when matched triggers an @emph{action} associated with the implicit
-button type.  The action is specified by either a Hyperbole action type
-(@pxref{Action Types}) or an Emacs Lisp command.  Implicit button types may use
-the same action types that explicit buttons use.  As an example, the pathname
-implicit button type matches to any existing local filename or directory name
-and its action type, @code{link-to-file}, displays the associated file or
-directory, typically in another window.  An explicit button could do the same
-thing but has to be created manually, rather than recognized as part of the
-buffer text.
+Implicit buttons are identified by implicit button type contextual
+pattern matchers that identify appropriate textual patterns at point.
+An @dfn{implicit button type} utilizes Emacs Lisp to identify a
+pattern or state that when matched triggers an @emph{action}
+associated with the implicit button type.  The action is specified by
+either a Hyperbole action type (@pxref{Action Types}) or an Emacs Lisp
+command.  Implicit button types may use the same action types that
+explicit buttons use.  As an example, the pathname implicit button
+type matches to any existing local filename or directory name and its
+action type, @code{link-to-file}, displays the associated file or
+directory, typically in another window.  An explicit button could do
+the same thing but has to be created manually, rather than recognized
+as part of the buffer text.
 
 @vindex file, hibtypes.el
 @cindex context
@@ -2087,16 +2091,27 @@ button with a label of 'My Emacs Files':
 <[My Emacs Files]>: "~/.emacs.d"
 @end example
 
+The label is delimited by @samp{<[} and @samp{]>} and can be followed
+by any number of :, - or = separator characters, including none.
+
+@kindex C-h h i
+@cindex menu, Ibut
+@cindex menu, Implicit-Button
+@kindex C-h h i a
+@kindex C-h h i c
 @kindex C-h h i e
 @kindex C-h h i l
-The label is delimited by @samp{<[} and @samp{]>} and can be followed
-by any number of :, - or = separator characters, including none.  You
-can activate the button either from its label or its text.  With point
-on the text of an implicit button, @bkbd{C-h h i l} will label it.  Or
-you may simply type the label and delimiters manually.  You can also
-simply edit any implicit button manually but for a little more help in
-editing named implicit buttons, use @bkbd{C-h h i e} which prompts
-you to rename the button and to change its text (the button itself).
+Implicit buttons are managed with the Hyperbole Ibut/ menu accessed
+with @bkbd{C-h h i}.  The Create item, @bkbd{C-h h i c}, prompts for
+an implicit button label, an action type, and the action's associated
+arguments, such as a file to which to link.  It then creates the
+button at point.  To activate the button with point on its label or
+button text, use the Act menu item, @bkbd{C-h h i a} or press the
+Action Key.  You can use @bkbd{C-h h i e} to edit an implicit button
+(or simply edit it manually).  If you want to add a label to an
+existing implicit button without one, use @bkbd{C-h h i l} to label
+it.
+
 
 @menu
 * Implicit Button Types::
@@ -3359,6 +3374,7 @@ upon the referent context in which the Action Key is released.
 @example
 Referent Context         Link Type
 ----------------------------------------------------
+Org Roam or Org Id       link-to-org-id
 Global Button            link-to-gbut
 Explicit Button          link-to-ebut
 Implicit Button          link-to-ibut
@@ -7015,6 +7031,12 @@ if any emacs-related terms are unfamiliar to you.
 
 @table @b
 
+@item Ace Window
+Emacs extension package that labels windows with letters and allows
+quick selection or other operations on a specific window.  Hyperbole
+extends this with a number of additional commands like throw a buffer
+to a window or replace a windows's contents.  @xref{Keyboard Drags}.
+
 @item Action
 An executable behavior associated with a Hyperbole button.  @dfn{Links}
 are a specific class of actions which display existing entities, such as
@@ -7153,6 +7175,14 @@ level deeper than the parent.
 A group of functions and variables with the same prefix in their names,
 used to provide an interface to an internal or external Hyperbole
 abstraction.
+
+@cindex consult package
+@cindex consult-org-roam package
+@item Consult
+An Emacs extension package that provides asynchronous search and narrow
+wrappers around common search commands like grep, ripgrep, find and locate.
+Hyperbole optionally utilizes this to search the HyRolo.  Use the
+@code{consult-org-roam} package to search Org Roam notes similarly.
 
 @item Context
 A programmatic or positional state recognized by Hyperbole.
@@ -7400,6 +7430,21 @@ Smalltalk.
 Hyperbole provides the mouse support for the OO-Browser, providing Smart
 Keys that utilize the OO-Browser's capabilities both when it is displayed
 on screen and when editing code.
+
+@item Org Mode
+A built-in Emacs mode for outlining, note taking and scientific
+publishing.  Hyperbole simplifies access to a number of its features
+and integrates its own hypermedia capabilities with those of Org mode.
+Hyperbole can display the referent of any Org Id.
+@xref{Smart Key - Org Mode}.
+
+@cindex org-roam package
+@item Org Roam
+An Emacs extension package that inserts ids into Org mode files and
+indexes them within a Sqlite database for rapid note taking and lookup
+by title.  Hyperbole can display the referent of any Org Roam Id and
+provides full-text searching of Org Roam nodes utilzing the interactive
+grep commands from the Consult extension package.
 
 @item Outline
 See @b{Koutline}.
@@ -9482,7 +9527,7 @@ When in an Org mode context and @code{hsys-org-enable-smart-keys} is non-nil:
 @noindent
 Org links may be used outside of Org mode buffers.  Such links are
 handled by the separate implicit button type, @code{org-link-outside-org-mode}.
-Org and Org Roam IDs may be activated as hyperbuttons outside of Org mode buffers.
+Org Roam and Org IDs may be activated as hyperbuttons outside of Org mode buffers.
 They are handled by the separate implicit button type, @code{org-id}.
 
 @node Smart Key - Ivy, Smart Key - Treemacs, Smart Key - Org Mode, Smart Keyboard Keys
