@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     29-Mar-23 at 22:25:14 by Bob Weiner
+;; Last-Mod:      8-Apr-23 at 23:10:43 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -791,6 +791,19 @@ Return TO-HBUT."
   (setplist to-hbut (copy-sequence (symbol-plist from-hbut)))
   to-hbut)
 
+(defun hattr:emacs-button-attributes (button)
+  "Return a property list of an Emacs BUTTON."
+  (let ((category (hattr:emacs-button-is-p button)))
+    (when category
+      (symbol-plist category))))
+
+(defun hattr:emacs-button-is-p (button)
+  "If BUTTON is a valid Emacs button, return its category, else return nil."
+  (let* ((type (when (or (overlayp button) (markerp button))
+		 (button-get button 'type)))
+	 (category (when type (get type 'button-category-symbol))))
+    category))
+
 (defun    hattr:get (obj-symbol attr-symbol)
   "Return value of OBJ-SYMBOL's attribute ATTR-SYMBOL."
   (get obj-symbol attr-symbol))
@@ -798,9 +811,10 @@ Return TO-HBUT."
 (defun    hattr:list (obj-symbol)
   "Return a property list of OBJ-SYMBOL's attributes.
 Each pair of elements is: <attrib-name> <attrib-value>."
-  (if (symbolp obj-symbol)
-      (symbol-plist obj-symbol)
-    (error "(hattr:list): Argument not a symbol: %s" obj-symbol)))
+  (cond ((hattr:emacs-button-attributes obj-symbol))
+	((symbolp obj-symbol)
+	 (symbol-plist obj-symbol))
+	(t (error "(hattr:list): Argument not a symbol: %s" obj-symbol))))
 
 (defun    hattr:memq (attr-symbol obj-symbol)
   "Return t if ATTR-SYMBOL is in OBJ-SYMBOL's attribute list, else nil."
@@ -1861,7 +1875,7 @@ first encountered."
   (apply #'set:create
 	 (ibut:map
 	  (lambda (lbl _start _end) (ibut:label-to-key lbl))
-	  nil nil (ibut:label-regexp lbl-key))))
+	  (ibut:label-regexp lbl-key))))
 
 (defun    ibut:label-p (&optional as-label start-delim end-delim pos-flag two-lines-flag)
   "Return key for the implicit button label that point is within, else nil.
@@ -1962,12 +1976,8 @@ positions at which the button label delimiter begins and ends."
 (defalias 'ibut:label-to-key 'hbut:label-to-key)
 (defalias 'map-ibut          'ibut:map)
 
-(defun    ibut:map (but-func &optional start-delim end-delim
-			     regexp-match include-delims)
+(defun    ibut:map (but-func &optional regexp-match include-delims)
   "Apply BUT-FUNC to the visible, named implicit buttons.
-
-Optional START-DELIM and END-DELIM override the default `ibut:label-start'
-and `ibut:label-end' delimiters.
 
 If REGEXP-MATCH is non-nil, only buttons which match this argument
 are considered.
@@ -1975,10 +1985,7 @@ are considered.
 BUT-FUNC must take precisely three arguments: the button label, the
 start position of the delimited button label and its end position (positions
 include delimiters when INCLUDE-DELIMS is non-nil)."
-  (hbut:map but-func
-	    (or start-delim ibut:label-start)
-	    (or end-delim ibut:label-end)
-	    regexp-match include-delims))
+  (hbut:map but-func ibut:label-start ibut:label-end regexp-match include-delims))
 
 (defun    ibut:next-occurrence (lbl-key &optional buffer)
   "Move point to next occurrence of an implicit button with LBL-KEY.
