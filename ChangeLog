@@ -1,3 +1,61 @@
+2023-04-30  Mats Lidell  <matsl@gnu.org>
+
+* test/hui-tests.el (hui--ebut-rename)
+    (hui--ebut-rename-only-button-with-that-label)
+    (hui--ebut-rename-nonumbered-label, hui--ebut-rename-numbered-label)
+    (hui--ebut-rename-all-copies)
+  test/hbut-tests.el (hypb:program-create-ebut-in-buffer-with-same-label):
+    Tests for ebut label rename.
+
+2023-04-30  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:label-regexp): If label does not contain an instance number
+    and 'no-delim' arg is nil, don't add a regexp matching to instance numbers,
+    use exact label match only.
+  hbdata.el (hbdata:write, hbdata:ebut-build): Add third arg, 'new-lbl-key'
+    for use when doing ebut renames.
+  hbut.el (ebut:edit, ebut:operate): Call above with third arg.
+
+* hbut.el (ebut:operate): Fix bug that caused hui:ebut-rename to rename
+    all numbered instances of a given label rather than just the particular
+    instance of a label because was using instance-flag from 'curr-label'
+    instead of 'new-label'.
+
+2023-04-29  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (HyRolo Concepts): Document all supported types of
+  rolo files.
+                     (Glossary): Add entry for Helm and Org Rifle packages.
+  Mention 'hyrolo-helm-org-rifle'.
+
+* hui.el (hui:ebut-rename): Do nothing if curr and new labels are the same.
+
+* man/hyperbole.texi (HyControl): Add I/J/K/M key documentation.
+
+* HY-NEWS: Update for V9 release.
+
+2023-04-23  Bob Weiner  <rsw@gnu.org>
+
+* kotl/klink.el (klink:at-p):
+  hbut.el (hbut:outside-comment-p): Make the inside a comment prog
+    mode tests in each of these use the same conditional tests.
+
+* Makefile (version): Fix so this outputs the list of files whose
+    versions are wrong, shows the proper version number and
+    prints a clearer message.  If no problem, generates no output.
+
+* hpath.el (hpath:delimited-possible-path): Remove unneeded 'format'
+    call for end delim of space-delimited matches since now use "\\s-".
+
+* README.md: Add Action Key animated gif.
+  man/im/action-key-animation.gif: Add.
+
+* hui-mini.el (hui:menus): Disable "To/" menu; not yet ready.
+
+2023-04-23  Mats Lidell  <matsl@gnu.org>
+
+* Silence various byte compiler warnings.
+
 2023-04-22  Mats Lidell  <matsl@gnu.org>
 
 * test/hbut-tests.el
@@ -40,7 +98,7 @@
 2023-04-09  Bob Weiner  <rsw@gnu.org>
 
 * kotl/kimport.el (kimport:initialize): Change test from 'kview:is-p'
-    to 'kfile-is-p' as view may get set before file is fully formatted.
+    to 'kfile:is-p' as view may get set before file is fully formatted.
                   (kimport:aug-post-statements, kimport:star-entries):
     Remove (goto-char start) after each entry is imported as this was
     causing a duplicate at the end of the import.
@@ -65,7 +123,6 @@
     packages are installed.
 
 * hbut.el (gbut:ebut-key-list, hbut:ebut-key-list): Move 'save-restriction'
-
     before call to 'hbdata:to-entry-ref' to capture all restriction
     changes.  Fixes a bug that could leave the in-buffer hbdata separator
     exposed.
@@ -89,7 +146,8 @@
 
 * FAST-DEMO: Add EmacsConf 2022 videos.
 
-* hmouse-tag.el (smart-emacs-lisp-mode-p): Add support for "*Warnings*",
+* man/hyperbole.texi (Smart Key - Lisp Source Code):
+  hmouse-tag.el (smart-emacs-lisp-mode-p): Add support for "*Warnings*",
     "*Flymake log*" and "*Flymake diagnostics..." buffers.
 
 * hui-mini.el (hui:menu-rolo): Make HyRolo menu a customizable list
@@ -660,7 +718,7 @@
 
 * hycontrol.el (hycontrol-windows-grid-by-file-pattern): Update
     to use prefix arg as grid size or to autosize when not given
-    or given an invalid valude.
+    or given an invalid value.
                (hycontrol-windows-grid): Don't nullify prefix arg
     when calling above function.
                (hycontrol-make-windows-grid): Move 'hhist:add' call
@@ -797,8 +855,9 @@
     directory of the 'key-src' and use in 'klink:at-p'.
 
 * kotl/klink.el (klink:c-style-modes): Improve doc string.
-                (klink:at-p): In *scratch* buffer 'lisp-interaction-mode',
-    allow klinks outside of comments (since this is more intuitive).
+                (klink:at-p): In *scratch* buffer (lisp-interaction-mode)
+    and 'hui-select-markup-modes', allow klinks outside of comments
+    (since this is more intuitive).
 
 2022-10-11  Mats Lidell  <matsl@gnu.org>
 
@@ -929,8 +988,7 @@
     of only space after pound (#) headings.
             (markdown-mode-hook): Support hyrolo searches in markdown files.
 	    (hyrolo-fgrep-file, hyrolo-grep-file, hyrolo-fgrep, hyrolo-grep,
-             hyrolo-word):
-    Add optional 'headline-only' argument.
+             hyrolo-word): Add optional 'headline-only' argument.
 * hib-doc-id.el (link-to-doc, doc-id:help): Set new 'headline-only' argument
     to nil.
 
@@ -1014,7 +1072,7 @@
 * hibtypes.el (elisp-compiler-msg):
     Replace 'hypb:replace-match-string' with 'replace-regexp-in-string'.
 
-* hbut.el (ibut:at-p): Fix to returns nil if name and lbl-key are both nil.
+* hbut.el (ibut:at-p): Fix to return nil if name and lbl-key are both nil.
     Also add support for <> and {} ibut delimiters.
 
 * hui-mouse.el (hkey-alist): In HyRolo match buffer, test major-mode
@@ -1037,8 +1095,7 @@
   used to set 'case-fold-search'.
 
 * hyrolo.el (hyrolo-find-file-noselect-function): Add so can customize
-    low-level function used by HyRolo to read in each file searched by
-    HyRolo.
+    low-level function used to read in each file searched by HyRolo.
             (hyrolo-find-file): Add second optional parameter, 'find-function',
     used to find the file.
             (hyrolo-find-file-noselect): Add and use 'hyrolo-find-file-noselect-function'.
@@ -1233,7 +1290,7 @@
 
 * hbut.el (ibut:create): Add 'dir' key parameter and set as hbut:current
     attribute.  Remove '(or args)' as that was preventing set of
- hbut:current attributes.
+    hbut:current attributes.
 
 2022-07-21  Mats Lidell  <matsl@gnu.org>
 
@@ -1849,7 +1906,7 @@ V9.0.0 changes ^^^^:
     parameter; use this and kotl-mode:refill-flag in addition to no-fill parameter
     to determine whether to fill cell contents on creation.  Only the no-fill
     parameter sets the same named attribute on the cell.
-* kotl/kotl-mode.el (kotl-mode:add-cell): Send sibling-p valude to kview:add-cell.
+* kotl/kotl-mode.el (kotl-mode:add-cell): Send sibling-p value to kview:add-cell.
 
 * kotl/kotl-mode.el (kotl-mode:add-cell): Fix to not use sibling-p or
     `kotl-mode:refill-flag' to determine no-fill attribute of new cell.
