@@ -1,4 +1,50 @@
+2023-05-21  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (hkey-alist): Move . operator to beginning of line for font lock
+    support and add missing . in gnus modes.
+
+* hmouse-drv.el (hkey-mouse-help): Ensure call to hkey-help clears both Action
+    and Assist Key variables, so mouse key help always works.
+
+* man/hkey-help.txt:
+  FAST-DEMO (Implicit Buttons):
+  DEMO (Implicit Buttons, Creation via Dragging, Creation via Ace Window): Update
+    to describe implicit button creation via drags.
+  hui-window.el (hmouse-alist): Make change to long-time Assist Mouse Key drag
+    between windows behavior.  Assist Mouse Key drag from an item to another
+    window now displays the item in the release window, just as the Action Key
+    does.  Prior to Hyperbole V9, this would swap window buffers.
+
+* hmouse-key.el (hmouse-update-smart-keys): Ensure reload "hui-window" library
+    so 'hmouse-alist' is redefined.
+
+* hsys-org.el (hsys-org-search-internal-link-p)
+               hsys-org-search-radio-target-link-p): Replace 'org-show-context'
+    with newer 'org-fold-show-context' and alias this when necessary.
+              (hsys-org-radio-target-link-at-p): Remove test of
+    (hsys-org-link-at-p) since does not have link delimiters and already verified
+    uses link-face.
+
+* hactypes.el (link-to-ibut): Remove save-excursion and save-restriction calls
+    so if ilink refers to an ibut in a different file, point is left there
+    before the action is invoked.  Fixes ilinks like: <ilink:bs: /tmp/a.org>
+
+* hsys-org.el (hsys-org-link-at-p): Suppress display of *Warnings* backtrace.
+
 2023-05-20  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:normalize): Improve doc.
+
+* hui.el (hui:ibut-create, hui:ebut-create,
+          hui:ibut-link-create, hui:ebut-link-create):
+  hbut.el (ebut:program, ibut:program):
+    Set categ property, needed for 'ebut:is-p' and 'ibut:is-p' tests.
+          (ibut:is-p): Update to handle (eq categ 'implicit).
+          (ibut:create): If categ arg is not given and ibtype is found
+    from the given button, use that.  Otherwise, set to 'implicit.
+
+* kotl/klink.el (klink:at-p): Ignore <[ibut name]> and msg attachments like
+    <#part ...>.
 
 * hsys-org.el (hsys-org-link-at-p): Stop using (org-in-regexp org-link-any-re nil t)
     to avoid rx warnings.  Use (eq (org-element-type (org-element-context)) 'link)
