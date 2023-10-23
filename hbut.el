@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:      4-Oct-23 at 20:00:02 by Mats Lidell
+;; Last-Mod:     22-Oct-23 at 15:34:09 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -807,6 +807,11 @@ to two lines."
   (when (equal buffer-file-name (gbut:file))
     (hbut:label-p as-label start-delim end-delim pos-flag two-lines-flag)))
 
+(defun    gbut:save-buffer ()
+  "Save global button file after an edit."
+  (with-current-buffer (find-file-noselect (gbut:file))
+    (save-buffer)))
+
 (defun    gbut:to (lbl-key)
   "Find the global button with LBL-KEY (a label or label key).
 Find it within the visible portion of the global button file.
@@ -833,7 +838,7 @@ Return the symbol for the button when found, else nil."
   "Return a list of explicit button label keys from the global button file."
   (save-excursion
     (save-restriction
-      (when (hbdata:to-entry-buf (gbut:file))
+      (when (hbdata:to-entry-in-file (gbut:file))
 	(let (gbuts)
 	  (save-restriction
 	    (narrow-to-region (point) (if (search-forward "\f" nil t)
