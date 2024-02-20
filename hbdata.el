@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     2-Apr-91
-;; Last-Mod:     22-Oct-23 at 14:42:47 by Mats Lidell
+;; Last-Mod:     18-Feb-24 at 11:32:03 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2021  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -76,9 +76,9 @@
 (declare-function ebut:label-to-key "hbut")
 
 ;; Functions from abstract mail and news interface. See "hmail.el"
-(declare-function lmail:to nil)
-(declare-function rmail:to nil)
-(declare-function rmail:summ-msg-to nil)
+(declare-function lmail:to "hmail")
+(declare-function rmail:to "hmail")
+(declare-function rmail:summ-msg-to "hmail")
 
 ;;; ************************************************************************
 ;;; Public functions
@@ -88,7 +88,7 @@
 ;;; Button data accessor functions
 ;;; ------------------------------------------------------------------------
 (defun hbdata:action (hbdata)
-  "[Hyp V2] Return action overriding button's action type or nil."
+  "[Hyp V2] Return action overriding button's action type or nil from HBDATA."
   (nth 1 hbdata))
 
 (defun hbdata:actype (hbdata)
@@ -203,6 +203,7 @@ If the hbdata buffer is blank/empty, kill it and remove the associated file."
    lbl-key key-src directory))
 
 (defun hbdata:delete-entry-at-point ()
+  "Delete the hbdata entry at point."
   (delete-region (point) (progn (forward-line 1) (point))))
 
 (defun hbdata:ebut-build (&optional mod-lbl-key but-sym new-lbl-key)

@@ -3,43 +3,47 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    04-Feb-89
-;; Last-Mod:     23-Nov-23 at 03:45:24 by Bob Weiner
+;; Last-Mod:      4-Feb-24 at 10:07:05 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
 
 ;;; Commentary:
 ;;
-;;  This code is machine independent.  It works best with a pointing device but
-;;  may also be used from a keyboard.  When used with a pointing device it
+;;  This code is machine independent.  It works best with a pointing device
+;;  but may also be used from a keyboard.  When used with a pointing device it
 ;;  requires an Emacs command that sets point to the location of the pointing
 ;;  device's cursor.
 ;;
 ;;  If you want to use your shift-middle mouse button to select Hyperbole menu
 ;;  items and Hyperbole buttons, follow these instructions.
 ;;
-;;  If you plan to use a mouse only with the X window system or macOS
-;;  and you want to use the shift-middle and shift-right buttons, you
-;;  need not do any mouse configuration.  Your Emacs executable must
-;;  have been built so as to include the mouse support files for your
-;;  window system, however.  These are in the Emacs "src" directory:
-;;  for X - "x*.c", for macOS - "ns*.c".
+;;  If you plan to use a mouse only with the X window system or macOS and you
+;;  want to use the shift-middle and shift-right buttons, you need not do any
+;;  mouse configuration.  Your Emacs executable must have been built so as to
+;;  include the mouse support files for your window system, however.  These
+;;  are in the Emacs "src" directory: for X - "x*.c", for macOS - "ns*.c".
 ;;
 ;;  To use a different mouse key or a different window system, modify the
 ;;  mouse key bindings in "hmouse-sh.el".
 ;;
-;; Using the Action Mouse Key to browse through and delete files from
-;; Dired listings is exceptionally nice, just as it is when reading mail.
+;;  Using the Action Mouse Key to browse through and delete files from Dired
+;;  listings is exceptionally nice, just as it is when reading mail.
 
 ;;; Code:
 ;;; ************************************************************************
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
+(require 'ert-results nil t) ;; Action Key support in ERT result buffers
+;; Library in next line (for code optionally used in `smart-eol') uses
+;; `repeat-map' which was not added to the "repeat.el" library in Emacs 27.1,
+;; so don't use if it fails to load properly.
+(ignore-errors (require 'hsys-flymake))
 (require 'hload-path)
 (require 'hsys-org)
 (require 'hbut)
@@ -49,7 +53,7 @@
   (require 'hmouse-tag))
 (require 'imenu)
 (eval-when-compile
-  (require 'eieio))
+  (require 'eieio)) ;; magit uses this and thus smart-magit does
 
 (eval-when-compile (require 'tar-mode))
 
@@ -57,26 +61,47 @@
 ;;; Public declarations
 ;;; ************************************************************************
 
-;; Functions from abstract mail and news interface. See "hmail.el"
-(declare-function lmail:delete nil)
-(declare-function lmail:undelete nil)
-(declare-function rmail:msg-prev nil)
-(declare-function lmail:goto nil)
-(declare-function lmail:expunge nil)
-(declare-function rmail:msg-next nil)
-(declare-function lmail:undelete-all nil)
+;; Functions from optional, external ert-results package
+(declare-function ert-results-filter                 "ext:ert-results")
+(declare-function ert-results-filter-status-p        "ext:ert-results")
+(declare-function ert-results-display                "ext:ert-results")
+(declare-function ert-results-hide                   "ext:ert-results")
+(declare-function ert-results-show                   "ext:ert-results")
+(declare-function ert-results-toggle                 "ext:ert-results")
+(declare-function ert-results-describe-test-at-point "ext:ert-results")
 
+;; Hyperbole functions and keymap for `flymake-mode'
+(declare-function hsys-flymake-get-issue-at-position "hsys-flymake")
+
+;; Functions from Hyperbole's abstract mail and news interface.
+;; See "hmail.el"
+(declare-function lmail:delete "hmail")
+(declare-function lmail:undelete "hmail")
+(declare-function rmail:msg-prev "hmail")
+(declare-function lmail:goto "hmail")
+(declare-function lmail:expunge "hmail")
+(declare-function rmail:msg-next "hmail")
+(declare-function lmail:undelete-all "hmail")
+
+;; Functions and variables from the helm package
 (declare-function helm-get-actions-from-current-source "ext:helm-core")
 (declare-function helm-get-default-action "ext:helm-core")
 
 (defvar helm-selection-point)
 
+;; Functions from Hyperbole's HyRolo and Koutliner
+(declare-function hyrolo-edit-entry "hyrolo")
+(declare-function hyrolo-hdr-in-p "hyrolo")
+(declare-function hyrolo-hdr-to-first-line-p "hyrolo")
+(declare-function kotl-mode:eobp "kotl-mode")
+(declare-function kotl-mode:eolp "kotl-mode")
+
+;; Emacs functions
 (declare-function tar-flag-deleted "tar")
 (declare-function tar-unflag "tar")
 (declare-function tar-extract-other-window "tar")
 (declare-function tar-expunge "tar")
 (declare-function outline-invisible-in-p "hyperbole")
-(declare-function hyrolo-edit-entry "hyrolo")
 (declare-function Custom-newline "cus-edit")
 (declare-function Custom-buffer-done "cus-edit")
 
@@ -88,7 +113,7 @@
   "*Command that sets point to the mouse cursor position.")
 
 (defun action-key-error ()
-  "If in Org mode and Hyperbole shares {M-RET}, run org-meta-return.
+  "If in Org mode and Hyperbole shares {M-RET}, run `org-meta-return'.
 In other context signal an error."
   (if (and (funcall hsys-org-mode-function)
 	   (hsys-org-meta-return-shared-p))
@@ -96,7 +121,7 @@ In other context signal an error."
     (hypb:error "(Hyperbole Action Key): No action defined for this context; try another location")))
 
 (defun assist-key-error ()
-  "If in Org mode and Hyperbole shares {M-RET}, run org-meta-return.
+  "If in Org mode and Hyperbole shares {M-RET}, run `org-meta-return'.
 In other context, signal an error."
   (if (and (funcall hsys-org-mode-function)
 	   (hsys-org-meta-return-shared-p))
@@ -117,7 +142,7 @@ Smart Key behavior."
   :group 'hyperbole-keys)
 
 (defcustom action-key-modeline-buffer-id-function #'dired-jump
-  "*Function to call for Action Key clicks on the buffer id portion of a modeline.
+  "*Function to call for Action Key clicks on the buf id portion of a modeline.
 Its default value is `dired-jump'; set it to `smart-treemacs-modeline'
 to use the Treemacs file manager package instead."
   :type 'function
@@ -222,6 +247,12 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
     ((eq major-mode 'dired-sidebar-mode)
      . ((smart-dired-sidebar) . (smart-dired-sidebar)))
     ;;
+    ((and (eq major-mode 'ert-results-mode)
+	  (featurep 'ert-results)
+	  (setq hkey-value (ert-results-filter-status-p)))
+     . ((smart-ert-results hkey-value) . (smart-ert-results-assist hkey-value)))
+    ;;
+    ;;
     ;; Handle Emacs push buttons in buffers
     ((and (fboundp 'button-at) (button-at (point)))
      . ((smart-push-button nil (mouse-event-p last-command-event))
@@ -266,6 +297,10 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
 	      (smart-helm-alive-p)))
      . ((funcall (key-binding (kbd "RET"))) . (funcall (key-binding (kbd "RET")))))
     ;;
+    ;; If at the end of a line (eol), invoke the associated Smart Key handler EOL handler.
+    ((smart-eolp)
+     . ((funcall action-key-eol-function) . (funcall assist-key-eol-function)))
+    ;;
     ;; Handle any Org mode-specific contexts but give priority to Hyperbole
     ;; buttons prior to cycling Org headlines
     ((and (not (hyperb:stack-frame '(smart-org)))
@@ -285,12 +320,6 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
     ;; the source line referenced by the current entry.
     ((and (fboundp 'xref--item-at-point) (xref--item-at-point))
      . ((xref-goto-xref) . (xref-show-location-at-point)))
-    ;;
-    ;; If at the end of a line (eol), invoke the associated Smart Key handler EOL handler.
-    ((if (eq major-mode 'kotl-mode)
-	 (and (not (kotl-mode:eobp)) (kotl-mode:eolp t))
-       (smart-eolp))
-     . ((funcall action-key-eol-function) . (funcall assist-key-eol-function)))
     ;;
     ;; The Smart Menu system is an attractive in-buffer menu system
     ;; that works on any display system that supports Emacs.  It
@@ -381,6 +410,10 @@ Its default value is `smart-scroll-down'.  To disable it, set it to
     ;;
     ((eq major-mode 'kotl-mode)
      . ((kotl-mode:action-key) . (kotl-mode:assist-key)))
+    ;;
+    ;; If in the flymake linter list of issues buffer, jump to or show issue at point
+    ((eq major-mode 'flymake-diagnostics-buffer-mode)
+     . ((flymake-goto-diagnostic (point)) . (flymake-show-diagnostic (point) t)))
     ;;
     ;; Rdb-mode supports direct selection and viewing of in-memory relational
     ;; databases.  Rdb-mode is available as a part of InfoDock.
@@ -590,11 +623,11 @@ smart keyboard keys.")
 ;;; ************************************************************************
 
 (defun first-line-p ()
-  "Return true if point is on the first line of the buffer."
+  "Return t if point is on the first line of the buffer."
   (save-excursion (beginning-of-line) (bobp)))
 
 (defun last-line-p ()
-  "Return true if point is on the last line of the buffer."
+  "Return t if point is on the last line of the buffer."
   (save-excursion (end-of-line) (smart-eobp)))
 
 (defun smart-completion-help ()
@@ -649,13 +682,13 @@ If key is pressed:
 	(t (Buffer-menu-select))))
 
 (defun smart-buffer-menu-assist ()
-  "Use a single assist-key or mouse assist-key to manipulate `buffer-menu' entries.
+  "Use assist key or mouse assist key to manipulate `buffer-menu' entries.
 
-Invoked via an assist-key press when in `Buffer-menu-mode'.  It assumes that its
-caller has already checked that the assist-key was pressed in an appropriate
+Invoked via an assist key press when in `Buffer-menu-mode'.  It assumes that its
+caller has already checked that the assist key was pressed in an appropriate
 buffer and has moved the cursor there.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on the first or second column of an entry, the selected buffer is unmarked
      for display and for saving or deletion; 
  (2) anywhere else within an entry line, the selected buffer is marked for
@@ -717,13 +750,13 @@ If key is pressed:
 	(t (ibuffer-do-view))))
 
 (defun smart-ibuffer-menu-assist ()
-  "Use a single assist-key or mouse assist-key to manipulate `buffer-menu' entries.
+  "Use assist key or mouse assist key to manipulate `buffer-menu' entries.
 
-Invoked via an assist-key press when in ibuffer-mode.  It assumes that
-its caller has already checked that the assist-key was pressed in an
+Invoked via an assist key press when in ibuffer-mode.  It assumes that
+its caller has already checked that the assist key was pressed in an
 appropriate buffer and has moved the cursor there.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on the first or second column of an entry, the selected buffer is unmarked
      for display or deletion; 
  (2) anywhere else within an entry line, the selected buffer is marked for
@@ -749,7 +782,7 @@ If assist-key is pressed:
 (defun smart-custom ()
   "Use a single key or mouse key to manipulate customizable settings.
 
-Invoked via a key press when in Custom-mode.  It assumes that
+Invoked via a key press when in `Custom-mode'.  It assumes that
 its caller has already checked that the key was pressed in an
 appropriate buffer and has moved the cursor there.
 
@@ -768,9 +801,9 @@ If key is pressed:
 	(t (Custom-newline (point)))))
 
 (defun smart-custom-assist ()
-  "Use an assist-key or mouse assist-kkey to manipulate customizable settings.
+  "Use an assist key or mouse assist key to manipulate customizable settings.
 
-Invoked via a key press when in Custom-mode.  It assumes that
+Invoked via a key press when in `Custom-mode'.  It assumes that
 its caller has already checked that the key was pressed in an
 appropriate buffer and has moved the cursor there.
 
@@ -798,7 +831,7 @@ If key is pressed:
 (defun smart-calendar ()
   "Use a single key or mouse key to manipulate the scrolling calendar.
 
-Invoked via a key press when in calendar-mode.  It assumes that its
+Invoked via a key press when in `calendar-mode'.  It assumes that its
 caller has already checked that the key was pressed in an appropriate buffer
 and has moved the cursor there.
 
@@ -817,13 +850,13 @@ If key is pressed:
 	   (diary-view-entries 1))))
 
 (defun smart-calendar-assist ()
-  "Use the assist-key or mouse assist-key to manipulate the scrolling calendar.
+  "Use the assist key or mouse assist key to manipulate the scrolling calendar.
 
-Invoked via an assist-key press when in calendar-mode.  It assumes that its
-caller has already checked that the assist-key was pressed in an appropriate
+Invoked via an assist key press when in `calendar-mode'.  It assumes that its
+caller has already checked that the assist key was pressed in an appropriate
 buffer and has moved the cursor there.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) at the end of the buffer, the calendar is scrolled backward 3 months;
  (2) to the left of any dates on a calendar line, the calendar is scrolled
      forward 3 months;
@@ -846,7 +879,7 @@ If assist-key is pressed:
 ;; company-mode's minor mode map.
 
 (defun smart-company-to-definition (event)
-  "Action Key binding for company-mode completions popup to show item definition.
+  "Action Key binding for `company-mode' completions to show item definition.
 Use left mouse key, RET or TAB key to select a completion and exit."
   (interactive "e")
   (when (mouse-event-p last-command-event)
@@ -854,7 +887,7 @@ Use left mouse key, RET or TAB key to select a completion and exit."
   (company-show-location))
 
 (defun smart-company-help (event)
-  "Assist Key binding for company-mode completions popup to show item doc."
+  "Assist Key binding for `company-mode' completions popup to show item doc."
   (interactive "e")
   (when (mouse-event-p last-command-event)
     (company-select-mouse event))
@@ -867,9 +900,9 @@ Use left mouse key, RET or TAB key to select a completion and exit."
 ;;; ************************************************************************
 
 (defun smart-dired-pathname-up-to-point (&optional no-default)
-  "Return the part of the pathname up through point, else current directory path.
+  "Return the part of the pathname up through point, else current directory.
 Use for direct selection of an ancestor directory of the
-dired directory at point, if any.
+Dired directory at point, if any.
 
 With optional NO-DEFAULT, do not default to current directory
 path; instead return nil."
@@ -903,15 +936,15 @@ If key is pressed:
      for display in another window, then this entry is displayed in the current
      window (DisplayHere minor mode is shown in the mode-line; use {g}
      to disable it)
- (2) on a dired header line (other than the end of line):
+ (2) on a Dired header line (other than the end of line):
      (a) within the leading whitespace, then if any deletes are to be
          performed, they are executed after user verification; otherwise,
          nothing is done;
-     (b) otherwise, dired is run in another window on the ancestor directory
+     (b) otherwise, Dired is run in another window on the ancestor directory
          of the current directory path up through the location of point;
          if point is on the first character, then the / root directory
          is used.
- (3) on or after the last line in the buffer, this dired invocation is quit."
+ (3) on or after the last line in the buffer, this Dired invocation is quit."
 
   (interactive)
   (cond ((save-excursion
@@ -936,13 +969,13 @@ If key is pressed:
 	(t (hpath:find (or (dired-get-filename nil t) "")))))
 
 (defun smart-dired-assist ()
-  "Use a single assist-key or mouse assist-key to manipulate directory entries.
+  "Use a single assist key or mouse assist key to manipulate directory entries.
 
-Invoked via an assist-key press when in `dired-mode'.  It assumes that its
-caller has already checked that the assist-key was pressed in an appropriate
+Invoked via an assist key press when in `dired-mode'.  It assumes that its
+caller has already checked that the assist key was pressed in an appropriate
 buffer and has moved the cursor there.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on a `~' character, all backup files in the directory are marked for
      deletion;
  (2) on a `#' character, all auto-save files in the directory are marked for
@@ -965,12 +998,23 @@ If assist-key is pressed:
 	 (dired-flag-file-deletion 1))))
 
 ;;; ************************************************************************
+;;; smart-ert-results functions
+;;; ************************************************************************
+
+(defalias 'smart-ert-results 'ert-results-filter)
+
+(defun smart-ert-results-assist (_status-symbol)
+  "Display help documentation for the `ert-results-mode' test at point, if any.
+Trigger an error if there is no test result at or before point."
+  (ert-results-describe-test-at-point))
+
+;;; ************************************************************************
 ;;; smart-gnus functions
 ;;; ************************************************************************
 
 (defun smart-gnus-group ()
   "Use a key or mouse key to move through Gnus Newsgroup listings.
-Invoked via a key press when in gnus-group-mode.  It assumes that its caller
+Invoked via a key press when in `gnus-group-mode'.  It assumes that its caller
 has already checked that the key was pressed in an appropriate buffer and has
 moved the cursor to the selected buffer.
 
@@ -991,8 +1035,8 @@ If key is pressed within:
 	(t (gnus-group-read-group nil))))
 
 (defun smart-gnus-group-assist ()
-  "Use an assist-key or assist-mouse key to move through Gnus Newsgroup listings.
-Invoked via an assist-key press when in gnus-group-mode.  It assumes that its
+  "Use assist key or assist-mouse key to move through Gnus Newsgroup listings.
+Invoked via an assist key press when in `gnus-group-mode'.  It assumes that its
 caller has already checked that the key was pressed in an appropriate buffer
 and has moved the cursor to the selected buffer.
 
@@ -1014,7 +1058,7 @@ If key is pressed within:
 
 (defun smart-gnus-summary ()
   "Use a key or mouse key to move through Gnus News article listings.
-Invoked via a key press when in gnus-summary-mode.  It assumes that its caller
+Invoked via a key press when in `gnus-summary-mode'.  It assumes that its caller
 has already checked that the key was pressed in an appropriate buffer and has
 moved the cursor to the selected buffer.
 
@@ -1043,10 +1087,10 @@ If key is pressed within:
 	   (call-interactively 'gnus-summary-next-page))))
 
 (defun smart-gnus-summary-assist ()
-  "Use an assist-key or assist-mouse key to move through Gnus News articles.
-Invoked via an assist-key press when in gnus-summary-mode.  It assumes that its
-caller has already checked that the key was pressed in an appropriate buffer
-and has moved the cursor to the selected buffer.
+  "Use an assist key or assist-mouse key to move through Gnus News articles.
+Invoked via an assist key press when in `gnus-summary-mode'.  It assumes that
+its caller has already checked that the key was pressed in an appropriate
+buffer and has moved the cursor to the selected buffer.
 
 If key is pressed within:
  (1) to the left of an article number, that article is marked as unread;
@@ -1067,7 +1111,7 @@ If key is pressed within:
 (defun smart-gnus-article ()
   "Use a key or mouse key to move through Gnus netnews articles.
 
-Invoked via a key press when in gnus-article-mode.
+Invoked via a key press when in `gnus-article-mode'.
 It assumes that its caller has already checked that the key was pressed in an
 appropriate buffer and has moved the cursor to the selected buffer.
 
@@ -1088,14 +1132,14 @@ If key is pressed within:
 	(t (smart-scroll-up))))
 
 (defun smart-gnus-article-assist ()
-  "Use an assist-key or mouse assist-key to move through Gnus netnews articles.
+  "Use an assist key or mouse assist key to move through Gnus netnews articles.
 
-Invoked via an assist-key press when in gnus-article-mode.  It
-assumes that its caller has already checked that the assist-key
+Invoked via an assist key press when in `gnus-article-mode'.  It
+assumes that its caller has already checked that the assist key
 was pressed in an appropriate buffer and has moved the cursor to
 the selected buffer.
 
-If assist-key is pressed within:
+If assist key is pressed within:
  (1) the first line or end of an article, the previous message is displayed;
  (2) the first line of an Info cross reference, the reference is followed;
  (3) anywhere else, the window is scrolled down a windowful."
@@ -1153,6 +1197,7 @@ active."
 	    (smart-helm-get-current-action)))))))
 
 (defun smart-helm-alive-p ()
+  "Return t if `helm' completion is actively prompting."
   ;; Handles case where helm-action-buffer is visible but helm-buffer
   ;; is not; fixed in helm with commit gh#emacs-helm/helm/cc15f73.
   (and (featurep 'helm)
@@ -1324,9 +1369,9 @@ Locations are:
 (defun smart-hmail ()
   "Use a key or mouse key to move through e-mail messages and summaries.
 
-Invoked via a key press when in hmail:reader or hmail:lister mode.
-It assumes that its caller has already checked that the key was pressed in an
-appropriate buffer and has moved the cursor to the selected buffer.
+Invoked via a key press when in `hmail:reader' or `hmail:lister' mode.
+It assumes that its caller has already checked that the key was pressed
+in an appropriate buffer and has moved the cursor to the selected buffer.
 
 If key is pressed within:
  (1) a msg buffer, within the first line or at the end of a message,
@@ -1357,12 +1402,12 @@ If key is pressed within:
 (defun smart-hmail-assist ()
   "Use an assist key or mouse key to move through e-mail messages and summaries.
 
-Invoked via an assist key press when in hmail:reader or
-hmail:lister mode.  It assumes that its caller has already
-checked that the assist-key was pressed in an appropriate buffer
+Invoked via an assist key press when in `hmail:reader' or
+`hmail:lister' mode.  It assumes that its caller has already
+checked that the assist key was pressed in an appropriate buffer
 and has moved the cursor to the selected buffer.
 
-If assist-key is pressed within:
+If assist key is pressed within:
  (1) a msg buffer, within the first line or at the end of a message,
      the previous undeleted message is displayed;
  (2) a msg buffer within the first line of an Info cross reference, the
@@ -1394,13 +1439,18 @@ If assist-key is pressed within:
 
 (defun smart-hyrolo ()
   "In hyrolo match buffer, edit current entry.
-Uses one key or mouse key.
+If on a file header, edit the file.  Uses one key or mouse key.
 
 Invoked via a key press when in the `hyrolo-display-buffer'.  Assume that
 its caller has already checked that the key was pressed in an appropriate
 buffer and has moved the cursor to the selected buffer."
   (interactive)
-  (hyrolo-edit-entry))
+  (if (hyrolo-hdr-in-p)
+      (hact 'hyp-source (save-excursion
+			  (when (and (hyrolo-hdr-to-first-line-p)
+				     (search-forward hbut:source-prefix nil t))
+			    (hbut:source t))))
+    (hyrolo-edit-entry)))
 
 (defalias 'smart-hyrolo-assist #'smart-hyrolo)
 
@@ -1444,7 +1494,7 @@ sets `hkey-value' to (identifier . identifier-definition-buffer-position)."
 
 ;; Derived from `imenu' function in the imenu library.
 (defun smart-imenu-item-p (index-key &optional variable-flag no-recurse-flag)
-  "Return the definition marker position for INDEX-KEY in current buffer's imenu.
+  "Return the definition marker pos for INDEX-KEY in current buffer's imenu.
 Return nil if INDEX-KEY is not in the imenu.  If INDEX-KEY is
 both a function and a variable, the function definition is used
 by default; in such a case, when optional VARIABLE-FLAG is
@@ -1492,7 +1542,7 @@ NO-RECURSE-FLAG non-nil prevents infinite recursions."
 ;;; ************************************************************************
 
 (defun smart-magit-display-file (return-command)
-  "Execute Magit command bound to return, possibly using hpath:display-buffer."
+  "Execute `magit' RETURN-COMMAND possibly using `hpath:display-buffer'."
   (cond ((eq return-command #'magit-diff-visit-file)
 	 ;; Use Hyperbole display variable to determine where
 	 ;; to display the file of the diff.
@@ -1530,10 +1580,10 @@ If key is pressed:
 
 Invoked via an assist key press when in a magit mode and not on a
 button.  It assumes that its caller has already checked that the
-assist-key was pressed in an appropriate buffer and has moved the
+assist key was pressed in an appropriate buffer and has moved the
 cursor to the selected buffer.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on the last line, quit from the magit mode (\"q\" key binding);
  (2) at the end of a line, scroll down a windowful;
  (3) on an initial read-only header line, cycle visibility of all sections;
@@ -1618,13 +1668,13 @@ If key is pressed:
       (unix-apropos-get-man))))
 
 (defun smart-apropos-assist ()
-  "Move through UNIX man apropos listings by using assist-key or mouse assist-key.
+  "Move through man apropos listings by using assist key or mouse assist key.
 
-Invoked via an assist-key press when in `unix-apropos-mode'.  It assumes that
-its caller has already checked that the assist-key was pressed in an appropriate
+Invoked via an assist key press when in `unix-apropos-mode'.  It assumes that
+its caller has already checked that the assist key was pressed in an appropriate
 buffer and has moved the cursor to the selected buffer.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on a UNIX man apropos entry, the man page for that entry is displayed in
      another window;
  (2) on or after the last line, the buffer in the other window is scrolled down
@@ -1684,7 +1734,7 @@ local variable containing its pathname."
 	  (t ref))))
 
 (defun smart-man-c-routine-ref ()
-  "Return form to jump to the definition of the C function whose name is at point.
+  "Return form to jump to the definition of the named C function at point.
 Valid sections within the man page are: ROUTINES, MACROS or FUNCTIONS.
 Uses (smart-tags-file-list) function to determine the tags file from which to
 locate the definition."
@@ -1729,7 +1779,7 @@ If not on a file name, returns nil."
 ;;; ************************************************************************
 
 (defun smart-org ()
-  "Follow Org mode references, cycles outline visibility and executes code blocks.
+  "Follow Org mode references, cycle outline visibility and execute code blocks.
 Active when `hsys-org-enable-smart-keys' is non-nil,
 
 When the Action Key is pressed:
@@ -1737,7 +1787,7 @@ When the Action Key is pressed:
   1. If on an Org todo keyword, cycle through the keywords in
      that set or if final done keyword, remove it.
 
-  2. If on an Org agenda item, jump to the item for editing.
+  2. If on an Org agenda view item, jump to the item for editing.
 
   3. Within a radio or internal target or a link to it, jump between
      the target and the first link to it, allowing two-way navigation.
@@ -1753,7 +1803,7 @@ When the Action Key is pressed:
 
   8. With point on any #+BEGIN_SRC, #+END_SRC, #+RESULTS, #+begin_example
      or #+end_example header, execute the code block via the Org mode
-     standard binding of {C-c C-c}, (org-ctrl-c-ctrl-c).
+     standard binding of {\\`C-c' \\`C-c'}, (org-ctrl-c-ctrl-c).
   
   9. When point is on an Org mode heading, cycle the view of the subtree
      at point.
@@ -1767,7 +1817,7 @@ in these contexts:
   1. If on an Org todo keyword, move to the first todo keyword in
      the next set, if any.
 
-  2. If on an Org mode link or agenda item, display Hyperbole
+  2. If on an Org mode link or agenda view item, display Hyperbole
      context-sensitive help.
 
   3. On a Hyperbole button, perform the Assist Key function, generally
@@ -1878,6 +1928,15 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 	     ;; contexts
 	     nil)))))
 
+(defun smart-org-bob-and-non-heading-p ()
+  "Check whether {TAB} should globally `org-cycle' at point."
+  (and (bobp)
+       buffer-file-name
+       (derived-mode-p 'org-mode)
+       (not (org-at-heading-p))
+       (member buffer-file-name
+	       (hpath:expand-list hsys-org-cycle-bob-file-list))))
+
 ;;; ************************************************************************
 ;;; smart-outline functions
 ;;; ************************************************************************
@@ -1889,13 +1948,13 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
   "Non-nil means outline region was cut and is ready to be pasted at point.")
 
 (eval-after-load "outline"
-  #'(mapc (lambda (mode)
-	    (add-hook mode (lambda ()
-			     (make-local-variable 'smart-outline-cut)
-			     ;; Non-nil means outline region was cut
-			     ;; and is available to be pasted at point.
-			     (setq smart-outline-cut nil))))
-	  '(outline-mode-hook outline-minor-mode-hook)))
+  '(mapc (lambda (hook-var)
+	   (add-hook hook-var (lambda ()
+				(make-local-variable 'smart-outline-cut)
+				;; Non-nil means outline region was cut
+				;; and is available to be pasted at point.
+				(setq smart-outline-cut nil))))
+	 '(outline-mode-hook outline-minor-mode-hook)))
 
 (defun smart-outline-level ()
   "Return outline level if point is on a line that begins with `outline-regexp'.
@@ -1947,13 +2006,13 @@ If key is pressed:
 
 (defun smart-outline-assist ()
   "Collapse, expand, and move outline entries.
-Invoked via an assist-key press when in `outline-mode'.  It assumes that
-its caller has already checked that the assist-key was pressed in an appropriate
-buffer and has moved the cursor to the selected buffer.
+Invoked via an assist key press when in `outline-mode'.  It assumes that
+its caller has already checked that the assist key was pressed in an
+appropriate buffer and has moved the cursor to the selected buffer.
 
-If assist-key is pressed:
- (1) after an outline heading has been cut via the action-key, allow multiple
-     pastes throughout the buffer (last paste should be done with
+If assist key is pressed:
+ (1) after an outline heading has been cut via the action key, allow
+     multiple pastes throughout the buffer (last paste should be done with
      the Action Key, not the Assist Key);
  (2) at the end of buffer, hide all bodies in buffer;
  (3) at the beginning of a heading line, cut the current heading (sans
@@ -1982,13 +2041,15 @@ If assist-key is pressed:
 	(t (outline-hide-entry))))
 
 (defun smart-outline-to-entry-end (&optional include-sub-entries)
-  "Move point past the end of the current entry.
+  "Move point past the end of the current entry, if any.
 With optional INCLUDE-SUB-ENTRIES non-nil, move to the end of the
 entire subtree.  Return final point."
-  (if include-sub-entries
-      (progn (outline-end-of-subtree)
-	     (goto-char (1+ (point))))
-    (outline-next-heading))
+  (if (not include-sub-entries)
+      (outline-next-heading)
+    (condition-case ()
+	(progn (outline-end-of-subtree)
+	       (goto-char (1+ (point))))
+      (error "")))
   (point))
 
 (defun smart-outline-subtree-hidden-p ()
@@ -1998,7 +2059,8 @@ entire subtree.  Return final point."
 	(point) (or (save-excursion (re-search-forward "[\n\r]" nil t)) (point)))))
 
 (defun smart-outline-char-invisible-p (&optional pos)
-  "Return t if the character after point is invisible/hidden, else nil."
+  "Return t if the character after point is invisible/hidden, else nil.
+With optional POS, use that instead of point."
   (or pos (setq pos (point)))
   (when (or
 	 ;; New-style Emacs outlines with invisible properties to hide lines
@@ -2024,7 +2086,7 @@ If key is pressed:
 	(t (todotxt-complete-toggle))))
 
 (defun smart-todotxt-assist ()
-  "Use a single assist-key or mouse assist-key to manipulate `todotxt' items.
+  "Use a single assist key or mouse assist key to manipulate `todotxt' items.
 
 If key is pressed:
  (1) at the end of buffer, archive completed items
@@ -2048,10 +2110,23 @@ If key is pressed:
 (defun smart-eolp ()
   "Return t if point is at the end of a visible line but not the end of the buffer."
   ;; smart-helm handles eol for helm buffers
-  (unless (and (smart-helm-alive-p) (equal (helm-buffer-get) (buffer-name)))
-    (and (not (smart-eobp)) (eolp)
-	 (or (not (smart-outline-char-invisible-p))
-	     (not (smart-outline-char-invisible-p (1- (point))))))))
+  (unless (or (and (smart-helm-alive-p) (equal (helm-buffer-get) (buffer-name)))
+	      ;; Allow for org global cycling at start of buffer on a
+	      ;; non-heading line in Hyperbole doc files when
+	      ;; displayed from Hyperbole menu items.
+	      (smart-org-bob-and-non-heading-p)
+	      ;; If there is a flymake diagnostic issue at eol,
+	      ;; drop through this clause to handle it later.
+	      (and (featurep 'hsys-flymake)
+		   (boundp 'flymake-mode)
+		   flymake-mode
+		   (eolp)
+		   (hsys-flymake-get-issue-at-position)))
+    (if (eq major-mode 'kotl-mode)
+	(and (not (kotl-mode:eobp)) (kotl-mode:eolp t))
+      (and (not (smart-eobp)) (eolp)
+	   (or (not (smart-outline-char-invisible-p))
+	       (not (smart-outline-char-invisible-p (1- (point)))))))))
 
 ;;; ************************************************************************
 ;;; smart-push-button functions
@@ -2059,10 +2134,10 @@ If key is pressed:
 
 ;; Emacs push button support
 (defun smart-push-button (&optional _pos _use-mouse-action)
-  "Activate an Emacs push-button, including text-property follow-link buttons.
+  "Activate an Emacs `push-button', including text-property follow-link buttons.
 Button is at optional POS or at point.  USE-MOUSE-ACTION prefers
 mouse-action to action property."
-  (or 
+  (or
    ;; Handle Emacs text-property buttons which don't work with 'button-activate'.
    ;; Use whatever command is bound to RET within the button's keymap.
    (call-interactively (or (lookup-key (get-text-property (point) 'keymap) (kbd "RET"))
@@ -2114,13 +2189,13 @@ If key is pressed:
 	(t (tar-extract-other-window))))
 
 (defun smart-tar-assist ()
-  "Use a single assist-key or mouse assist-key to manipulate tar file entries.
+  "Use a single assist key or mouse assist key to manipulate tar file entries.
 
-Invoked via an assist-key press when in `dired-mode'.  It assumes that its
-caller has already checked that the assist-key was pressed in an appropriate
+Invoked via an assist key press when in `dired-mode'.  It assumes that its
+caller has already checked that the assist key was pressed in an appropriate
 buffer and has moved the cursor there.
 
-If assist-key is pressed:
+If assist key is pressed:
  (1) on an entry line, the current entry is marked for deletion;
  (2) on or after the last line in the buffer, all delete marks on all entries
      are undone."

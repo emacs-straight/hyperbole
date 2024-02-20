@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    19-Nov-17
-;; Last-Mod:      3-Oct-23 at 23:01:16 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 20:20:00 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2017-2021  Free Software Foundation, Inc.
+;; Copyright (C) 2017-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -21,12 +21,12 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
-(when (or (require 'treemacs nil t)
-	  (and (require 'package)
-	       (package-installed-p 'treemacs)
-	       (package-activate 'treemacs)))
+(require 'package)
+(require 'seq)
 
-(require 'treemacs)
+(or (require 'treemacs nil t)
+    (and (package-installed-p 'treemacs)
+	 (package-activate 'treemacs)))
 
 (defvar treemacs-version)
 
@@ -86,7 +86,7 @@ If key is pressed:
      `assist-key-eol-function', typically to scroll down proportionally,
      if an Asisst Key press;
  (4) on the first line of the buffer (other than the end of line),
-     dired is run on the current directory of this Treemacs;
+     Dired is run on the current directory of this Treemacs;
  (5) at the end of the first or last line of the buffer,
      this Treemacs invocation is quit."
 
@@ -141,4 +141,4 @@ Suitable for use as a value of `action-key-modeline-buffer-id-function'."
 
 (provide 'hui-treemacs)
 ;;; hui-treemacs.el ends here
-)
+

@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
-;; Last-Mod:     25-Nov-23 at 16:34:27 by Mats Lidell
+;; Last-Mod:     27-Jan-24 at 23:43:15 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1993-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1993-2024  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -26,6 +26,9 @@
 ;;; ************************************************************************
 
 (defvar kotl-mode:refill-flag)
+(defvar hyrolo-display-buffer)
+(defvar hyrolo-hdr-regexp)
+(defvar hbut:source-prefix)
 
 (declare-function klabel:format "klabel.el")
 (declare-function klabel:idstamp-p "klabel.el")
@@ -88,7 +91,7 @@ Default value is \". \"."
   :type 'string
   :group 'hyperbole-koutliner)
 
-(defconst kview:outline-regexp (concat "\\( *\\)[0-9][0-9a-z.]*\\("
+(defconst kview:outline-regexp (concat "\\( *\\)\\([0-9][0-9a-z.]*\\)\\("
 				       (regexp-quote kview:default-label-separator)
 				       "\\)")
   "Koutline view `outline-regexp' value that handles all label formats.")
@@ -426,8 +429,9 @@ If labels are off, return cell's idstamp as a string."
       (if (eq label-type 'no)
 	  (kcell-view:idstamp)
 	(kcell-view:to-label-end)
-	(buffer-substring-no-properties (point) (progn (skip-chars-backward "^ \t\n\r")
-						       (point)))))))
+	(buffer-substring-no-properties
+	 (point) (progn (skip-chars-backward "^ \t\n\r")
+			(point)))))))
 
 (defun kcell-view:level (&optional pos lbl-sep-len indent)
   "Return the outline level of the current cell or the one at optional POS.
@@ -524,7 +528,15 @@ Cell is at optional POS or point."
 Point is set at end of cell's label but before the label separator.
 If between kcells, move to the previous one.  The current cell may be hidden."
   (when pos (goto-char pos))
+  (when (eq (current-buffer) (get-buffer hyrolo-display-buffer))
+    ;; May need to move past header to a valid position in HyRolo
+    ;; display match buffer
+    (while (save-excursion (forward-line 0)
+			   (or (looking-at hyrolo-hdr-regexp)
+			       (looking-at hbut:source-prefix)))
+      (forward-line 1)))
   (kview:end-of-actual-line)
+
   (let (found)
     (unless (setq found (kproperty:get (1- (point)) 'kcell))
       ;; If not at beginning of cell contents, move there.

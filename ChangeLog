@@ -1,7 +1,1202 @@
+2024-02-19  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-show-post-command): Add.
+            (hyrolo-outline-minor-mode): Toggle use of 'hyrolo-show-post-command'.
+
+* hyrolo.el (hyrolo-mode): Set these two missing variables:
+    'hyrolo-entry-group-number' and 'hyrolo-entry-trailing-space-group-number'.
+            (hyrolo-outline-level): Fix to use the length of match to
+    'hyrolo-entry-group-number'.
+            (hyrolo-min-matched-level): Fix 'hyrolo-top-level'.  First
+    'outline-regexp' match was ignored when computing min-level; fix to include.
+  test/hyrolo-tests.el (hyrolo-tests--top-level-outline-for-all-file-types):
+    Fix kotl-mode match string to include only the top-level entry line.
+
+2024-02-18  Mats Lidell  <matsl@gnu.org>
+
+* Fix flycheck/flymake warnings.
+
+2024-02-18  Bob Weiner  <rsw@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-demo-show-overview,
+                        hyrolo-tests--hyrolo-reveal-mode): ): Fix to handle
+    that {TAB} now auto-expands the whole subtree of the matching entry.
+
+* hyrolo.el (hyrolo-next-match, hyrolo-previous-match): Temporarily add
+    'hyrolo-outline-show-subtree' call.
+            (hyrolo-markdown-mode, hyrolo-outline-mode, hyrolo-org-mode):
+    Change all `reveal-mode' calls to new `hyrolo-reveal-mode', which is
+    temporarily a no-op until its functionality can be debugged in *HyRolo*
+    buffers.
+
+2024-02-12  Bob Weiner  <rsw@gnu.org>
+
+* hsys-org.el (hsys-org-fix-version): Reorder to have `org-macs' near front.
+
+* hbut.el (hbut:act-label): Add to match same func for ebuts and ibuts.
+
+2024-02-12  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--modify-test-data): Helper for
+    modifying org test data for outline and markdown files.
+    (hyrolo-tests--outline-content-otl)
+    (hyrolo-tests--outline-content-md): Use hyrolo-tests--modify-test-data.
+    (hyrolo-tests---org-expected-outline-for-top-level)
+    (hyrolo-tests---org-expected-outline-for-overview): Add expected
+    outline for org test data.
+    (hyrolo-tests--top-level-outline-for-all-file-types): Test top level outline.
+    (hyrolo-tests--overview-outline-for-all-file-types): Test overview outline.
+
+2024-02-11  Mats Lidell  <matsl@gnu.org>
+
+* test/hbut-tests.el (hbut-tests--ebut-act-calls-hbut-act)
+    (hbut-tests--ibut-act-calls-hbut-act): Add test for new act functions
+    with error cases.
+
+* hui-menu.el (hui-menu-explicit-buttons): Use ebut:act-label.
+
+* hbut.el (ibut:act-label, ebut:act-label): Rename ebut:act and ibut:act
+    since they take a label as arg.
+    (ebut:act, ibut:act): Add new act functions taking a hbut as
+    arg. Allow only to be called with ebut or ibut respectively. If
+    falling back on hbut:current check that it is of the same type as the
+    call.
+
+2024-02-08  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el: Make hide tests more forgiving about hiding
+    section headers. Allows test cases to be used with different versions
+    of org.
+    Expand test verification strings so it is easier to view the expected
+    outcome.
+
+2024-02-05  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (README.md.html): Rewrote to use md_toc and pandoc programs for greater
+    reliability.
+           (README.toc.md, README.md.html): Add to git repo for package distribution.
+* MANIFEST, Makefile: Add README.toc.md and remove README.
+
+2024-02-04  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (Hyperbole Overview): Update summary to include all newly
+    supported file formats.
+                     (HyRolo Concepts): Remove comment that HyRolo entries can begin
+    with optional whitespace; the code does not support this.
+
+* hyrolo.el (hyrolo-add): Ensure when matching for initial # characters, do not match
+    to those later in the line.
+            (hyrolo-markdown-mode): Fix to match only to lines starting with # as an
+    entry prefix; don't use `markdown-regex-header' since that allows '- ' as an
+    entry prefix.
+
+* hsys-org.el (hsys-org--set-fold-style): Add and use in 'hsys-org-fix-version'.
+
+2024-02-03  Mats Lidell  <matsl@gnu.org>
+
+* test/demo-tests.el (fast-demo-key-series-shell-apropos): Skip test if
+    apropos command is not available. Useful for running test-all using
+    silex docker-emacs images.
+
+2024-02-03  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-move-to-entry-end): Add doc string; add 'condition-case' in
+    case of 'outline-before-first-heading' error (see advice from "org-compat.el").
+  hui-mouse.el (smart-outline-to-entry-end): Reverse parts of if clause; add
+    'condition-case' in case of 'outline-before-first-heading' error (see advice
+    from "org-compat.el").
+    (hyrolo-cache-get-major-mode-from-pos): Fix error msg to reflect >= not >.
+
+2024-02-01  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--hyrolo-section-header): Helper that
+    returns a HyRolo section header.
+    (hyrolo-tests--hyrolo-reveal-mode): Add reveal mode test.
+
+2024-02-01  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-hdr-move-after-p): Updated to skip over trailing empty lines.
+* test/hyrolo-tests.el (hyrolo-demo-no-following-same-level-heading,
+                        hyrolo-demo-move-between-entries-on-same-level): No longer
+    need to go to next record after moving past a header followed by a blank line.
+
+2024-01-31  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-move-to-entry-end): Handle potential error raised if called
+    with point before the first entry.
+
+2024-01-30  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--outline-as-string): Add helper that
+    returns how the buffer looks to the eye.
+    (hyrolo-tests--outline-hide-other)
+    (hyrolo-tests--outline-hide-sublevels)
+    (hyrolo-tests--hyrolo-outline-show-subtree): Add tests for hyrolo
+    outline show and hide commands.
+
+2024-01-28  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-org-outline-level): Fix to not move point; was causing errors
+    when moving forward to next sibling.
+            (hyrolo-org-outline-level): Remove and use 'hyrolo-outline-level' instead
+    to centralize any issues.
+
+* hmouse-tag.el (find-ert-test-regexp): Change ert test definition lookups to use
+    the path stored in each test symbol's 'ert--test' property by changing from
+    using the 'xref-find-definitions' in 'find-function-regexp-alist' to using
+    this newly defined regexp instead.
+
+* hyrolo.el (hyrolo-reveal-open-new-overlays, hyrolo-reveal-close-old-overlays):
+    Wrap 'funcall' in 'hyrolo-funcall-match' so uses HyRolo outline settings.
+            (hyrolo-markdown-mode): Add missing (require 'markdown-mode).
+	    (hyrolo-show-levels): Remove call to 'hyrolo-outline-hide-subtree'
+    to ensure reveal-mode does not expand current entry, since if point is within
+    file header this displays the first entry on the final visible line of the file
+    header rather than the next line.  Callers of this function should instead set
+    'hyrolo-reveal-ignore-this-command' to t (which was already being done).
+            (hyrolo-outline-hide-subtree, hyrolo-outline-hide-body)
+             hyrolo-outline-hide-entry, hyrolo-outline-hide-leaves,
+             hyrolo-outline-hide-other, hyrolo-outline-hide-sublevels,
+             hyrolo-outline-show-branches, hyrolo-outline-show-children,
+             hyrolo-outline-show-entry, hyrolo-outline-show-subtree): Add
+    '(setq hyrolo-reveal-ignore-this-command t)' to these hide/show commands.
+            (hyrolo-funcall-match): Fix edge-case of bob and eob off by one
+    error in 'hyrolo-cache-set-major-mode' argument.
+            (hyrolo-boolean-only-flag): Declare this so 'boundp' test passes.
+
+2024-01-27  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-google-contacts-insert-data): Remove local let of (child nil).
+            (hyrolo-edit, hyrolo-add): Call '(set-auto-mode t)' to change from any
+    HyRolo-specific major-mode for quick reading to the file's normal mode for editing.
+            (hyrolo--funcall-with-outline-regexp): Add to avoid setting 'outline-regexp'
+    with a 'let' and call from 'hyrolo-map-matches' and 'hyrolo-funcall-match'.
+
+* hyrolo.el (hyrolo-auto-mode-alist): Add new variable to control major modes used
+    by files read in for HyRolo searches.
+            (hyrolo-find-file-noselect): Remove Org mode-specific logic and instead
+    utilize 'hyrolo-auto-mode-alist'.
+            (hyrolo-outline-mode): Add for use with .ou?tl files with HyRolo.
+            (hyrolo-min-matched-level): Ensure never returns less than 1.
+            (hyrolo--cache-major-mode): Use `hyrolo-auto-mode-alist' to override
+    the default `major-mode' used on file entry matches within the *HyRolo* buffer.
+  hypb.el (hypb:major-mode-from-file-name): Rename to 'hyrolo-major-mode-from-file-name'
+    and move to "hyrolo.el".  Prefix 'auto-mode-alist' values with those in
+    'hyrolo-auto-mode-alist'.
+  hyrolo.el (hyrolo-any-file-type-problem-p): Rename call here of above function.
+  hyrolo-logic.el (hyrolo-logic): Change call from 'hyrolo-find-file' to
+    'hyrolo-find-file-noselect' to enable use of 'hyrolo-auto-mode-alist'.
+
+2024-01-23  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-reveal-ignore-this-command, hyrolo-reveal-open-new-overlays,
+             hyrolo-reveal-close-old-overlays, reveal-post-command):
+    Enable Hyperbole extended version of 'reveal-mode' that supports 'org-fold'.
+
+2024-01-21  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:add-to-invisibility-spec): Add and use wherever
+    'add-to-invisbility-spec' was.
+
+* hload-path.el (auto-mode-alist):
+  hyrolo.el (hyrolo-file-suffix-regexp): Allow for suffix .outl to invoke outline
+    mode in addition to .otl.
+
+* hmouse-tag.el (smart-emacs-lisp-mode-p ,smart-lisp-mode-p): Change to use
+   'derived-mode-p' rather than checking for 'major-mode' matches directly.
+                (smart-emacs-lisp-mode-p): Add optional 'skip-identifier-flag'.
+  hsys-xref.el (hsys-xref-definitions): Use above flag to fix improper cyclic
+    calling of 'smart-emacs-lisp-mode-p'; visible as very slow Elisp tag finding
+    in ChangeLog mode.
+
+* hsys-org.el (hsys-org-log-and-fix-version): Add to log state when fixing a mixed
+    Org mode installation.
+  test/hy-test-dependencies.el: Remove require of 'pp' library and move logging
+    into "hsys-org.el".
+
+* hyrolo.el (hyrolo-map-matches, hyrolo-funcall-match): Move 'sit-for' to the end
+    of the function to ensure happens last.
+
+* hui-window.el (hmouse-alist-add-window-handlers):
+  hui-mouse.el (outline-mode-hook):
+  hui-menu.el (hui-menu-about):
+  hmouse-tag.el (smart-emacs-lisp-mode-p, smart-tags-noselect-function):
+  hib-debbugs.el (debbugs-gnu):
+  hbut.el (hbut:ibut-key-list): Remove # quoting around function lists as edebug
+    cannot handle this.
+
+* test/hy-test-dependencies.el (hsys-org-fix-version): Improve log msgs for
+    this function.
+
+2024-01-20  Bob Weiner  <rsw@gnu.org>
+
+* hsettings.el (hyperbole-web-search, hyperbole-read-web-search-arguments): Update
+    to not prompt for search-term if the service is a function rather than a string.
+    In such cases, the function should prompt for the search term.
+               (hyperbole-web-search-alist): Add 'ducKduckgo' search engine.
+
+2024-01-20  Mats Lidell  <matsl@gnu.org>
+
+* hmouse-sh.el (hmouse-move-point-eterm): Remove unused function.
+
+* Cleanup using flycheck resolving info and warning messages.
+
+* Update copyright date of latest updated version to be 2024 for all files
+    with copyright string that so far have been updated in git under 2024.
+
+* test/hsettings-test.el: New test file for hsettings.
+    (hsettings-test--hyperbole-web-search): Test hyperbole-web-search.
+
+* Makefile (package-lint): Add explicit loading of package-lint from Melpa
+    for this target. Only needed there.
+
+* test/hy-test-dependencies.el: Do not load package-lint for running
+    tests.
+    (string-replace): Remove not needed compatibility code.
+
+* test/hyrolo-tests.el (hyrolo-tests--outline-content-otl)
+    (hyrolo-tests--outline-content-md): Use replace-regexp-in-string for
+    compatibility with old Emacs versions.
+
+2024-01-17  Bob Weiner  <rsw@gnu.org>
+
+* test/hy-test-dependencies.el (org-reloaded): Show Org src dir.
+                               (string-replace): Conditionally define
+    this from "compat" package, since is from Emacs28 and not available
+    in Emacs27.
+
+* hsys-org.el (hsys-org-fix-version): Rewrite to reload any Org libraries
+    previously loaded from the wrong builtin Org path, if a newer
+    user-installed Org version exists on the 'load-path'.
+              (hsys-org-get-libraries-to-reload): Add to compute wrong
+    Org libraries loaded and use in above function.
+
+2024-01-16  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (eln): Use echo target for showing build info as part of the
+    eln build.
+    (echo): Show Emacs location and version in build environment info.
+
+2024-01-15  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-to-entry-beginning): Rewrite to move properly.
+            (hyrolo-move-backward): Remove, no longer used.
+
+2024-01-16  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el
+    (hyrolo-tests--forward-same-level-all-file-types-level1-depth2)
+    (hyrolo-tests--forward-same-level-all-file-types-level2): Add test
+    with more file types and second level headings.
+
+    (hyrolo-tests--outline-content-org, hyrolo-tests--outline-content-otl)
+    (hyrolo-tests--outline-content-md); Add test content constants.
+
+    (hyrolo-tests--gen-kotl-outline): Add depth arg to kotl to generate
+    child cells in test data.
+
+2024-01-15  Bob Weiner  <rsw@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--forward-same-level-all-file-types-level1):
+    Fix test error by removing last forward list element so does not move past.
+
+* hyrolo.el (hyrolo-map-matches, hyrolo-funcall-match): Disable 'orgtbl-mode'
+    only if enabled.
+
+* man/hkey-help.txt: Add ref to Org Meta Return.
+
+* hui-mouse.el (smart-hyrolo): Extend to edit source location from any line
+    within the header, not just the @loc> line.
+  man/hyperbole.texi (Smart Key - HyRolo Match Buffers): Document above change.
+
+* kotl/kotl-mode.el (kotl-mode): Set 'outline-level' to 'hyrolo-outline-level'
+    which works for all HyRolo supported modes.
+
+* hyrolo.el (hyrolo-mode-map): Change {b} to 'hyrolo-outline-backward-same-level'.
+    Change {f} to 'hyrolo-outline-forward-same-level' and rewrite.
+            (hyrolo-outline-get-last-sibling, hyrolo-outline-get-next-sibling):
+    Add to support {f} and {b} commands.
+            (hyrolo-mode): Add set of buffer read-only to ensure no editing.  Any
+    commands that change text therein need to also update the buffer caches.
+            (hyrolo-forward-same-level, hyrolo-backward-same-level): Remove,
+    duplicates of above hyrolo-outline-* functions.
+            (hyrolo-outline-next-visible-heading): Change to return whether any
+    next heading/header is found.
+            (hyrolo-outline-forward-same-level, hyrolo-outline-backward-same-level):
+    Rewrite based on 'hyrolo-outline-next-visible-heading'.
+            (hyrolo-outline-get-level): Add and call from above 2 functions.
+	    (hyrolo-markdown-outline-level): Remove and use 'hyrolo-outline-level'.
+	    (hyrolo-outline-level): Fix to handle kotl-mode properly.
+	    (hyrolo-outline-move-subtree-up, hyrolo-outline-move-subtree-down,
+	     hyrolo-outline-insert-heading, hyrolo-outline-demote,
+	     hyrolo-outline-promote): Barf if buffer is read-only for these cmds.
+
+2024-01-15  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--forward-same-level-all-file-types-level1)
+    (hyrolo-tests--forward-same-level-org-level2): Add tests for hyrolo
+    forward and backward movement on same level.
+
+2024-01-14  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (require 'org): Add to define 'org-show-all'.  Fix typo
+    missing leading h in 'hsys-org-enable-smart-keys'.
+
+* hsys-org.el (hsys-org-fix-version): Remove unused 'org-dir-version'.
+
+* hsys-xref.el (smart-emacs-lisp-mode-p): Declare this function.
+
+* hycontrol.el (hycontrol-windows-grid-buffer-list): Remove use of
+    free variable, 'mode', since this is never called when a specific
+    'major-mode' is set.
+
+* hsys-org.el (package): Add (require 'package).
+
+* hmouse-tag.el (smart-tags-display): Fix missed rename of
+    'hsys-xref-item-buffer' and 'hsys-xref-item-position'.
+
+* hui.el (hui:ebut-act, hui:ebut-act): Fix 'hui:hbut-operate' call
+    to use 'hbut:act' which takes a button argument as opposed to
+    'ebut:act' and 'ibut:act' which each take a label argument.
+
+2024-01-13  Mats Lidell  <matsl@gnu.org>
+
+* test/hbut-tests.el (ebut-program-link-to-directory): Remove test in
+    favor of almost identical copy but keep the simpler name.
+
+    (ebut-program-link-to-directory-in-non-file-buffer)
+    (ebut-program-link-to-directory-in-message-mode-buffer)
+    (ebut-delete-removes-ebut-in-non-file-buffer)
+    (ebut-delete-removes-ebut-in-message-mode-buffer): Add tests for
+    non-file buffer and non-file in message-mode buffer.
+
+2024-01-13  Bob Weiner  <rsw@gnu.org>
+
+* test/hy-test-dependencies.el: Print status of resolving any
+    multi-version/mixed Org installations.
+
+* hyrolo.el (hyrolo-any-file-type-problem-p): Disable printing
+    output if 'hyrolo-boolean-only-flag' is non-nil, used in
+    testing.
+ test/hyrolo-tests.el (hyrolo-tests--get-file-list-wrong-suffix):
+    Use above flag.
+
+* Makefile (test-ert): Do not ellide any stack traces, i.e. set
+    'ert-batch-print-length' to nil.
+    Change test SELECTOR= to test= and document how to run.
+
+* hyrolo.el (hyrolo-any-file-type-problem-p): Disable printing of
+    any output when 'hyrolo-boolean-only-flag' is non-nil, typically
+    used for testing purposes.
+
+* hui.el (hui:ebut-unmark): Fix to handle a non-file-based buffer as
+    'key-src'.
+
+* hsys-org.el (hsys-org-fix-version): Add.  Add .org suffix to
+    'auto-mode-alist' as it may be removed in this function.  Return
+    t when Org is reloaded, nil if not.  Require Org libraries even
+    when no reload is done.  Handle when 'org-version' differs from
+    version number in 'org-dir'.
+  hyperbole.el (hyperb:init): Add call to 'hsys-org-fix-version' when
+    detect a mixed version installation of Org, typically part of
+    built-in Org loaded before loading a newer packaged version.
+
+* hargs.el (hargs:at-p): Fix 'no-default' arg handling to not select
+    non-existent dirs and files when no-default is true.
+
+* hsys-xref.el (hsys-xref-definitions): Fix to pass symbol, not string to
+    'ert-test-boundp'.
+
+* hmouse-drv.el (hkey-help-show): Rename local var from 'org-help' to
+    'hkey-org-help' to eliminate any confusion that this is an Org variable.
+
+* hyrolo.el (hyrolo-any-file-type-problem-p): Print error buffer to stdout
+    when run noninteractively (batch mode).
+
+* hyrolo.el (hyrolo-org-mode): Conditionalize org-fold usage as it is only
+    available in newer Org versions.  Add missing forward declarations.
+
+* hyrolo.el (hyrolo-org-mode): Add newer Org 9.7-pre hide/show support.
+  test/hyrolo-tests.el (hyrolo-tests--outline-hide-show-heading,
+  	                hyrolo-tests--outline-show-when-moving-out-of-hidden-line):
+    The above change fixes these tests, so they have been re-enabled.
+
+* hmouse-tag.el (smart-lisp-identifier-chars): Add @ char as advised
+    functions use the orig-function@advice-wrapper-name to refer to the
+    advice.
+
+* hpath.el (hpath:variables): Move 'load-path' and 'exec-path' before
+    'Info-directory-list' as they should be higher priority matches.
+    Remove old 'Info-directory'.
+
+2024-01-12  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:display-file-with-logo): Expand any folded headings
+    in the file.
+
+    Improve use in tests by doing the following when in batch mode
+    (noninteractive): Kill off any non-modified buffer showing the file
+    to display before freshly reading it.
+
+2024-01-10  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (hkey-alist): Move 'smart-eolp' to immediately before
+    'smart-org' clause.
+  hsys-org.el (hsys-org-cycle-bob-file-list): Add to list files auto
+    set to 'org-mode' with minor 'view-mode' that allow org global
+    cycling of headings with {TAB} when at the beginning of buffer and
+    not on a heading.
+  hyrolo.el (hyrolo-verify): Allow buffers associated with files from
+    'hsys-org-cycle-bob-file-list' as well.
+  hui-mouse.el (smart-org-bob-and-non-heading-p): Check whether {TAB} or
+    {M-RET} should org-global-cycle at point."
+               (smart-eolp): Allow for org global cycling at start of
+    buffer on a non-heading line in Hyperbole doc files when displayed from
+    Hyperbole menu items.
+  hypb.el (hypb:insert-hyperbole-banner): Update so Hyperbole logo link
+    does not include the first blank line, allowing for a different
+    action on {RET} there.
+
+* hyrolo.el (hyrolo-verify): Remove mentions of HyNote (not in this release).
+
+* hypb.el (hypb:display-file-with-logo): Remove call (skip-syntax-forward "-")
+    so point stays at the beginning of buffer for Org global display cycling.
+    Replace 'id-browse-file' and 'view-mode' with 'hyrolo-mode'.
+
+* hsys-flymake.el (repeat-mode): Add missing (require 'repeat) since
+    'repeat-mode' function used herein is not autoloaded.
+                  (flymake-mode-hook): Check whether `repeat-mode' is
+    fboundp or not before trying to enable it (should be autoloaded when
+    it exists, probably in Emacs 28 or greater).
+
+2024-01-09  Bob Weiner  <rsw@gnu.org>
+
+* hsys-xref.el: Add forgotten file.
+
+2024-01-09  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--outline-next-visible-heading-md)
+    (hyrolo-tests--outline-next-visible-heading-all)
+    (hyrolo-tests--outline-next-visible-heading-kotl)
+    (hyrolo-tests--outline-next-visible-heading-all-file-types)
+    (hyrolo-tests--outline-show-when-moving-out-of-hidden-line): Add more
+    test cases for hyrolo outline show, hide and movement.
+
+    (hyrolo-tests--gen-kotl-outline, hyrolo-tests--verify-hidden-line)
+    (hyrolo-tests--verify-not-hidden-line): Add helper functions and use.
+
+2024-01-09  Bob Weiner  <rsw@gnu.org>
+
+* hact.el (htype:def-symbol, htype:names, actype:def-symbol): Change call
+    from 'make-symbol' to 'intern' for efficiency.
+
+2024-01-07  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:actype, ibut:type): Add for Hyperbole API use.
+          (ibut:at-type-p): Rewrite using 'ibtype:elisp-symbol' and
+    'ibut:type'.
+          (ibut:is-type-p): Add to give both an ibut and a type for
+  comparison and API use.
+         (ibtype:def-symbol, hattr:report): Change call from 'make-symbol'
+  to 'intern' for efficiency.
+
+* hmouse-tag.el (smart-tags-noselect-function): Change function reference
+    to new name, 'hsys-xref-definition'.
+
+* MANIFEST:
+  Makefile (EL_COMPILE):
+  hsys-xref.el (hsys-xref-definitions): Move xref utility functions
+    from "hmouse-tag.el" to here and add Hyperbole unique hsys- prefix.
+
+* test/hy-test-helpers.el (hy-delete-files-and-buffers): Add helper for
+    cleaning up multiple files and buffers.
+
+2024-01-06  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (HYPB_ERT_BATCH, HYPB_ERT_BATCH_BT):  Add command line arg to
+    run test specified by selector. Example to run all hyrolo tests
+
+      make test SELECTOR=hyrolo
+
+    Bonus. Control size of backtraces so that we get more info on
+    errors. For full backtrace add command line argument FULL_BT=
+
+      make test SELECTOR=hyrolo FULL_BT=
+
+2024-01-06  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (test-all): Revert to use 'ert-run-tests-interactively' again
+    instead of 'ert-run-tests-batch' so get interactive *ert* features
+    including {b} to show backtraces for failed tests.  With new updates,
+    now can run a previously run test from its definition with the Action
+    Key and it will simply update the result in the existing buffer rather
+    than overwriting the buffer with just that test.
+
+* test/hypb-ert-tests.el (hypb-ert-tests--edebug-is-called): Fix this
+    test by removing mock of `edebug-defun' which is necessary to set
+    the symbol property that registers the name as an ert test.  Without
+    this, `hypb-ert-run-test-at-definition' will not run the test.
+
+2024-01-05  Bob Weiner  <rsw@gnu.org>
+
+* test/hypb-ert-tests.el (hypb-ert-tests--edebug-is-called):
+  hypb-ert.el (hypb-ert-run-test-at-definition,
+               hyperbole-run-test-definition,
+               hyperbole-run-test-definition:help): Remove 'test-name' arg
+    and find any name at point instead.  Return t if run a test, else nil.
+    Simplify logic.
+
+* hmouse-tag.el (smart-emacs-lisp-mode-p): Include 'ert-results-mode'.
+                (smart-lisp-find-tag): Allow 'tag' arg to be a symbol,
+    not just a string.  This allows it to be used as a target function
+    in 'find-function-regexp-alist' which is used in the ert results buffer
+    with the {.} command to jump to the ert test definition at point.
+                (xref-definitions, xref-definition): Rewrite to handle
+    ert-deftests.
+
+* Makefile (test-all): Change 'ert-run-tests-interactively' to
+    'ert-run-tests-batch' because this shows tracebacks of any tests that
+    fail in the *Messages* buffer, speeding debugging.  Although it does
+    have the side-effect of not producing the interactive *ert* buffer that
+    lets you jump to test source.  However, you can paste the test results
+    into another Emacs and use Hyperbole to jump to test/symbol definitions.
+           (test-all-output): Save outputs including backtraces written
+    to *Messages* buffer in file "ERT-OUTPUT".
+
+* test/hib-kbd-tests.el (kbd-key-hy-demo-factorial-test): Remove use of *ert*
+    buffer which may not exist if run in batch mode.
+
+* hyrolo.el (hyrolo-any-file-type-problem-p): If problem occurs within a 'let',
+    then show backtrace so know where the let-binding was set.
+
+2024-01-04  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-org-mode): Force font-lock-mode off in this major mode for speed.
+            (hyrolo-funcall-match): Add optional arg 'backward-flag' to select
+    proper major mode for a *HyRolo* match file when moving backwards.
+  test/hyrolo-tests.el (hyrolo-tests--outline-next-visible-heading,
+                        hyrolo-tests--outline-next-visible-heading-two-sections):
+    Fix tests to work with fixed {n} and {p} commands.
+
+* hui-mouse.el (hsys-flymake): Move loading of this library here from "hibtypes.el".
+  hsys-flymake.el (hsys-flymake-issue-at-point, hsys-flymake-issue-at-point:help):
+    Remove this ibtype and its :help function.  Hyperbole uses 'hkey-alist' Smart
+    Key invocations of functions from this file instead now.
+    Also, add documentation of all commands and key bindings.
+
+* test/hyrolo-tests.el: Changed all 'header' to 'heading'.
+    (hyrolo-tests--generate-heading-contents-for-tests): Generalized to take
+    a 'heading-prefix-char' argument, to allow for markdown outline generation
+    as well.
+
+* hyrolo.el (hyrolo-hdr-move-after-p): Fix and improve to handle point
+    anywhere within a file header, not just on delim or loc lines.
+            (hyrolo-outline-next-visible-heading,
+             hyrolo-outline-previous-visible-heading): Fix to handle file
+    headers properly when moving more than one entry at a time.
+
+2024-01-03  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (smart-eolp): Change 'hsys-flymake-get-issue-at-point' to
+    correct 'hsys-flymake-get-issue-at-position' call.
+               (hkey-alist): If in the flymake linter list of issues buffer,
+    jump to or show issue at point.
+  man/hkey-help.txt:
+  man/hyperbole.texi (Implicit Button Types): Remove
+    'hsys-flymake-issue-at-point' ibtype (use {C-c C-l g} command instead.
+    Document new 'hkey-alist' behavior from above.
+* man/hyperbole.texi (Smart Key - Occurrence Matches): Move to proper
+    priority order.
+                     (Smart Key - Flymake Mode): Add and add table of
+    Hyperbole key bindings in source buffer 'flymake-mode'.
+                     (Glossary - Flymake): Add.
+                     (Implicit Button Types): Remove hsys-flymake ibtype
+    since would only apply if no other type applies and this could be
+    confusing and inconsistent to users.  Leave it commented out in the
+    code so a user can enable it at a higher priority if desired.
+
+* hypb-ert.el (hypb-ert-run-test-at-definition): Fix to edebug function
+    when not previously defined.
+  test/hypb-ert-tests.el (hypb-ert-tests--edebug-is-called): Make edebug
+    test work.
+
+* hib-debbugs.el (declare-function): Revert declarations to use
+    "ext:debbugs-gnu" from "ext:debbugs" since the newer package
+    does not have many of the functions that Hyperbole presently uses.
+
+* MANIFEST:
+  man/hkey-help.txt:
+  man/hyperbole.texi (Implicit Button Types):
+  hibtypes.el (hsys-flymake):
+  Makefile (EL_COMPILE): Add "hsys-flymake.el" to Hyperbole.
+
+2024-01-02  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (text-toc): Fix doc on whitespace handling before and after
+    TOC header and TOC entry lines.
+  hactypes.el (text-toc): Fix not handling different whitespace in TOC
+    entry vs. section header.
+
+* hui.el (hui:hbut-help): Return custom button help function symbol if any;
+    otherwise, return the function used, 'hbut:report.  This is used in
+    Smart Key help which previously was not displaying the proper action
+    for the Assist Key when on a Hyperbole button.
+  hmouse-drv.el (hkey-help): Update to display proper Assist Key help.
+
+2023-01-02  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--level-number)
+    (hyrolo-tests--generate-header-contents-for-tests)
+    (hyrolo-tests--gen-outline): Add helper for constructing org files for
+    tests.
+    (hyrolo-tests--outline-next-visible-header)
+    (hyrolo-tests--tab-through-matches)
+    (hyrolo-tests--outline-hide-show-heading)
+    (hyrolo-tests--outline-up-header, hyrolo-tests--edit-entry)
+    (hyrolo-tests--outline-next-visible-header-two-sections): Add test for
+    working with hyrolo matches.
+    (hyrolo-tests--get-file-list-change)
+    (hyrolo-tests--get-file-list-wrong-suffice): Add hyrolo tests for
+    get-file-list.
+
+* test/hypb-ert-tests.el (hypb-ert-tests--def-at-p)
+    (hypb-ert-tests--edebug-is-called): Add tests for hypb-ert.
+
+2024-01-01  Bob Weiner  <rsw@gnu.org>
+
+* hypb-ert.el (hypb-ert-def-at-p): Update doc.  Fix grouping ref that was
+   1 that should have been 2 since optional "\\(-async\\)" added to the
+   regexp.
+
+2023-12-31  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (ibut:create, ibut:at-p): Change to call 'smart-eolp' instead of
+   'eolp' so can handle flymake issues where an overlay/char-property is
+   added at the end of a line only and we want an implicit button created
+   for this.
+
+* hui-mouse.el (hkey-alist): Add logic for new hsys-flymake library to handle
+    diag issues at the end of the line where we want an implicit button to
+    fire rather than typicaly eol handling.
+
+* hbut.el (ibtype:test-p, ibtype:act): Add these to mirror actype functions.
+          (ibtype:elisp-symbol): Add alias similar to existing actype one.  So
+    that (ibtype:act <ibtype-sym-or-name>) executes the ibtype action if the
+    current buffer context supports it.
+
+* hyrolo.el (hyrolo-file-list): Add 'hyrolo-set-file-list' after loading the hyrolo
+    library (at the end of the file) if 'hyrolo-file-list' has been set by the
+    user or the customization system prior to loading HyRolo.
+
+2023-12-30  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-show-levels): Add top-level save-excursion so point does
+    not move.
+            (hyrolo-outline-next-visible-heading): Rename
+    'hyrolo-next-visible-heading' to this.
+
+* FAST-DEMO (Action Buttons): Update to include ert test definition within
+    the file so do not have to load all of the test files to run the demo.
+
+* hbut.el (ebut:label-p): For <action> buttons, allow unlimited length
+    button labels since might be an entire long sexpression.
+
+* hib-debbugs.el (debbugs-gnu-query:list): Debbugs support libary has been renamed
+    from 'debbugs-gnu' to just 'debbugs'.
+
+2023-12-29  Bob Weiner  <rsw@gnu.org>
+
+* test/hui-tests.el (hui--link-possible-types): Make use .otl rather than .outl
+    file suffix which automatically invokes 'outline-mode'.
+
+* hyrolo.el (hyrolo-to-entry-end): Fix bug where HyRolo fgrep would get stuck
+    in Org buffers without any outline delimiters due to this function moving
+    backwards.
+
+* HY-ANNOUNCE:
+  README.md:
+  FAST-DEMO (Introductory Videos): Add 3 EmacsConf 2023 videos on Hyperbole.
+
+* hui-mouse.el (hkey-alist): Add 'ert-results-mode' support using rsw's new
+    "ert-results.el" library.  Add 'smart-ert-results' and
+    'smart-ert-results-assist' support functions.  Fix many flycheck warnings.
+
+* hmouse-tag.el (smart-lisp-find-tag): Fix issue where 'hkey-value' was used
+    as tag when it was not a string, causing failures on known function lookups.
+
+2023-12-29  Mats Lidell  <matsl@gnu.org>
+
+* test/demo-tests.el (fast-demo-markdown-anchor-with-spaces)
+    (fast-demo-elisp-or-env-vars, fast-demo-elisp-library-in-load-path)
+    (fast-demo-info-manual-references, fast-demo-grep)
+    (fast-demo-python-trace-back, fast-demo-man-k)
+    (fast-demo-action-button-shell, fast-demo-action-button-fill-column)
+    (fast-demo-display-demo-using-action-buttons)
+    (fast-demo-display-kotl-starting-from-cell)
+    (fast-demo-outline-section-anchor-and-relative-line-number)
+    (fast-demo-markdown-anchor-with-spaces)
+    (fast-demo-elisp-library-in-load-path)
+    (fast-demo-elisp-or-env-vars): Add remaining test cases for fast-demo.
+
+2023-12-28  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:pre-self-insert-command): Add these kotl-mode
+    commands: kill-line, kill-region, kill-sentence, kill-or-copy-region, yank,
+    yank-from-kill-ring, yank-pop, and yank-rectangle.
+                   (kotl-mode:to-valid-position-commands): Make list of commands
+    modifiable.
+
+* hypb-ert.el (hypb-ert-def-at-p): Add support for `ert-deftest-async' from the
+    "ert-async.el" package.
+
+* hactypes.el (text-toc): Tighten section matching by ensuring it matches to the
+    beginning of the text of the line aside from any initial whitespace.
+    Previously, it could match to any part of the line and was not regexp-quoted,
+    leading to occasional mis-matches.
+
+* hmouse-tag.el (smart-lisp-at-non-htype-tag-p): Fix to remove any action button
+    trailing '>' character.  Already removed any leading '<'.  Match to symbol
+    and word chars between <> to handle all action button labels.
+  hibtypes.el (action): Add support for executing ert-deftests and update doc
+    string for this.
+  man/hyperbole.texi (Action Buttons):
+  DEMO (Using Action Buttons):
+  FAST-DEMO (Action Buttons): Add example action button of a Hyperbole ert test.
+  man/hyperbole.texi (By Dragging): Eliminate repeated paragraph and update mouse
+    key references.
+
+2023-12-27  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-window-link): Invert the meaning of the prefix arg, so without
+    one, creates implicit buttons and with creates explicit buttons.  This is the new
+    V9 standard as then by default there is no need to prompt for a button name.
+  hui-window.el (hmouse-alist-add-window-handlers): Invert drag between windows so
+    without a prefix arg, creates implicit buttons and with, creates explicit ones.
+  hui.el (hui:ibut-link-directly):
+  FAST-DEMO (Implicit Buttons):
+  DEMO (Creation via Dragging, Creation via Ace Window):
+  man/hyperbole.texi (Keyboard Drags, Smart Mouse Drags between Windows):
+  man/hkey-help.txt: Update doc on above.
+
+2023-12-26  Mats Lidell  <matsl@gnu.org>
+
+* test/hmouse-drv-tests.el:
+  test/hibtypes-tests.el:
+  test/hib-kbd-tests.el:
+  test/demo-tests.el: Set enable-local-variables to nil for test cases
+    where DEMO and FAST-DEMO is loaded to avoid getting queried.
+
+2023-12-26  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): If 'referent-regexp' starts with '^', add
+    "[ \t]*" instead of "[ \t]+" to the expression in case it matches the whole line.
+
+* hui.el (hui:link-possible-types): Change outline heading line link to trigger only
+    for outline, org and kotl modes when point is anywhere on the heading line.
+    Include non-zero column in pathname so returns to the original point.  Produce a
+    'link-to-string-match' type.
+  hbut.el (ibut:insert-text): Change 'actypes::link-to-string-match' to use a pathname
+    format ibut rather than a <link-to-string-match> action button when the occurrence
+    number is 1.
+
+* hui-select.el (hui-select-scan-sexps): Don't use 'hui-select-syntax-table' in Lisp
+    modes as its use of matching angle brackets prevents proper sexp selection when
+    on the opening parentheses of anything with angle brackets inside, e.g. (< 2 3).
+
+* hyrolo-logic.el (hyrolo-fgrep-logical): Fix quoting for Lisp read and regexp
+    operator handling.
+  hyrolo.el (hyrolo-fgrep): Fix to handle 'r-<operator>' regexp logic operators.
+  man/hyperbole.texi (HyRolo Searching): Add doc for regular expression-based
+    logic operators.
+
+* hyrolo-logic.el (hyrolo-map-logic): Update to handle multi-file formats
+    in 'hyrolo-display-buffer'.
+                  (hyrolo-map-entries, hyrolo-map-kotl): Add doc string.
+		  (hyrolo-fgrep-logical): Rename arg 'whole-buffer-flag' to
+    'koutline-flag' to match its purpose.  Does not seem to be sent as true
+    anywhere in the existing code base.
+
+* hyrolo.el (hyrolo-hdr-in-p): Add to test if in a HyRolo file header.
+            (hyrolo-hdr-to-first-line-p): Add to move to file header start.
+	    (hyrolo-outline-hide-subtree): If point is on a file header in the
+    'hyrolo-display-buffer', then collapse the entire file from the current
+    end-of-line forward.  This makes {h} work within file headers.
+            (hyrolo-hdr-move-after-p): Handle point on single text line between
+    header delimiters.
+            (hyrolo-outline-show-subtree): If point is on a file header in the
+    'hyrolo-display-buffer', then show/expand the entire file.  This makes {s}
+    work within file headers.
+  man/hyperbole.texi (HyRolo Keys): Update to document latest {h} and {s} behavior.
+  hbut.el (hbut:get-key-src): Call (hyrolo-hdr-move-after-p) so if in a file
+    hdr, backwards search finds its @loc line rather than going to prior one.
+
+* hyrolo.el (hyrolo-outline-level): Fix to return level 1 when on a file header
+    separator or @loc> line.
+            (hyrolo-outline-up-heading): Rewrite and fix to handle edge cases.
+	    (hyrolo-name-at-p): Fix to store the current line and col in a text
+    property when possibly hierarchical name is found/used so can jump to the
+    specific line within an entry when editing.
+            (hyrolo-to): Fix to jump to stored current line and col after finding
+    a possibly hierarchical name in HyRolo.
+
+* man/hyperbole.texi (HyRolo Keys): Update doc for 'hyrolo-edit', {e} key, and
+    how it handles datestamps.  Mention 'hyrolo-date-format'.
+
+* hactypes.el (link-to-kcell): Fix to use any source location, e.g. in HyRolo
+    display matches buffer.
+
+* hsys-org.el (hsys-org-agenda-item-at-p):
+  hui-mouse.el (smart-org):
+  man/hyperbole.texi (Smart Key - Org Mode): Update doc to note the context is
+   an Org agenda item within an Org agenda view, not the item in its source
+   context.
+
+* test/hy-test-helpers.el (hy-test-helpers:ensure-link-possible-type): Add.
+  test/hui-tests.el (hui--link-possible-types): Use above function to ensure
+    'hui:link-possible-types' returns one given type only for each test herein.
+
+2023-12-26  Mats Lidell  <matsl@gnu.org>
+
+* test/hy-test-helpers.el (hy-delete-dir-and-buffer): Add test helper for
+    removing buffers for temp folders.
+
+* test/hui-tests.el (hui--link-possible-types): Add test for
+    hui:link-possible-types.
+
+2023-12-26  Bob Weiner  <rsw@gnu.org>
+
+* test/hyrolo-tests.el: Fix with-simulated-input where prompting for 'y'.
+
+* hyrolo.el (hyrolo-map-matches, hyrolo-funcall-match): Ensure point ends up
+    on a visible point so that reveal-mode does not force and unhide of the entry.
+    Remove the above logic from 'hyrolo-show-levels' since it calls
+    'hyrolo-map-matches'.
+            (hyrolo-mode): For now, stop enabling 'reveal-mode'  until can get it
+     working right with the enabling of 'outline-minor-mode' when switch major modes
+     in "*HyRolo*", typically using 'hyrolo-funcall-match' or 'hyrolo-map-matches'.
+
+* test/hyrolo-tests.el (hyrolo-sort-test): Enable this test.
+  hyrolo.el (hyrolo-add): Fix this function to insert sub-entries in the right
+    location so 'hyrolo-sort-test' passes.
+
+2023-12-25  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-entry-regexp): Rename to 'hyrolo-hdr-and-entry-regexp' and
+    in 'hyrolo-mode' extend its value to include all multiple trailing whitespace
+    chars after the entry delimiter.
+  Add new variable `hyrolo-entry-regexp' which does not match to file headers.
+
+* hyrolo.el (require 'reveal): Add since overload its functions now.
+
+* kotl/kotl-mode.el (kotl-mode:reveal-toggle-invisible): Fix by adding
+    'get-buffer' call around 'hyrolo-display-buffer'.  Otherwise, the buffer
+    comparison would always fail.
+
+* hyrolo.el (hyrolo-hdr-move-after-p): Modify to handle when point is not at
+    the start of but is on a hdr separator or loc line.
+            (hyrolo-to-entry-beginning): Fix to move past any file hdr.
+            (hyrolo-map-matches): Fix calls to this that are mode-specific by adding
+       second arg of t.
+            (hyrolo-show-levels): Rewrite so handles all behavior for {t} and {o}
+       key bindings.
+            (hyrolo-overview, hyrolo-top-level): Simplify for new version of
+       'hyrolo-show-levels'.
+            (outline-mode-hook): Fix to apture only one whitespace char in
+       'outline-regexp' so 'hyrolo-outline-level' function works properly.
+            (hyrolo-grep-file): Require a final blank line so that
+       'outline-hide-sublevels' won't hide it and combine with any next file header.
+       (hyrolo-min-matched-level): Fix to start with max val rather than min val.
+
+* man/hyperbole.texi (HyRolo Keys): Document [ and ] keys to move to prev and
+    next buffer/file @loc> line.
+
+* hyrolo.el (hyrolo-to-entry-end): Don't move back one char if on end of line.
+
+* hbut.el (hbut:source-prefix):
+  hmoccur.el (moccur-source-prefix): Clarify doc.
+
+* hyrolo.el (hyrolo-markdown-suffix-regexp): Add and use in `hyrolo-file-suffix-regexp'
+    to capture all Markdown suffixes.
+            (hyrolo-any-file-type-problem-p): Use above regexp here.  Separate out
+    invalid files due to invalid suffixes from files with invalid major modes due
+    to not being in 'auto-mode-alist'.
+            (outline-mode-hook): Add to configure outline-mode for use with HyRolo.
+	    (hyrolo-org-mode): Update to set all local hyrolo variables.
+
+* kotl/kotl-mode.el (kotl-mode): Set 'outline-regexp' to match 'hyrolo-hdr-and-entry-regexp'
+    to account for file headers in 'hyrolo-mode' (multi-format major-mode).
+
+2023-12-24  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-any-file-type-problem-p): Add to handle file suffixes
+    that HyRolo cannot handle and to install the markdown-mode package as
+    necessary when a Markdown file is specified in 'hyrolo-file-list'.
+            (hyrolo-let-file-list, hyrolo-set-file-list): Call above function.
+    This fixes failures with Markdown files improperly put into fundamental-mode
+    which means their headings are not recognized properly.
+            (hyrolo-to-previous-loc, hyrolo-to-next-loc): Add and
+    bind to [ and ] keys in 'hyrolo-mode-map'.
+    (hyrolo-hdr-prefix-regexp): Add so do not repeat expression multiple places
+       and add this to `outline-regexp' in all major-modes supported by HyRolo.
+
+* hload-path.el (auto-mode-alist): Setup to invoke 'outline-mode' on ".otl"
+    suffixed files.
+
+* man/hyperbole.texi (HyRolo Concepts):
+  hyrolo.el (hyrolo-file-list): Update doc to specify allowable file suffixes
+    and types.
+
+2023-12-23  Mats Lidell  <matsl@gnu.org>
+
+* test/hpath-tests.el (hpath--expand-no-wildcards-existing-path)
+    (hpath--expand-variations-non-existing-path)
+    (hpath--expand-elisp-variable, hpath--expand-environment-variable)
+    (hpath--expand-auto-variable-alist, hpath--resolve-auto-variable-alist)
+    (hpath--expand-list-return-a-list, hpath--expand-list-match-regexp):
+    Add tests for hpath:expand and hpath:expand-list.
+
+2023-12-23  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:major-mode-from-file-name): Add for initial use in "hyrolo.el".
+
+* hactypes.el (link-to-regexp-match): Fix to use arg 'n' in the regexp search.
+
+* kotl/kotl-mode.el (kotl-mode): Ensure local vars are set if current buffer
+    is HyRolo display matches buffer.
+
+* hypb.el (hypb:remove-from-plist, hypb:do-remove-from-plist): Add for use in
+    "hywconfig.el".
+  hywconfig.el (hywconfig-add-by-name, hywconfig-delete-by-name,
+                hywconfig-restore-by-name): Fix all wconfig by name functions
+    which were storing only unnamed window configs.  Change all to return a
+    boolean value based on whether the operation succeeds or not.
+               (hywconfig-set-names): Replace with 'hywconfig-named-set-entries'.
+               (hywconfig-named-get-entries, hywconfig-named-put,
+                hywconfig-named-get): Add.
+	       (hywconfig-get-names): Replace with 'hywconfig-named-get-names'.
+	       (hywconfig-set-window-configuration): Add doc.
+	       (require 'set): Remove, no longer used.
+
+* kotl/kotl-mode.el (kotl-mode): Disable 'change-major-mode-hook' addition of
+    'kotl-mode:show-all' if in the HyRolo display buffer.
+
+* hyrolo.el (hyrolo-hdr-and-entry-regexp): Add 'hyrolo-hdr-regexp' and 'hbut:source-prefix'
+    so are not skipped during hide/show operations.  Also do this in
+    'markdown-mode-hook' and 'kotl-mode'.
+
+* test/hyrolo-tests.el (hyrolo-demo-move-between-entries-on-same-level,
+                        hyrolo-demo-no-following-same-level-heading): Fix
+    header skipping by using 'hyrolo-hdr-move-after-p'.
+                       (hyrolo-fgrep-find-all-types-of-files): Fix by adding
+    proper headling structure to each file type.
+                       (hyrolo-fgrep-and-goto-next-visible-md-heading): Fix
+    by removing one '#' from expected heading level.
+
+* kotl/kotl-mode.el (kotl-mode:reveal-toggle-invisible): May be in the
+    'hyrolo-display-buffer', so wrap a 'hyrolo-funcall-match' call around
+    'outline-reveal-toggle-invisible' call to ensure proper match buffer mode
+    is set for koutline matches.
+
+* hyrolo.el (hyrolo-grep-file): Remove 'backward-search-limit' as may miss prior
+    entry starting positions.
+            (hyrolo-add-match): Remove first arg, 'hyrolo-matches-buffer' and
+    use global 'hyrolo-display-buffer' instead.
+            (hyrolo-grep-file): Remove first arg from call to 'hyrolo-add-match'.
+    Remove unused local 'curr-entry-level-len' which would not work for Markdown
+    'outline-regexp' anyway.
+
+2023-12-21  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-funcall-match, hyrolo-map-matches): Use (1- (point-max))
+    when 'end' is nil, i.e. only a single file has been found and the start of
+    of the next one used to determine the end of this one has not yet been added.
+
+* man/hyperbole.texi (Implicit Button Types): Add doc for 'hib-python-traceback'
+    and 'hyrolo-stuck-msg'.
+
+* hibtypes.el (Info-node): Tighten match to limit valid chars after closing paren.
+              (hyrolo-stuck-msg): Add to jump to the position where a HyRolo match
+    became stuck, if ever happens, when point is on the error.
+  hyrolo.el (hyrolo-grep-file): Update 'Stuck looping in buffer' msg so can be
+    used in 'hyrolo-stuck-msg' ibtype.
+
+* hyperbole.el: The 'describe-package' function fails under Emacs 28 when multiple
+    maintainers are listed under the 'Maintainer' header but later Emacs versions
+    support a 'Maintainers' header, so include both.  Change to using 'Authors'
+    instead of 'Author'.
+
+2023-12-20  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-edit-entry, hyrolo-locate): Wrap in 'hyrolo-funcall-match' call
+    to fix these functions to work with multiple modes.
+            (hyrolo-funcall-match): Ensure 'unwind-protect' end forms are run within
+    'hyrolo-display-buffer'.
+
+* kotl/kview.el (kview:outline-regexp): Add grouping for kcell label matches; used
+    in `hyrolo-display-buffer'.
+  kotl/kotl-mode.el (kotl-mode): Add local settings of 'hyrolo-entry-group-number'
+    and 'hyrolo-entry-trailing-space-group-number'.
+
+2023-12-18  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-move-backward, hyrolo-move-forward): If FUNC is a lambda
+    (not a function symbol), then temporarily narrow to the current match buffer
+     before applying FUNC.
+     (hyrolo-to-entry-end): Remove unused arg '_curr-entry-level-len'.
+     (hyrolo-grep-file): Remove unneeded passing of 'curr-entry-level-len' arg to
+     (hyrolo-outline-previous-visible-heading, hyrolo-next-visible-heading): Fix
+     doc strings to mention stops at match buffer headers.
+
+2023-12-17  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-move-backward, hyrolo-move-forward): If on a kotl-mode entry,
+    ensure move to a valid position.
+
+2023-12-16  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:expand-list): If path comes back nil from 'hpath:expand', then
+    ignore any potential file wildcards.
+
+2023-12-15  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode): Fix check of 'kotl-previous-mode' to not set local
+    vars if prior mode was the same, i.e. kotl-mode.
+
+* hyrolo.el (hyrolo-hdr-move-after-p): Add to move after any hdr lines in any buffer.
+            (hyrolo-grep-file, hyrolo-map-level, hyrolo-map-level, hyrolo-show-levels:
+    Change to call 'hyrolo-hdr-move-after-p'.
+            (hyrolo-move-forward, hyrolo-move-backward): Rewrite.
+	    (hyrolo-up-heading): Remove, use 'hyrolo-outline-up-heading'.
+	    (hyrolo-map-matches, hyrolo-funcall-match): Add optional 'narrow-flag' to
+    narrow to the current file of matches.
+            (hyrolo-outline-previous-heading): Add.
+	    (hyrolo--cache-major-mode): Fix so stored matched buffer major-mode rather
+    than hyrolo-mode from the display matches buffer.  Also, reused cached major-mode-index
+    values when the major-mode is the same and increment index only when not reused.
+            (hyrolo-map-matches, hyrolo-funcall-match): Eliminate save-restriction calls.
+	    (hyrolo-cache-get-major-mode-from-pos): Add and use in 'hyrolo-cace-set-major-mode'.
+	    (hyrolo-previous-visible-heading): Remove, use
+    'hyrolo-outline-previous-visible-heading'.
+
+2023-12-14  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-grep): Remove '(set-buffer display-buf)' since call to
+    'hyrolo-display-matches' does this.
+            (hyrolo-mode-map): Fix bindings of hyrolo-* overloads of
+    'outline-mode-prefix-map' (outline-minor-mode).
+
+2023-12-13  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo-logic.el (hyrolo-map-logic): Add doc for last arg,
+    whole-buffer-flag.
+                  (hyrolo-logic): Add calls to 'hyrolo--cache-initialize' and
+    'hyrolo--cache-post-display-buffer'.
+    Also add temporary disabling of 'magit-auto-revert-mode-enable-in-buffers'
+    in 'after-change-major-mode-hook' to speed file processing.
+                  (hyrolo-map-entries, hyrolo-map-kotl): Add call to
+    'hyrolo--cache-major-mode'.
+  hyrolo.el (hyrolo-grep-file): Change 'delq' to 'remove' so does not
+    permanently modify the 'after-change-major-mode-hook'.
+
+* hyrolo.el (hyrolo--cache-initialize, hyrolo--cache-major-mode): Ensure
+    all settings apply to `hyrolo-display-buffer' local variables.
+            (hyrolo-find-file): Fix doc string.
+	    (hyrolo-set-file-list, hyrolo-let-file-list): Remove call to
+    'hyrolo--cache-initialize'.
+
+* test/hyrolo-tests.el (hyrolo-demo-move-to-beginning-and-end-of-file):
+    Move to {,} and {.} tests to sep test,
+    'hyrolo-demo-move-to-beginning-and-end-of-entry'.
+
+2023-12-12  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-mode): Add trailing space to default `outline-regexp'.
+            (hyrolo-org-mode): Add quick enable of basic Org mode for use
+    in HyRolo display match searches and use in 'hyrolo-helm-org-rifle'.
+            (hyrolo-org-outline-level): Add to not widen the buffer when
+    computing the Org outline level when in the display match buffer.
+
+* kotl/kotl-mode.el (kotl-mode):
+  hyrolo.el (hyrolo-mode): Change 'run-hooks' to 'run-mode-hooks'.
+
+2023-12-11  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-mode): Add 'hbut:source-prefix' and 'hyrolo-hdr-regexp'
+    as level 1 outline entries in outline-heading-alist.
+            (hyrolo-mode-outline-level): Delete, use default 'hyrolo-outline-level'
+    or per matched file function in 'outline-level'.
+
+* test/hibtypes-tests.el (ibtypes::text-toc-test): Regexp-quote * and allow
+    for preceding whitespace.
+
+* kotl/kotl-mode.el (require 'hyrolo): Add.
+
+* hyrolo.el (hyrolo-grep-file): Change 'insert-buffer-substring-no-properties'
+    to 'insert-buffer-substring' to keep properties, as need Koutline
+    'kcell properties to navigate them properly.
+
+* kotl/kview.el (kcell-view:to-label-end):
+  kotl/kotl-mode.el (kotl-mode:to-valid-position): Fix to handle file headers
+    in HyRolo display match buffer when displaying parts of Koutlines.
+
+* hyrolo.el (hyrolo-cache-set-major-mode): Move to this function the
+    addition of 'hyrolo-hdr-regexp' to both 'hyrolo-hdr-and-entry-regexp' and
+    'outline-regexp' within the *HyRolo* display match buffer.
+            (hyrolo-markdown-outline-level, hyrolo-cache-set-major-mode):
+    Fix markdown 'outline-level' function to always return a non-nil level.
+
+2023-12-10  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-grep): Remove unused local 'hyrolo-buf'.
+            (hyrolo-outline-minor-mode): Define and enable in 'hyrolo-mode'.
+
+* hyrolo-menu.el (hyrolo-menu-common-body):
+  hyrolo.el (hyrolo-mode-map): Change to 'make-sparse-keymap', name it and inherit
+    from a copy of 'outline-mode-prefix-map' where its command bindings are overriden
+    with hyrolo- prefixed ones.
+
+* hyrolo.el (hyrolo-move-backward): Change 'outline-previous-heading' call to
+    'hyrolo-outline-previous-heading'.
+
 2023-12-09  Mats Lidell  <matsl@gnu.org>
 
 * test/hy-test-helpers.el (hy-test-helpers:consume-input-events): Remove
     not needed recursion-depth check.
+
+2023-12-09  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-funcall-match, hyrolo-map-matches): Add these functions to
+    wrap function calls in the HyRolo display matches buffer that require the
+    original major mode of the location, e.g. outline commands.
+
+* hyrolo.el (hyrolo-outline-show-subtree): Add to replace usage of
+    'outline-show-subtree'.
+	    (hyrolo-outline-hide-subtree): Rename from 'hyrolo-hide-subtree'.
+            (hyrolo-outline-hide-subtree, hyrolo-overview,
+             hyrolo-top-level, hyrolo-move-backward, hyrolo-move-forward):
+    Add a wrapper call to 'hyrolo-funcall-match' or 'hyrolo-map-matches'
+    which sets appropriate major mode per location in the match buffer.
+            (hyrolo-outline-*): Add new functions emulating all 'outline-minor-mode'
+    key bindings with above wrapper calls and add to 'hyrolo-mode-map' keys.
+* hyrolo-*.el (outline): Change all (outline-*) calls to (hyrolo-outline-*) calls.
+    This supports different major modes within the HyRolo match display buffer.
+
+2023-12-08  Bob Weiner  <rsw@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode): Update to be usable in `hyrolo-display-buffer'.
+
+2023-12-07  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo--cache-*): Add caching of each 'major-mode' to use for the buffer
+    from which a matching HyRolo record is drawn.
+    (hyrolo-let-file-list, hyrolo-set-file-list): Add calls to
+    `hyrolo--cache-initialize'.
+    (hyrolo-grep): Add calls to 'hyrolo--cache-initialize' and to
+       'hyrolo--cache-post-display-buffer' when not 'count-only'.
+    (hyrolo-grep-file): Add call to 'hyrolo--cache-locals'.
+    (hyrolo-grep): Remove concatenated 'outline-regexps' and 'hyrolo-entry-regexps'.
+       They are no longer used.  Move header matching in `outline-regexp' and
+       `hyrolo-hdr-and-entry-regexp' to 'hyrolo--cache-matched-buffer'.
 
 2023-12-07  Mats Lidell  <matsl@gnu.org>
 
@@ -15,6 +1210,51 @@
     (hywconfig--get-not-existing-config-fails, hywconfig--add-by-name)
     (hywconfig--delete-by-name): Tests.
 
+2023-12-04  Bob Weiner  <rsw@gnu.org>
+
+* Makefile (HY-TALK/HYPER*.org): Add Hyperbole talk slides from EmacsConf
+    presentations.
+  MANIFEST: Update with org files used in talks.
+
+* hsys-org.el (org-link): Expand this actype to open Org links that are in
+    non-Org-mode buffers.
+
+2023-12-03  Bob Weiner  <rsw@gnu.org>
+
+* hibtypes.el (annot-bib): Lower priority below 'org-link-outside-org-mode'
+    as this can be mistaken for an org link outside an org buffer.
+
+* hactypes.el (link-to-regexp-match): Fix typo.
+
+* hui.el (hui:link-possible-types): Set no-default when checking if
+    at a filename; otherwise, will match at any point in a file-based
+    buffer, which is only supposed to trigger at the end of the possible
+    matches when 'buffer-file-name' is checked.
+
+* test/hyrolo-tests.el (hyrolo-sort-test): Temporarily set to known
+    :failing, as is a known bug.
+
+2023-12-02  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-expand-path-list): Eliminate any non-existing
+    entries after expansion.
+            (hyrolo-date-format): Allow empty string to disable
+    date adding/updating in entries.
+            (hyrolo-set-date): Add optional 'edit-only-flag'
+    when non-nil, replaces existing dates but does not add new ones;
+    use as part of an edit command.  Do nothing if 'hyrolo-date-format'
+    is an empty string.  These changes support the new file formats
+    that HyRolo supports where you don't want a date added when jumping
+    to and editing entries.
+            (hyrolo-edit-date): Add for use with 'hyrolo-edit-hook'.
+	    (hyrolo-edit-hook): Set to 'hyrolo-edit-date'.
+	    (hyrolo-toggle-datestamps): Use 'hyrolo-edit-date'.
+	    (hyrolo-to): Handle entries of all file types now supported
+    by HyRolo.  If kotl-mode, move to first valid position on the line.
+
+* kotl/kotl-mode.el (kotl-mode:example): Fix to prompt to save in
+    home directory, not the current directory.
+
 2023-12-01  Mats Lidell  <matsl@gnu.org>
 
 * hmouse-tag.el (ibtype:def-symbol): Declare function to silence warning.
@@ -24,7 +1264,17 @@
     (hyrolo-fgrep-and-goto-next-visible-md-heading): Use level one heading
     so that heading hierarchy is respected.
 
+==============================================================================
+V8.0.2pre changes ^^^^:
+==============================================================================
+
 2023-12-01  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-add): Fix that narrow-to-region was narrowing to a
+    zero-sized region when point was not on an entry start character.
+    Also fix that when moved to point-max trying optimized insertion
+    but failing, never moved point back to point-min, so insertion
+    would occur at the buffer end rather than the proper point.
 
 * hargs.el (hargs:delimited): Remove use of 'bounds-of-thing-at-point'
     and (require 'thingatpt) since it doesn't use the delimiters given
@@ -110,10 +1360,6 @@
     which exits and selects the first minibuffer line, not the candidate
     presently selected.
 
-* hargs.el (hargs:delimited):
-           (require 'thingatpt): For 'bounds-of-thing-at-point'
-    used in 'hargs:delimited' on single char matching delims.
-
 * hui-select.el (hui-select-scan-sexps): Add to fix brace handling
     as a matching pair when selecting things by using previously
     unused 'hui-select-syntax-table'.
@@ -131,7 +1377,7 @@
     and 'keymap-sym' locally within the function rather than globally
     which would affect modes beyond those in 'hui-select-markup-modes'.
                 (hui-select-goto-matching-delimiter): If the key that
-    invokes this command in hyperbole-minor-mode is also bound in the
+    invokes this command in hyperbole's minor-mode is also bound in the
     current major mode map, then interactively invoke that command
     instead.  Typically prevents clashes over {C-c .}.  Previously
     did this only for 'org-mode' but 'kotl-mode' also has a conflict
@@ -209,7 +1455,7 @@
             (hyrolo-find-file): Improve 'outline-regexp' handling and set
     'outline-level' function if an Emacs outline.
 	    (hyrolo-add): Compare entry-regexp against default-value of
-    'hyrolo-entry-regexp' rather than a literal string.
+    'hyrolo-hdr-and-entry-regexp' rather than a literal string.
 
 2023-11-14  Bob Weiner  <rsw@gnu.org>
 
@@ -768,7 +2014,7 @@
 
 * kotl/kotl-mode.el (kotl-mode:self-insert-command): Remove special kotl-mode auto-filling
     is handled by regular 'self-insert-command'.  This fixes improper hanging indent auto-
-    filling in kcells due to narrowing kcell to text contens only, hiding the cell prefix.
+    filling in kcells due to narrowing kcell to text contents only, hiding the cell prefix.
                     (kotl-mode:pre-self-insert-command):
   kotl/kotl-orgtbl.el (kotl-mode:setup-overriding-orgtbl-keymap): Remove reference to
     'kotl-mode:self-insert-command'.
@@ -1939,10 +3185,10 @@ name with 'name' and 'name-key'.
 
 2023-04-02  Bob Weiner  <rsw@gnu.org>
 
-* HY-NEWS (9.0.0): Add EmacsConf 2022 videos.
+* HY-NEWS: Add EmacsConf 2022 videos.
   INSTALL: (Invocation):
   README.md (Videos):
-  man/hyperbole.texi (Invocation): Add link to Hyperbole videos in README.
+  man/hyperbole.texi (Invocation): Add link to Hyperbole videos in README.md.
 
 2023-03-29  Bob Weiner  <rsw@gnu.org>
 
@@ -2831,7 +4077,7 @@ name with 'name' and 'name-key'.
              hyrolo-google-contacts-grep, hyrolo-grep-file,
              hyrolo-display-to-entry-end, hyrolo-name-at):
   kotl/kimport.el (kimport:star-entries): Don't fold case when searching
-    for 'hyrolo-entry-regexp'.
+    for 'hyrolo-hdr-and-entry-regexp'.
     (hyrolo-isearch-for-regexp): Add 2nd parameter, 'fold-search-flag'
   used to set 'case-fold-search'.
 
@@ -2890,11 +4136,11 @@ name with 'name' and 'name-key'.
 
 * hyrolo.el (hyrolo-grep): Add support for 'outline-regexp' and
     'outline-level' variables from multiple file types.  This includes
-    adding 'hyrolo-hdr-regexp' to both 'hyrolo-entry-regexp' and
+    adding 'hyrolo-hdr-regexp' to both 'hyrolo-hdr-and-entry-regexp' and
    'outline-regexp' within the *HyRolo* match buffer.
             (hyrolo-mode): Set local value of 'outline-level' to
     'hyrolo-mode-outline-level' and define that function to support
-    star outlines and Koutlines.  Also, make 'hyrolo-entry-regexp'
+    star outlines and Koutlines.  Also, make 'hyrolo-hdr-and-entry-regexp'
     local and set it to its default value, after which it may be
     modified.
             (hyrolo-previous-match): Change so can be used in a
@@ -2902,7 +4148,7 @@ name with 'name' and 'name-key'.
             (hyrolo-mode-outline-level): Add and use in 'hyrolo-mode'.
 
 * kotl/kotl-mode.el (kotl-mode): Add local settings of:
-    'hyrolo-entry-regexp', 'outline-level', and 'outline-regexp'
+    'hyrolo-hdr-and-entry-regexp', 'outline-level', and 'outline-regexp'
      specific to Koutlines.
   kotl/kview.el (kview:outline-regexp): Regexp quote
     use of 'kview:default-label-separator'.
@@ -3530,6 +4776,9 @@ name with 'name' and 'name-key'.
 
 * Makefile (website-local): Add dependency on README.md.html.
 
+==============================================================================
+V8.0.1pre changes ^^^^:
+==============================================================================
 ==============================================================================
 V9.0.0 changes ^^^^:
 ==============================================================================
@@ -6097,7 +7346,7 @@ Delete knode.el and integrate functionality into kcell.el.
     This makes behavior across magit lines consistent and pathnames can still
     be displayed using the Assist Key (invokes magit {RET} key).
 
-* hyrolo.el (hyrolo-to-entry-end): Default to using entire hyrolo-entry-regexp
+* hyrolo.el (hyrolo-to-entry-end): Default to using entire hyrolo-hdr-and-entry-regexp
     to determine the outline depth when no hyrolo-entry-group-number is
     included in the expression.  Fixes issue that could call (goto-char nil).
 
@@ -7304,7 +8553,7 @@ V7.1.0 test release changes ^^^^:
     using {q} to quit from the hyrolo match buffer.
 
 * hyrolo-logic.el (hyrolo-map-logic): Fixed function call.
-    Changed: (match-string-no-properties hyrolo-entry-regexp
+    Changed: (match-string-no-properties hyrolo-hdr-and-entry-regexp
          To: (match-string-no-properties hyrolo-entry-group-number)
 
 * hsys-org.el (inhibit-hsys-org): Added customization to allow disabling all Smart Key support when in an
@@ -7336,7 +8585,7 @@ V7.1.0 test release changes ^^^^:
             (hyrolo-to):
             (hyrolo-to-entry-end): Fixed bug that caused addition of new entries at the end of the hyrolo file,
     rather than in sorted order.  Also caused hyrolo-logic functions to fail.
-    The issue was that 'hyrolo-entry-regexp' had been updated to include the whitespace following the entry prefix
+    The issue was that 'hyrolo-hdr-and-entry-regexp' had been updated to include the whitespace following the entry prefix
     and this whitespace was improperly included when computing the hierarchy level of the entry.  Also, changed
     'curr-entry-level' parameter from a string to an integer to reduce length comparisons.
             (hyrolo-r-not): Fixed typo 'path' should be 'pat'.
@@ -7975,11 +9224,13 @@ for expanded Org mode reference handling.
 
 * hbut.el (gbut:ibut-key-list): Added.
 
-* hui.el (hui:hbut-term-highlight, hui:hbut-term-unhighlight): Fixed so save-excursion is outermost.
+* hui.el (hui:hbut-term-highlight, hui:hbut-term-unhighlight): Fixed so
+    save-excursion is outermost.
 
 2019-06-29  Bob Weiner  <rsw@gnu.org>
 
-* hbut.el (ebut:get, ebut:at-p, ebut:label-to-key, ibut:at-type-p): Simplified conditionals using 'when'.
+* hbut.el (ebut:get, ebut:at-p, ebut:label-to-key, ibut:at-type-p): Simplified
+    conditionals using 'when'.
           (ibut:label-start, ibut:label-end, ibut:label-p, ibut:get,
            ibut:next-occurrence, ibut:label-regexp): Added.
 	   (hbut:label-regexp): Added to support labeled implicit buttons too.
@@ -7988,8 +9239,9 @@ for expanded Org mode reference handling.
 
 2019-06-23  Bob Weiner  <rsw@gnu.org>
 
-* hsys-org.el: Added many new predicates and code to handle navigation between Org
-    mode internal links and their targets, as well as radio target definitions and their links.
+* hsys-org.el: Added many new predicates and code to handle navigation between
+    Org mode internal links and their targets, as well as radio target
+    definitions and their links.
     (hsys-org-mode-function, hsys-org-mode-p): Added to determine when hsys-org actions
        are activated.
 
@@ -8041,7 +9293,7 @@ for expanded Org mode reference handling.
 2019-06-16  Bob Weiner  <rsw@gnu.org>
 
 * hyrolo.el: Replaced buffer-substring-no-properties with match-string-no-properties where possible.
-             (hyrolo-entry-regexp): Changed to require whitespace following the entry prefix.
+             (hyrolo-hdr-and-entry-regexp): Changed to require whitespace following the entry prefix.
              (hyrolo-entry-group-number): Added.
 
 2019-06-12  Bob Weiner  <rsw@gnu.org>

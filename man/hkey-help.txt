@@ -53,7 +53,7 @@ Mouse-only Control
     but/buffer/file menu item   Displays ref/buffer/file   <- same
                                   in window of button release 
     buffer/file menu 1st line   Moves buffer/file menu     <- same
-    anywhere else               Creates an ebut link       Creates an ibut link
+    anywhere else               Creates an ibut link       Creates an ebut link
 
   Drag outside of Emacs from:
     but/buffer/file menu item   Displays ref/buffer/file   Moves window to new frame
@@ -80,11 +80,10 @@ Hyperbole Key Press/Click in Special Modes
   Region Active                 Yanks region at release    Kills and yanks at release
   Company Mode Completion       Displays definition        Displays documentation
   Helm Completion               Displays item              Displays item
-  Treemacs                      Displays item              Displays item
-  Dired Sidebar                 Displays item              Displays item
   Emacs Push Button             Activates button           Button help
   Emacs Regression Test Def     Evals and runs test        Edebugs and runs test
   Thing Begin or End            Marks thing region         Marks & kills thing region
+  Flymake Linter Mode           Jumps to issue at point    Displays issue at point
   Page Directory Listing        Jumps to page              <- same
   C,C++,Objective-C,Java Modes  Jumps to id/include def    Jumps to next def
   Assembly Language Mode        Jumps to id/include def    Jumps to next def
@@ -106,9 +105,8 @@ Hyperbole Key Press/Click in Special Modes
     Menu Item or node hdr       Jumps to Texinfo referent  Button help
     Include file                Jumps to Texinfo referent  Button help
     code/var reference          Displays doc for referent  Button help
-  Org Mode                      Follows links and cycles outline views
+  Org Mode                      Follows links, cycles headings and Org Meta Return
   Org/Roam ID                   Jumps to ID referent       Button help
-  Magit Modes                   Collapses, expands and jumps to things
   Outline Major/Minor Modes     Collapses, expands, and moves outline entries
   Man Apropos                   Displays man page entry    <- same
   Man Pages                     Follows cross refs, file refs and C code refs
@@ -125,7 +123,10 @@ Emacs Info Reader
 Subsystems
   Calendar                      Scrolls or shows appts     Scrolls/marks date
   GNU Debbugs Tracker           Displays issue discussion  Displays issue status
+  Treemacs                      Displays item              Displays item
+  Dired Sidebar                 Displays item              Displays item
   Dired Mode                    Views and deletes files from dir listing
+  Magit Modes                   Collapses, expands and jumps to things
   GNUS News Reader              Toggles group subscriptions, gets new news,
                                   and browses articles
   Mail Reader and Summaries     Browses, deletes and expunges messages

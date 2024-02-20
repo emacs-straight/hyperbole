@@ -3,15 +3,15 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Jun-16 at 14:24:53
-;; Last-Mod:      3-Oct-23 at 23:23:16 by Mats Lidell
+;; Last-Mod:      2-Feb-24 at 22:44:22 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2016, 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2016-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of Hyperbole.  It requires the Emacs package
-;; Debbugs 0.9.7 or higher; there were bugs in earlier versions
+;; debbugs-gnu 0.9.7 or higher; there were bugs in earlier versions
 ;; that made it incompatible with the queries Hyperbole issues.
 ;;
 ;;; Commentary:
@@ -77,11 +77,11 @@
 ;;; Public declarations
 ;;; ************************************************************************
 
-(declare-function debbugs-get-status "ext:debbugs")
-(declare-function debbugs-gnu-bugs "ext:debbugs")
-(declare-function debbugs-gnu-current-id "ext:debbugs")
-(declare-function debbugs-gnu-select-report "ext:debbugs")
-(declare-function debbugs-gnu-show-reports "ext:debbugs")
+(declare-function debbugs-get-status "ext:debbugs-gnu")
+(declare-function debbugs-gnu-bugs "ext:debbugs-gnu")
+(declare-function debbugs-gnu-current-id "ext:debbugs-gnu")
+(declare-function debbugs-gnu-select-report "ext:debbugs-gnu")
+(declare-function debbugs-gnu-show-reports "ext:debbugs-gnu")
 (defvar debbugs-gnu-current-query)
 (defvar debbugs-port)
 
@@ -90,8 +90,10 @@
 ;;; ************************************************************************
 
 (eval-after-load "debbugs-gnu"
-  #'(progn (push "hyperbole"  debbugs-gnu-all-packages)
-	   (push "oo-browser" debbugs-gnu-all-packages)))
+  '(progn
+     (defvar debbugs-gnu-all-packages)
+     (push "hyperbole"  debbugs-gnu-all-packages)
+     (push "oo-browser" debbugs-gnu-all-packages)))
 
 ;;; ************************************************************************
 ;;; Public implicit button types
@@ -154,9 +156,9 @@ Ignore other types of GNU debbugs query strings."
 ;;; ************************************************************************
 
 (defun debbugs-gnu-show-discussion ()
+  "Display the 2nd message which is the initial bug report.
+This may be in Gnus or Rmail summary mode."
     (debbugs-gnu-select-report)
-    ;; Display the 2nd message which is the initial bug report.  This
-    ;; may be in Gnus or Rmail summary mode.
     (goto-char (point-min))
     (forward-line 1)
     (call-interactively (key-binding "\C-m")))
@@ -189,7 +191,7 @@ used as well in place of `bug'."
 Each element of the list should be of the form (attribute . attribute-value).
 Attribute may be a symbol or a string.  Common attributes
 include: status, severity, and package."
-  (require 'debbugs-gnu)
+  (require 'debbugs)
   (setq debbugs-gnu-current-query nil)
   (dolist (attr query-attribute-list)
     (add-to-list 'debbugs-gnu-current-query
@@ -219,7 +221,7 @@ When the Action Key is pressed on a Gnu Debbugs listing entry."
   "Return t if point appears to be within a debbugs id.
 Id number is (match-string 2).  If this is a query with attributes,
 then (match-string 3) = \"?\" and (match-string 4) is the query
-attributes." 
+attributes."
   ;; Point must be before one of the bug#222 characters to match.
   (let ((case-fold-search t))
     (when (string-match "[bugise#0-9]" (char-to-string (following-char)))
@@ -263,7 +265,7 @@ Return t unless no attributes are printed."
   "Return t iff debbugs version is sufficient for use with Hyperbole.
 Must be greater than equal to 0.9.7."
   (save-excursion
-    (let* ((debbugs-src (locate-file "debbugs" load-path '(".el")))
+    (let* ((debbugs-src (locate-file "debbugs-gnu" load-path '(".el")))
 	   (visiting-debbugs-src (when debbugs-src (get-file-buffer debbugs-src)))
 	   debbugs-src-buffer
 	   version)

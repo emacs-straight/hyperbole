@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    19-Sep-91 at 21:42:03
-;; Last-Mod:      6-Nov-23 at 19:36:33 by Bob Weiner
+;; Last-Mod:     20-Jan-24 at 20:20:21 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2021  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -295,8 +295,8 @@ Default is the current button."
 			(hargs:read-match "Activate explicit button: " lst nil t
 					  (ebut:label-p 'as-label) 'ebut))))
 	    (t
-	     (hypb:error "(ebut-act): No explicit buttons in buffer."))))))
-  (hui:hbut-operate #'ebut:act "Activate explicit button: " but))
+	     (hypb:error "(ebut-act): No explicit buttons in buffer"))))))
+  (hui:hbut-operate #'hbut:act "Activate explicit button: " but))
 
 (defun hui:ebut-create (&optional start end)
   "Interactively create an explicit Hyperbole button.
@@ -761,7 +761,7 @@ The default is the current button."
   (hui:hbut-operate #'hbut:act "Activate Hyperbole button: " but))
 
 (defun hui:hbut-buf (&optional prompt)
-  "Prompt for and return a buffer in which to place a button."
+  "PROMPT for and return a buffer in which to place a button."
   (let ((buf-name))
     (while
 	(progn
@@ -876,7 +876,8 @@ BUT defaults to the button whose label point is within."
     (if (functionp type-help-func)
 	(funcall type-help-func but)
       (let ((total (hbut:report but)))
-	(when total (hui:help-ebut-highlight))))))
+	(when total (hui:help-ebut-highlight))))
+    (or type-help-func 'hbut:report)))
 
 (defun hui:hbut-label (default-label func-name &optional prompt)
   "Read button label from user using DEFAULT-LABEL and caller's FUNC-NAME.
@@ -940,8 +941,8 @@ Default is any implicit button at point."
 			(hargs:read-match "Activate named implicit button: " lst nil t
 					  (ibut:label-p 'as-label) 'ibut))))
 	    (t
-	     (hypb:error "(ibut-act): No named implicit buttons in buffer."))))))
-  (hui:hbut-operate #'ibut:act "Activate named implicit button: " ibut))
+	     (hypb:error "(ibut-act): No named implicit buttons in buffer"))))))
+  (hui:hbut-operate #'hbut:act "Activate named implicit button: " ibut))
 
 (defun hui:ibut-create (&optional start end)
   "Interactively create an implicit Hyperbole button at point.
@@ -1138,8 +1139,10 @@ If an explicit button already exists at point, replace it with the new
 link button and return t; otherwise, return nil.
 
 With optional DEPRESS-WINDOW and RELEASE-WINDOW, use the points
-from those instead.  See also documentation for
-`hui:link-possible-types'."
+from those instead.  See also documentation for `hui:link-possible-types'.
+
+An Assist Mouse Key drag between windows (when not on an item)
+runs this command."
   (interactive (progn
 		 ;; Clear smart key variables so this does not
 		 ;; improperly reference values left over from a prior
@@ -1238,12 +1241,11 @@ from those instead.  See also documentation for
 `hui:link-possible-types'.
 
 With optional NAME-ARG-FLAG (interactively, the prefix argument set to
-anything other than a single C-u (list 4)), prompt for a name to precede
+anything other than a single \\`C-u' (list 4)), prompt for a name to precede
 the implicit button.
 
-An Assist Mouse Key drag between windows runs this command.
-Alternatively, to swap buffers between two windows, Assist Mouse Key
-drag from a window to another window's modeline."
+An Action Mouse Key drag between windows (when not on an item)
+runs this command."
   (interactive (progn
 		 ;; Clear smart key variables so this does not
 		 ;; improperly reference values left over from a prior
@@ -1345,7 +1347,7 @@ drag from a window to another window's modeline."
 ;;; ************************************************************************
 
 (defun hui:action (actype &optional prompt)
-  "Prompt for and return an action to override action from ACTYPE."
+  "PROMPT for and return an action to override action from ACTYPE."
   (and actype
        (let* ((act) (act-str)
 	      (params (actype:params actype))
@@ -1466,6 +1468,8 @@ from the button that point is within."
       (hypb:error "(ebut-delete): You may not delete buttons from this buffer"))))
 
 (defun hui:ebut-message (but-edit-flag)
+  "Display message about the ebut execution.
+With BUT-EDIT-FLAG non-nil message about ebut being edited."
   (let ((actype (symbol-name (hattr:get 'hbut:current 'actype)))
 	(args (hattr:get 'hbut:current 'args)))
     (setq actype (actype:def-symbol actype))
@@ -1520,10 +1524,12 @@ With a prefix argument, also delete the button text between the delimiters."
 	  (when (search-forward ebut:label-end nil t) (funcall form)))
       ;; Non-interactive invocation.
       (let (cur-flag)
-	(if (and (or (null key-src) (eq key-src buffer-file-name))
-		 (or (null directory) (eq directory default-directory)))
-	    (setq cur-flag t)
-	  (set-buffer (find-file-noselect (expand-file-name key-src directory))))
+	(cond ((and (or (null key-src) (eq key-src buffer-file-name))
+		    (or (null directory) (eq directory default-directory)))
+	       (setq cur-flag t))
+	      ((bufferp key-src)
+	       (set-buffer key-src))
+	      (t (set-buffer (find-file-noselect (expand-file-name key-src directory)))))
 	(unless (stringp but-key)
 	  (setq but-key (hbut:label-p))
 	  (unless (stringp but-key)
@@ -1545,8 +1551,9 @@ With a prefix argument, also delete the button text between the delimiters."
 
 (defun hui:hbut-operate (operation operation-str &optional but)
   "Execute OPERATION func described by OPERATION-STR action on a Hyperbole button.
-Either the button at point is used or if none, then one is prompted
-for with completion of all labeled buttons within the current buffer."
+With optional BUT use that.  If none then either the button at
+point is used or if none, then one is prompted for with
+completion of all labeled buttons within the current buffer."
   (unless (or but (setq but (hbut:at-p)))
     (let (lst)
       (cond ((setq lst (nconc (ebut:alist) (ibut:alist)))
@@ -1556,7 +1563,7 @@ for with completion of all labeled buttons within the current buffer."
 						    (hbut:label-p 'as-label) 'hbut)))))
 	    (t (hypb:error "(hbut-operate): No labeled buttons in buffer")))))
   (cond ((and (called-interactively-p 'interactive) (null but))
-	 (hypb:error "(hbut-operate): No current button upon which to operate."))
+	 (hypb:error "(hbut-operate): No current button upon which to operate"))
 	((progn (unless but (setq but 'hbut:current))
 		(hbut:is-p but))
 	 ;; Temporarily move point to start of the button text for flashing and activation.
@@ -1711,6 +1718,8 @@ within."
       (hypb:error "(ibut-delete): You may not delete buttons from this buffer"))))
 
 (defun hui:ibut-message (but-edit-flag)
+  "Display message about the ibut execution.
+With BUT-EDIT-FLAG non-nil message about ibut being edited."
   (let ((actype (symbol-name (hattr:get 'hbut:current 'actype)))
 	(args (hattr:get 'hbut:current 'args)))
     (setq actype (actype:def-symbol actype))
@@ -1824,7 +1833,7 @@ File Name                link-to-file
 Koutline Cell            link-to-kcell
 Outline Heading          link-to-string-match
 Buffer attached to File  link-to-file
-EOL in Dired Buffer      link-to-directory (dired dir)
+EOL in Dired Buffer      link-to-directory (Dired dir)
 Buffer without File      link-to-buffer-tmp"
 ;; Elisp Buffer at Start
 ;; or End of Sexpression    eval-elisp
@@ -1854,7 +1863,8 @@ Buffer without File      link-to-buffer-tmp"
 			     ;; and sets hbut:current button attributes.
 			     (t (cond ((and (not (derived-mode-p 'dired-mode))
 					    (prog1 (setq hbut-sym (hbut:at-p))
-					      (save-excursion (ibut:at-to-name-p hbut-sym)))
+					      (when (ibut:is-p hbut-sym)
+						(save-excursion (ibut:at-to-name-p hbut-sym))))
 					    (setq lbl-key (hattr:get hbut-sym 'lbl-key))
 					    (eq (current-buffer) (get-file-buffer (gbut:file))))
 				       (list 'link-to-gbut lbl-key))
@@ -1893,33 +1903,33 @@ Buffer without File      link-to-buffer-tmp"
 					     (setq val (hargs:at-p t)))
 					   (list 'link-to-directory val))
 					  ((let ((hargs:reading-type 'file))
-					     (setq val (hargs:at-p)))
+					     (setq val (hargs:at-p t)))
 					   (list 'link-to-file val))
 					  ((derived-mode-p #'kotl-mode)
 					   (list 'link-to-kcell buffer-file-name (kcell-view:idstamp)))
-					  ;; If link is within an outline-regexp prefix, use
+					  ;;
+					  ;; If current line starts with an outline-regexp prefix, use
 					  ;; a link-to-string-match.
-					  ((and (boundp 'outline-regexp)
+					  ((and (derived-mode-p 'outline-mode 'org-mode 'kotl-mode)
 						(stringp outline-regexp)
 						(save-excursion
-						  (<= (point)
-						      (progn
-							(beginning-of-line)
-							(if (looking-at outline-regexp)
+						  (beginning-of-line)
+						  (looking-at outline-regexp)))
+					   (let ((heading (string-trim
+							   (buffer-substring-no-properties
 							    (match-end 0)
-							  0)))))
-					   (save-excursion
-					     (let ((heading (string-trim
-							     (buffer-substring-no-properties
-							      (point)
-							      (line-end-position))))
-						   (occur 0))
+							    (line-end-position))))
+						 (occur 0))
+					     (save-excursion
 					       (end-of-line)
 					       (while (and (not (string-empty-p heading))
 							   (search-backward heading nil t))
-						 (setq occur (1+ occur)))
-					       (list 'link-to-string-match
-						     heading occur buffer-file-name))))
+						 (setq occur (1+ occur))))
+					     (list 'link-to-string-match
+						   (if (zerop (current-column))
+						       heading
+						     (format "%s:L1:C%d" heading (current-column)))
+						   occur buffer-file-name)))
 					  (buffer-file-name
 					   (list 'link-to-file buffer-file-name (point)))
 					  ((derived-mode-p 'dired-mode)

@@ -2,17 +2,18 @@
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1992-2023  Free Software Foundation, Inc.
+;; Copyright (C) 1992-2024  Free Software Foundation, Inc.
 
-;; Author:       Bob Weiner
-;; Maintainer:   Bob Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
+;; Authors:      Robert Weiner <rsw@gnu.org>
+;; Maintainer:   Mats Lidell <matsl@gnu.org>
+;; Maintainers:  Robert Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:      06-Oct-92 at 11:52:51
-;; Last-Mod:     11-Nov-23 at 16:34:14 by Bob Weiner
-;; Released:     03-Dec-22
-;; Version:      8.0.1pre
+;; Last-Mod:     19-Feb-24 at 12:31:45 by Bob Weiner
+;; Released:     03-Dec-23
+;; Version:      8.0.2pre
 ;; Keywords:     comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:      hyperbole
-;; Package-Requires: ((emacs "27.0"))
+;; Package-Requires: ((emacs "27.1"))
 ;; URL:          http://www.gnu.org/software/hyperbole
 
 ;; See the "HY-COPY" file for license information.
@@ -63,7 +64,7 @@
 ;; 
 ;; ----
 ;;
-;; See the "INSTALL" file for installation instructions and the "README" file
+;; See the "INSTALL" file for installation instructions and the "README.md" file
 ;; for general information.
 ;;
 ;; There is no need to manually edit this file unless there are specific
@@ -133,7 +134,7 @@ See `hkey-initialize'.")
 
 (defcustom hyperbole-mode-lighter " Hypb"
   "String to display in mode line when the Hyperbole global minor mode is enabled.
-  Use nil for no Hyperbole mode indicator."
+Use nil for no Hyperbole mode indicator."
   :type 'string
   :group 'hyperbole)
 
@@ -171,7 +172,7 @@ Info documentation at \"(hyperbole)Top\".
 (declare-function hmouse-install "hmouse-key")
 (declare-function hui-search-web "hui-mini")
 (declare-function hkey-operate "hmouse-drv")
-(declare-function facemenu-keymap nil)  ; Where is this defined?
+(declare-function facemenu-keymap "facemenu")
 (declare-function hkey-help "hmouse-drv")
 (declare-function hkey-either "hmouse-drv")
 
@@ -193,9 +194,9 @@ Info documentation at \"(hyperbole)Top\".
   "*A non-nil value (default) at system load time binds Hyperbole keys.
 Keys bound are the Action and Assist Keyboard Keys, as well as
 other keys.  {\\[hkey-either]} invokes the Action Key and
-{C-u \\[hkey-either]} invokes the Assist Key.  Additionally,
+{\\`C-u' \\[hkey-either]} invokes the Assist Key.  Additionally,
 {\\[hkey-help]} shows what the Action Key will do in the current
-context (wherever point is).  {C-u \\[hkey-help]} shows what the
+context (wherever point is).  {\\`C-u' \\[hkey-help]} shows what the
 Assist Key will do."
   :type 'boolean
   :group 'hyperbole-keys)
@@ -405,7 +406,7 @@ frame, those functions by default still return the prior frame."
     "Return t if there is an invisible character between BEG and END, else nil."
     (catch 'result
       (let ((p beg))
-	(while (< p end) 
+	(while (< p end)
 	  (when (eq (get-char-property p 'invisible) 'outline)
 	    (throw 'result t))
 	  (setq p (1+ p))))
@@ -495,6 +496,13 @@ frame, those functions by default still return the prior frame."
 				'buttons
 			      t)))
   ;;
+  ;; This next function call must be run before any tests involving Org
+  ;; in case the user has installed a new version of Org but Emacs has
+  ;; loaded parts of Org before his load path is finalized.  It loads
+  ;; the newer version of Org, if any, assuming `load-path' is configured
+  ;; correctly.
+  (hsys-org-fix-version)
+  ;;
   ;; When vertico-mode is used, vertico-mouse-mode is needed for the
   ;; Action Key to properly select completions from the candidate
   ;; list, so force its usage when vertico-mode is invoked.
@@ -504,9 +512,10 @@ frame, those functions by default still return the prior frame."
   ;;
   ;; Hyperbole initialization is complete.
   (message "Initializing Hyperbole...done"))
+  
 
-;; This call loads the rest of the Hyperbole system.
-(require 'hinit)
+  ;; This call loads the rest of the Hyperbole system.
+  (require 'hinit)
 
 (defun hyperbole--enable-mode ()
   "Enable Hyperbole global minor mode."
@@ -567,7 +576,8 @@ frame, those functions by default still return the prior frame."
 ;; it also sets up Kotl's autoloads.
 ;;;###autoload
 (let ((us (if (fboundp 'macroexp-file-name)
-              (macroexp-file-name) load-file-name)))
+              (macroexp-file-name)
+	    load-file-name)))
   (when us
     ;; Contrary to the usual ELPA autoloads files, `kotl-autoloads'
     ;; does not add its directory to `load-path', so let's do it here

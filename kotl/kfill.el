@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    23-Jan-94
-;; Last-Mod:      3-Oct-23 at 23:27:17 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 15:42:54 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1994-2021  Free Software Foundation, Inc.
+;; Copyright (C) 1994-2024  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -20,7 +20,7 @@
 ;;; Public declarations
 ;;; ************************************************************************
 
-(declare-function kcell-view:indent "kcell")
+(declare-function kcell-view:indent "kview")
 
 ;;; ************************************************************************
 ;;; Public variables

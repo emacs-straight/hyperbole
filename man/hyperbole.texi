@@ -1,4 +1,4 @@
-\input texinfo  @c -*- coding: utf-8 -*-
+ \input texinfo  @c -*- coding: utf-8 -*-
 
 @c $Id$
 @c hyperbole.texi --- The GNU Hyperbole Manual
@@ -7,7 +7,7 @@
 @c Author:       Bob Weiner
 @c
 @c Orig-Date:     6-Nov-91 at 11:18:03
-@c Last-Mod:     21-Nov-23 at 03:27:45 by Bob Weiner
+@c Last-Mod:     19-Feb-24 at 12:40:29 by Bob Weiner
 
 @c %**start of header (This is for running Texinfo on a region.)
 @setfilename hyperbole.info
@@ -155,8 +155,8 @@ WITHOUT ANY WARRANTY, without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</P>
 
 <PRE>
-Edition 8.0.1pre
-Printed November 21, 2023.
+Edition 8.0.2pre
+Printed February 19, 2024.
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -197,8 +197,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 @sp 2
 
 @example
-Edition 8.0.1pre
-November 21, 2023
+Edition 8.0.2pre
+February 19, 2024
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -342,9 +342,9 @@ Utilizing Explicit Buttons
 
 Creation
 
-* By Menu::                     Creation Via Menus
+* By Menu::
 * By Link::                     Creation Via Buffer Link
-* By Dragging::                 Creation Via Action Key Drags
+* By Dragging::                 Creation Via Assist Key Drags
 
 Koutliner
 
@@ -459,6 +459,7 @@ Smart Keyboard Keys
 * Smart Key - Ivy::
 * Smart Key - Treemacs::
 * Smart Key - Dired Sidebar Mode::
+* Smart Key - ERT Results Mode::
 * Smart Key - Emacs Pushbuttons::
 * Smart Key - Argument Completion::
 * Smart Key - ID Edit Mode::
@@ -470,7 +471,9 @@ Smart Keyboard Keys
 * Smart Key - View Mode::
 * Smart Key - Helm Mode::
 * Smart Key - Delimited Things::
+* Smart Key - Occurrence Matches::
 * Smart Key - The Koutliner::
+* Smart Key - Flymake Mode::
 * Smart Key - RDB Mode::
 * Smart Key - Help Buffers::
 * Smart Key - Custom Mode::
@@ -486,7 +489,6 @@ Smart Keyboard Keys
 * Smart Key - Objective-C Source Code::
 * Smart Key - Fortran Source Code::
 * Smart Key - Identifier Menu Mode ::
-* Smart Key - Occurrence Matches::
 * Smart Key - Calendar Mode::
 * Smart Key - Man Page Apropos::
 * Smart Key - Emacs Outline Mode::
@@ -512,7 +514,7 @@ Smart Keyboard Keys
 @chapter Introduction
 
 This edition of the GNU Hyperbole Manual is for use with any version
-8.0.1pre or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 27.1
+8.0.2pre or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs 27.1
 or higher.  It will trigger an error if your Emacs is older.
 
 This chapter summarizes the structure of the rest of the manual,
@@ -750,12 +752,13 @@ window's buffer by pressing @bkbd{C-h h e l}.
 @item Implicit buttons
 are patterns automatically recognized within existing text that perform
 actions, e.g. bug#24568 displays the bug status information for that Emacs
-bug number, without the need for any additional markup.
+bug number, without the need for any additional markup.  Implicit link
+buttons can be added to documents with a simple drag between windows too.
 
-With two windows on screen, an implicit link button can be created at point
-in the current buffer linking to the position in the other window's buffer by
-pressing @bkbd{C-h h i l}.  Use @bkbd{C-u C-h h i l} instead to be prompted
-for a name for the implicit button.
+Or from the keyboard, With two windows on screen, an implicit link button
+can be created at point in the current buffer linking to the position in
+the other window's buffer by pressing @bkbd{C-h h i l}.  Use @bkbd{M-1
+C-h h i l} instead to be prompted for a name for the implicit button.
 
 @item Global buttons
 are buttons that are activated by name from anywhere within Emacs.  They may
@@ -781,16 +784,19 @@ Assist Key, that perform an extensive array of context-sensitive operations
 across emacs usage, including activating and showing help for Hyperbole
 buttons.  In many popular Emacs modes, they allow you to perform common,
 sometimes complex operations without having to use a different key for each
-operation.  Just press a Smart Key and the right thing happens.  @xref{Smart
+operation.  Just press a Smart Key and the right thing happens.  The
+mouse versions of these keys additionally allow for drag actions.  We
+call these the Action Mouse and Action Assist keys or buttons.  @xref{Smart
 Keys}.
 
 @item HyRolo
-a powerful, hierarchical contact manager which anyone can
-use, is also included.  It is easy to learn since it introduces only a few
-new mechanisms and has a menu interface, which may be operated from the
-keyboard or the mouse.  It may also be used to look up any record-based
-information in any number of Org or Markdown files.  Hyperbole buttons may
-be embedded in any records.  @xref{HyRolo}. 
+a powerful, hierarchical contact manager which anyone can use, is also
+included.  It is easy to learn since it introduces only a few new
+mechanisms and has a menu interface, which may be operated from the
+keyboard or the mouse.  It may also be used for full-text searching
+over any record-based information in any number of Org, Markdown,
+Koutline or Emacs Outline files.  Hyperbole buttons may be embedded in
+any records.  @xref{HyRolo}.
 
 @item HyControl
 the fastest, easiest-to-use window and frame control available for GNU
@@ -1741,7 +1747,7 @@ needed, @pxref{Keyboard Drags}.
 So now you can put a bunch of buffers and files on your screen wherever
 you like.  Typically, a brief visual pulse is shown first at the source
 item and then in the destination window, to help you see that the transfer
-has been made.  An Assist Key Drag will move the the item list buffer to
+has been made.  An Assist Key drag will move the the item list buffer to
 the destination (swapping buffers), just as it does with other buffers.
 
 @node Keyboard Drags,  , Displaying Items, Dragging Buffers
@@ -1755,14 +1761,14 @@ the destination (swapping buffers), just as it does with other buffers.
 @cindex emulation, drag
 @cindex keyboard drags
 If you run Emacs under a window system and there is no prior key binding
-on @bkbd{M-o} when you load Hyperbole, then many Action Key drags can be
+on @bkbd{M-o} when you load Hyperbole, then many Smart Key drags can be
 emulated from the keyboard.  To do so, press @bkbd{M-o}, the
-@code{hkey-operate} command, at the button source location, move
-to the link destination, e.g.@: with @bkbd{C-x o}, and then press
-@bkbd{M-o} again.  This simulates a depress and release of the
-Action Key.  @bkbd{C-u M-o} emulates drags of the Assist Key.
-This will not work when Hyperbole is run from a dumb terminal Emacs
-session since drag actions are not supported without a window system.
+@code{hkey-operate} command, at the button source location, move to the
+link destination, e.g.@: with @bkbd{C-x o}, and then press @bkbd{M-o}
+again.  This simulates a depress and release of the Action Key.
+@bkbd{C-u M-o} emulates drags of the Assist Key.  This will not work when
+Hyperbole is run from a dumb terminal Emacs session since drag actions
+are not supported without a window system.
 
 @findex ace-window
 @findex hkey-ace-window-setup
@@ -1774,19 +1780,20 @@ For even faster keyboard-based display of items and drag emulations,
 use the Emacs package @code{ace-window}
 (see @url{https://elpa.gnu.org/packages/ace-window.html}).
 
-The ace-window package assigns short letter IDs to each Emacs window and lets
-you jump to or operate upon a specific window by giving its ID.  Hyperbole can
-add commands to ace-window that replace the two-step drag emulation key
-described above with a single key sequence that does not require moving to
-the drag target window since it is specified by ID as part of the command.
+The @dfn{ace-window} package assigns short letter IDs to each Emacs
+window and lets you jump to or operate upon a specific window by giving
+its ID.  Hyperbole can add commands to ace-window that replace the
+two-step drag emulation key described above with a single key sequence
+that does not require moving to the drag target window since it is
+specified by ID as part of the command.
 
-To enable this feature, in your Emacs initialization file after
-Hyperbole is initialized, if you do not have a key bound for
-@code{ace-window}, then call: @code{(hkey-ace-window-setup \"\M-o\")}
-to bind it to @bkbd{M-o}, replacing Hyperbole's
-default @code{hkey-operate} command there (because ace-window can emulate
-the drags performed by @code{hkey-operate}).  If you already have a key bound
-for @code{ace-window}, then just ensure it is initialized by calling
+To enable this feature, in your Emacs initialization file after Hyperbole
+is initialized, if you do not have a key bound for @code{ace-window},
+then call: @code{(hkey-ace-window-setup \"\M-o\")} to bind it to
+@bkbd{M-o}, replacing Hyperbole's default @code{hkey-operate} command
+there (because ace-window can emulate the drags performed by
+@code{hkey-operate}).  If you already have a key bound for
+@code{ace-window}, then just ensure it is initialized by calling
 @code{(hkey-ace-window-setup)} without a key argument.
 
 @kindex M-o i <window-id>
@@ -1815,24 +1822,28 @@ selected window's buffer with that of another window, use @bkbd{M-o m
 <id-of-window-to-swap-with>}.
 
 @kindex M-o w <window-id>
+@kindex M-1 M-o w <window-id>
 @cindex create link button
 @cindex link button
-@findex hui:ebut-link-directly
-And finally, to create an explicit link between the selected window
-and another window, use @bkbd{M-o w <id-of-referent-window>}.
-@code{hui:ebut-link-directly} determines the link type by using
-the referent context.  
-
+@findex hui:ibut-link-directly
+And finally, to create a new, @emph{unnamed} implicit link in the
+selected window that refers to the location in the other window, use
+@bkbd{M-o w <referent-window-id>}.  This executes @code{hui:ibut-link-directly}
+which determines the link type by using the referent context.  To create
+a @emph{named} implicit link button in the selected window, use
+@bkbd{M-1 M-o w <window>}.  It prompts for the name and then links to
+the referent window location.  If you highlight a region
+before invoking this, Hyperbole will use that as the name for the
+implicit button.
 
 @kindex C-u M-o w <window-id>
-@kindex M-1 M-o w <window-id>
-@findex hui:ibut-link-directly
-@bkbd{C-u M-o w <window>} creates a new, @emph{unnamed} implicit
-button in the selected (current) window that links to point in the
-referent <window>.  @code{hui:ibut-link-directly} determines the link
-type by using the referent context.  @bkbd{M-1 M-o w <window>} creates
-a new, @emph{named} implicit button in the selected (current) window
-that links to point in the referent <window>.
+@findex hui:ebut-link-directly
+To create an explicit button the same way, use @bkbd{C-u M-o w
+<window-id>}.  This executes @code{hui:ebut-link-directly}, prompts for
+any needed arguments, determines the link type by using the referent
+context and then creates the explicit button.  If you highlight a region
+before invoking this, Hyperbole will use that as the name for the
+explicit button.
 
 @kindex M-o t <window-id>
 @cindex item throw
@@ -1865,16 +1876,18 @@ replace the selected (current) window's buffer with that of <window>
 throw region, listing item at point, or current buffer to <window>
 
 @item M-o w <window>
-window link, create a new @emph{explicit button} in the selected
+window link, create a new @emph{unnamed implicit button} in the selected
 (current) window, linking to point in the referent <window>.
 
-@item C-u M-o w <window>
-window link, create a new, @emph{unnamed implicit button} in the
-selected (current) window, linking to point in the referent <window>.
-
 @item M-1 M-o w <window>
-window link, create a new, @emph{named implicit button} in the
-selected (current) window, linking to point in the referent <window>.
+window link, create a new @emph{named implicit button} in the selected
+(current) window, linking to point in the referent <window>.  Use region,
+if any, as the button name.
+
+@item C-u M-o w <window>
+window link, create a new @emph{explicit button} in the selected
+(current) window, linking to point in the referent <window>.  Use region,
+if any, as the button name.
 @end table
 
 @c -------
@@ -2116,10 +2129,11 @@ If you have exactly two Emacs windows in your current frame or exactly
 two windows visible across two Emacs frames, then the link referent will
 be to the point in the other, non-selected window.
 
-With more than two windows on screen, Hyperbole will prompt you to choose
-the referent window and its associated point to which to link.  If the
-Ace Window package is installed and active, this will be used to choose
-the window; otherwise, you will be prompted to select it by mouse.
+With more than two windows on screen, Hyperbole will prompt you to
+choose the referent window and its associated point to which to link.
+If the Ace Window package is installed and active, this will be used
+to choose the window via keyboard; otherwise, you will be prompted to
+select it by mouse.
 
 Global buttons are actually explicit buttons stored at the end of your
 personal button file, @pxref{Button Files}.  You can always go into that
@@ -2202,8 +2216,8 @@ C-h h i l} will additionally prompt to add a name or rename the button
 at point.  With more than two windows, Hyperbole will prompt you to
 choose the referent window and its associated point to which to link.
 If the Ace Window package is installed and active, this will be used
-to choose the window; otherwise, you will be prompted to select it by
-mouse.
+to choose the window via keyboard; otherwise, you will be prompted to
+select it by mouse.
 
 @cindex activating implicit button
 @cindex menu item, Ibut/Act
@@ -2302,7 +2316,7 @@ If on an Org todo keyword, cycle through the keywords in
 that set or if final done keyword, remove it.
 
 @item
-If on an Org agenda item, jump to the item for editing.
+If on an Org agenda view item, jump to the item for editing.
 
 @item
 Within a radio or internal target or a link to it, jump between
@@ -2345,7 +2359,7 @@ If on an Org todo keyword, move to the first todo keyword in
 the next set, if any.
 
 @item
-If on an Org mode link or agenda item, display Hyperbole
+If on an Org mode link or agenda view item, display Hyperbole
 context-sensitive help.
 
 @item
@@ -2498,6 +2512,14 @@ Jump to the source line associated with a debugger stack frame or
 breakpoint line.  This works with gdb, dbx, and xdb.  Such lines are
 recognized in any buffer.
 
+@findex ibtypes hib-python-traceback
+@cindex pdb
+@cindex python traceback
+@cindex python error
+@cindex source line
+@item hib-python-traceback
+Test for and jump to line referenced in Python pdb, traceback, or pytype error.
+
 @findex ibtypes grep-msg
 @cindex grep
 @cindex compiler error
@@ -2505,6 +2527,12 @@ recognized in any buffer.
 @item grep-msg
 Jump to the line associated with a grep or compilation error message.
 Messages are recognized in any buffer.
+
+@findex hyrolo-stuck-msg
+@cindex hyrolo error
+@item hyrolo-stuck-msg
+Jump to the position where a HyRolo search has become stuck from the error.
+Such errors are recognized in any buffer.
 
 @findex ibtypes ripgrep-msg
 @cindex grep
@@ -2855,11 +2883,12 @@ e.g. @file{::} represent the current directory, @file{.}.  Must have at
 least four paths within the variable value for this to work.
 
 @findex ibtypes hyperbole-run-test-definition
-@cindex edebug a test
+@cindex edebugging tests
 @cindex debugging tests
+@cindex executing tests
 @cindex running tests
 @cindex testing
-@cindex ert
+@cindex ert tests
 @cindex Emacs Regression Test framework
 @item hyperbole-run-test-definition
 With an Action Key press on the name in the first line of an ert test
@@ -2896,10 +2925,11 @@ For times when you need a cross between the two, with a universal
 button syntax and all button data stored in the button source file,
 there are @emph{action buttons}.
 
-@dfn{Action Buttons} are a form of implicit buttons that can execute
-any existing action types, Emacs Lisp functions or display the values
-of Emacs Lisp variables and constants.  Such buttons are delimited by
-angle brackets, < >, and come in three types:
+@cindex ert tests
+@dfn{Action Buttons} are a form of implicit buttons that can execute any
+existing action types, Emacs Lisp functions, Emacs Regression Tests (ERT
+tests) or display the values of Emacs Lisp variables and constants.  Such
+buttons are delimited by angle brackets, < >, and come in four types:
 
 @table @dfn
 @item action type invocations
@@ -2922,6 +2952,17 @@ Generally, such functions are invoked for their side-effects and their
 return value is silently ignored.  But if a function is a boolean
 predicate whose name ends in @samp{-p}, then the result is displayed
 in the minibuffer.
+
+@item test executions
+Each of these consists solely of the name of an ERT test defined with
+@code{ert-deftest} and surrounded by angle brackets, e.g.
+
+@example
+<hbut-tests-ibut-insert-kbd-key>
+@end example
+
+The above example runs a Hyperbole regression test when activated and
+shows the pass/fail result in a pop-up buffer.
 
 @item variable displays
 These consist of an Emacs Lisp variable name only.  They display
@@ -3495,9 +3536,10 @@ Creating explicit buttons is fun and easy.  You can always try them out
 immediately after creating them or can utilize the Assist Key to verify
 what buttons do.
 
-If you want to create an explicit link button to somewhere within an Emacs
-window, then simply drag with the Action Mouse Key from an editable buffer
-(outside of a draggable item) to the target buffer.
+If you want to create an explicit link button to somewhere within an
+Emacs window, then simply drag with the Assist Mouse Key from an
+editable buffer (outside of a draggable item) to the target buffer.
+Note, the same Action Mouse Key drag creates an implicit button.
 
 Alternatively, the Hyperbole minibuffer menu item, Ebut/Create, will
 create any type of explicit button, but requires a few steps.
@@ -3506,16 +3548,14 @@ The next two subsections examine explicit button creation and
 modification in detail.
 
 @menu
-* By Menu::                     Creation Via Menus
+* By Menu::
 * By Link::                     Creation Via Buffer Link
-* By Dragging::                 Creation Via Action Key Drags
+* By Dragging::                 Creation Via Assist Key Drags
 @end menu
 
 @node By Menu, By Link, Creation, Creation
 @subsubsection Creation Via Menus
 
-@cindex link creation
-@cindex creating explicit links
 @cindex explicit button creation
 @cindex menu, Ebut
 @cindex menu item, Explicit-Button
@@ -3552,6 +3592,8 @@ delimited label within a buffer as the same button.
 @node By Link, By Dragging, By Menu, Creation
 @subsubsection Creation Via Buffer Link
 
+@cindex link creation
+@cindex creating explicit links
 @cindex explicit link creation
 @cindex menu item, Ebut/Link
 @cindex source point
@@ -3570,58 +3612,48 @@ or create a new one.
 With more than two windows on screen, Hyperbole will prompt you to choose
 the referent window and its associated point to which to link.  If the
 Ace Window package is installed and active, this will be used to choose
-the window; otherwise, you will be prompted to select it by mouse.
+the window via keyboard; otherwise, you will be prompted to select
+it by mouse.
 
 @node By Dragging,  , By Link, Creation
-@subsubsection Creation Via Action Key Drags
+@subsubsection Creation Via Assist Key Drags
 
-@cindex mouse drag, explicit link creation
-@cindex drag
-@cindex Assist Key drag
-Alternatively, to create an explicit link button to something
-displayed within an Emacs window (the referent), simply drag with the
-Assist (not the Action) Mouse Key depressed from an editable source
-window to another window with the desired link referent and then
-release.  The drag must start outside of a draggable item,
-@pxref{Displaying Items}.  Hyperbole will either automatically select
-the button type based on the referent context or will prompt you to
-select from one of a few possible link types.
-
-@cindex explicit button creation
-@cindex link creation
 @cindex creating explicit links
+@cindex link creation
+@cindex mouse drag, explicit link creation
 @cindex mouse drag, link creation
 @cindex drag
-@cindex Action Key drag
-The most efficient way to create an explicit link button to something
-within an Emacs window is to use the Action Mouse Key to drag from an
-editable source window to another window with the desired link referent.
-The drag must start outside of a draggable item, @pxref{Displaying
-Items}.  Hyperbole will prompt for the button text label and then will
-either automatically select the button action type based on the referent
-context or will prompt you to select from one of a few possible link
-types.
+@cindex Assist Key drag
+Alternatively, to create an explicit link button to a referent
+displayed within an Emacs window, simply drag with the Assist (not the
+Action) Mouse Key depressed from an editable source window to another
+window with the desired link referent and then release.  The drag must
+start outside of a draggable item, @pxref{Displaying Items}.
+Hyperbole will either automatically select the button type based on
+the referent context or will prompt you to select from one of a few
+possible link types.
 
 In detail, you should split your current Emacs frame into two
 windows: one which contains the point at which you want a button to be
 inserted and another which shows the point to which you want to link.
-Depress the Action Mouse Key at the source point for the button (anywhere
+Depress the Assist Mouse Key at the source point for the button (anywhere
 but on a paired delimiter such as double quotes or parentheses).  Then
-drag to the other window and release the Action Mouse Key at the start
+drag to the other window and release the Assist Mouse Key at the start
 point of the link referent.  The process becomes quite simple with a
 little practice. (@xref{By Menu, Creation Via Menus}, for a more detailed
 explanation of the explicit button creation process).
 
 If a region was selected prior to the start of the drag, it is used as
-the button label, otherwise, you are prompted for the label.  Then
-Hyperbole uses the link referent context to determine the type of link to
-make.  If there are a few different types of links which are applicable
-from the context, you will be prompted with a list of the types.  Simply
-use the Action Key or the first capital letter of the link type to select
-one of the type names and to finish the link creation.  Hyperbole will
-then insert explicit button delimiters around the button label and will
-display a message in the minibuffer indicating the button label, its
-action/link type, and any arguments, notably the thing to which it links.
+the button label; otherwise, you are prompted for the label.
+Hyperbole uses the link referent context to determine the type of link
+to make.  If there are a few different types of links which are
+applicable from the context, you will be prompted with a list of the
+types.  Simply use the Action Key or the first capital letter of the
+link type to select one of the type names to finish the link
+creation.  Hyperbole will then insert explicit button delimiters
+around the button label and will display a message in the minibuffer
+indicating the button label, its action/link type, and any arguments,
+notably the thing to which it links.
 
 The following table shows the type of link that will be created based
 upon the referent context in which the Action Key is released.
@@ -5942,17 +5974,26 @@ tool.
 
 @cindex rolo file
 @cindex rolo entry
-HyRolo manages and searches rolo files.  A @dfn{rolo file} consists of
+@vindex hyrolo-file-list
+HyRolo manages and searches a list of rolo files stored in the
+@code{hyrolo-file-list} custom option.  A @dfn{rolo file} consists of
 an optional header that starts and ends with a line of equal signs (at
 least three equal signs starting at the beginning of a line), followed
-by zero or more rolo records which we call entries.  You must manually
-add a header to any rolo file if you want it to have one.  Rolo files
-may be Emacs outline files, Org files, Markdown files or Koutline files.
+by zero or more rolo records which we call entries.
 
-Rolo @dfn{entries} begin with optional space, followed by a delimiter of
-one or more special characters followed by another space.  Delimiters
-vary based on the type of file, for example level 3 entry delimiters
-look like this:
+@cindex Org mode
+@cindex Markdown mode
+@cindex Emacs Outline mode
+@cindex Koutline mode
+The first file in the list should be a user-specific hyrolo file,
+typically in the home directory and must have a suffix of either .org
+(Org mode) or .otl (Emacs Outline mode).  Other files in the list may
+use suffixes of .org, .otl, .md (Markdown mode) or .kotl (Koutline
+mode).
+
+HyRolo @dfn{entries} begin with a delimiter of one or more special
+characters followed by another space.  Delimiters vary based on the
+type of file, for example level 3 entry delimiters look like this:
 
 @example
 @group
@@ -5970,15 +6011,17 @@ in the case of Koutlines.
 
 Beyond this initial delimiter, entries are completely free-form text.
 It is best to use a "lastname, firstname" format, however, when adding
-contact entries into a rolo.  Then HyRolo will automatically keep your
-entries alphabetized as you enter them.  Then you can sort the entries
-if you ever need.  This ordering is what the rolo will use if you
-accept the default entry with which it prompts you when adding a new
-entry.
+contact entries into the first HyRolo file in your list.  Then HyRolo
+will automatically keep your entries alphabetized as you add them;
+HyRolo can also sort the entries if you ever need.  HyRolo will use
+this ordering if you accept the default entry with which it prompts
+you when adding a new entry.
 
+@vindex hyrolo-date-format
 @noindent
-Here is an example of a simple rolo file.  The date at the end is
-automatically added by HyRolo whenever a new record is added.
+Here is an example of a simple HyRolo file.  The date at the end is
+automatically added by HyRolo whenever a new record is added, unless
+@code{hyrolo-date-format} is set to the empty string.
 
 @example
 @group
@@ -6159,12 +6202,17 @@ logical operators.
 
 @example
 @group
-Operator Name   Number of Arguments    Description
+Operator Name   Num of Args   Description
 =====================================================================
-and             two or more            Match entries with all args
-or              two or more            Match entries with any args
-xor             two or more            Match entries with 1 arg only
-not             one                    Match entries without the arg
+and             two or more   Match entries with all str args
+or              two or more   Match entries with any str args
+xor             two or more   Match entries with exactly 1 str arg
+not             one           Match entries without the str arg
+
+r-and           two or more   Match entries with all regexp args
+r-or            two or more   Match entries with any regexp args
+r-xor           two or more   Match entries with exactly 1 regexp arg
+r-not           one           Match entries without the regexp arg
 =====================================================================
 @end group
 @end example
@@ -6188,9 +6236,22 @@ the 408 area code have been contacted and you want to see who else
 you should contact.
 
 @example
-(xor 408- client)
+(xor client 408- )
 @end example
 
+When using the regular expression operators, your operands are sent as
+regular expressions without the need to quote single words or
+special regular expression characters like '*' and '?'.  Use double
+quote marks to include a phrase or multi-word regular expression pattern
+to match.  For example:
+
+@example
+(r-and HyRolo "Red Buttons?")
+@end example
+
+@noindent
+would match entries that contain both "HyRolo" and either "Red Button" or
+"Red Buttons".
 
 @node HyRolo Keys, HyRolo Settings, HyRolo Searching, HyRolo
 @section   HyRolo Keys
@@ -6265,12 +6326,21 @@ will work.
 @cindex rolo, auto-expanding entries
 @cindex rolo, hiding entries
 @cindex rolo, showing entries
-Press @bkbd{s} to show (expand) the entry at point.  Use @bkbd{h} to hide
-(collapse) the entry.  Press @bkbd{a} to expand all entries in the
-buffer.  If an entry is collapsed/hidden, moving to any hidden part
-auto-expands it and then re-collapses it when point is moved to another
-entry (just like isearch).  A side-effect of this is that the @bkbd{h}
-hide entry subtree command now moves to the beginning of the entry.
+Press @bkbd{s} to show (expand) the entry at point if it is hidden
+(collapsed).  If point is on a file header, this will expand the header
+and show the entire set of matched entries for the file.  The @bkbd{h}
+does the reverse and hides entries.  Within file headers it hides the
+file from the end of the current line forward, so you can leave parts of
+the header displayed, if desired.  Press @bkbd{a} to expand all entries
+in the buffer across all matched files.
+
+@c If an entry is collapsed/hidden, moving to any hidden part auto-expands
+@c it and then re-collapses it when point is moved to another entry (just
+@c like isearch).
+
+Please note that to facilitate further use of movement by entry commands,
+the @bkbd{h} hide entry subtree command leaves point at the beginning of
+the entry (does not apply in file headers).
 
 @noindent
 Other keys are defined to help you work with matching entries.
@@ -6300,6 +6370,12 @@ move to the beginning of highest ancestor level.
 @kitem .
 Move to the end of the entry.  With a prefix argument,
 move to the end of the entire subtree.
+@kindex rolo, [
+@kitem [
+Move to previous file/buffer location header beginning with @@loc>.
+@kindex rolo, ]
+@kitem ]
+Move to next file/buffer location header beginning with @@loc>.
 @kindex rolo, <
 @kitem <
 Move to the beginning of the buffer.
@@ -6317,6 +6393,7 @@ Scroll forward a windowful.
 @kindex rolo, e
 @cindex rolo, editing
 @cindex datestamps
+@cindex date format
 @cindex rolo, datestamps
 @cindex customize, rolo datestamps
 @cindex menu item, Rolo/Toggle-Rolo-Dates
@@ -6324,14 +6401,15 @@ Scroll forward a windowful.
 @cindex customize, rolo additions
 @vindex hyrolo-edit-hook
 @vindex hyrolo-add-hook
-Use the @bkbd{e} key to edit the current entry within your personal
-rolo file.  A datestamp will automatically be added or updated at the end
-of the entry, unless this feature has been turned off via the
+@vindex hyrolo-date-format
+Use the @bkbd{e} key to jump to and edit the current line in its original
+source file.  If on a rolo entry and it contains a datestamp at its end,
+update the datestamp, unless this feature has been turned off via the
 Cust/Toggle-Rolo-Dates menu item.  The variable, @code{hyrolo-edit-hook},
-is evaluated after the update of the entry datestamp.  This allows
-programmed modification of the way rolo edits work.  The variable,
-@code{hyrolo-add-hook}, works the same way but is evaluated when a new
-entry is first added.
+performs this update.  This allows programmed modification of the way
+rolo edits work.  The variable, @code{hyrolo-add-hook}, works the same
+way but is evaluated when a new entry is first added.  The format of the
+datestamp is specified by @code{hyrolo-date-format}.
 
 @kindex rolo, q
 @cindex rolo, quitting
@@ -6474,9 +6552,9 @@ regular expression variable, @code{hyrolo-hdr-regexp}, whose default value
 is "^===".  This allows lines of all equal signs to visually separate
 matching entries retrieved from multiple files during a single search.
 
-@item hyrolo-entry-regexp
+@item hyrolo-hdr-and-entry-regexp
 The rolo entry start delimiter is given by the regular expression
-variable, @code{hyrolo-entry-regexp}, whose default value is "^\*+", i.e.@: 
+variable, @code{hyrolo-hdr-and-entry-regexp}, whose default value is "^\*+", i.e.@: 
 one or more asterisks at the beginning of a line.
 
 @item hyrolo-display-format-function
@@ -7122,17 +7200,21 @@ by the implicit button; that must be done separately.
 @vindex class, hbut
 @vindex file, hib-kbd.el
 By default, a request for help on an implicit button will display the
-button's attributes in the same manner as is done for explicit buttons.
-For some implicit button types, other forms of help will be more
-appropriate.  If an Emacs Lisp function is defined whose name is formed
-from the concatenation of the type name followed by @samp{:help}, e.g.@:
-@code{my-ibtype:help}, it is used as the assist-action whenever the
-Assist Key is pressed, to respond to requests for help on buttons of
-that type.  Any such function should take a single argument of an
-implicit button construct.  (This is what
+button's attributes in the same manner as is done for explicit
+buttons.  For some implicit button types, other forms of help will be
+more appropriate.  If an Emacs Lisp function is defined whose name is
+formed from the concatenation of the type name followed by
+@samp{:help}, e.g.@: @code{my-ibtype:help}, it is used as the
+assist-action whenever the Assist Key is pressed, to respond to
+requests for help on buttons of that type.  Any such function should
+take a single argument of an implicit button construct.  (This is what
 @code{(ibut:at-p)} returns when point is within an implicit button
-context).  The button may be queried for its attributes using
-functions from the @samp{hbut} and @samp{hattr} classes.  See
+context).  Remember that the standard help for buttons with custom
+help functions is still available with @bkbd{C-h A} for the Action Key
+and @bkbd{C-u C-h A} for the Assist Key.
+
+To programmatically query implicit buttons for their attributes, use
+the functions from the @samp{hbut} and @samp{hattr} classes.  See
 the @file{hib-kbd.el} file for an example of a custom help function.
 
 @node Explicit Button Technicalities, Encapsulating Systems, Creating Types, Developing with Hyperbole
@@ -7326,9 +7408,10 @@ if any emacs-related terms are unfamiliar to you.
 
 @item Ace Window
 Emacs extension package that labels windows with letters and allows
-quick selection or other operations on a specific window.  Hyperbole
-extends this with a number of additional commands like throw a buffer
-to a window or replace a windows's contents.  @xref{Keyboard Drags}.
+quick keyboard selection or other operations on a specific window.
+Hyperbole extends this with a number of additional commands like throw
+a buffer to a window or replace a windows's contents.  @xref{Keyboard
+Drags}.
 
 @item Action
 An executable behavior associated with a Hyperbole button.  @dfn{Links}
@@ -7520,6 +7603,18 @@ A button created and managed by Hyperbole, associated with a specific
 action type.  By default, explicit buttons are delimited like
 this @samp{<(fake button)>}.  Direct selection is used to operate upon
 an explicit button.
+
+@cindex flymake definition
+@findex flymake-minor-mode
+@findex flymake-diagnostics-buffer-mode
+@item Flymake
+Flymake is an Emacs library that lints your code in the background.
+It provides @code{flymake-minor-mode} for source buffers and
+@code{flymake-diagnostics-buffer-mode} for listing the linter issues
+for a given source buffer.  Hyperbole extends this library with Smart
+Key jump and display issue contexts as well as a key map of commands
+in source buffers to support removal of flymake issues without having
+to jump to the issue listing buffer.
 
 @item Frame
 An Emacs frame displays one or more Emacs windows and widgets
@@ -8637,11 +8732,11 @@ in @ref{HyControl}.
 Drag Operation: Keyboard emulation of the start and stop of mouse
 drags to invoke Smart Key actions.  This binding is made only if the
 key is not bound prior to initializing Hyperbole and if Emacs is run
-under a window system.  If the Ace Window package is loaded, then
-Ace Window commands are typically bound to @bkbd{M-o} instead.  Then
-@bkbd{M-o w} may be used to quickly create an explicit link button
-in the selected window that links to any other window chosen via the
-Ace Window prompt.
+under a window system.  If the Ace Window package is loaded, then Ace
+Window commands are typically bound to @bkbd{M-o} instead.  Then
+@bkbd{M-o w} may be used to quickly create an implicit link button in
+the selected window that links to a referent in any other window
+chosen via the Ace Window prompt.
 
 @cindex key binding, C-h h
 @kitem C-h h
@@ -9615,8 +9710,8 @@ Otherwise, if dragged from inside one window to another:
          See @code{hmouse-drag-item-mode-forms} for how to allow for draggable
          items in other modes.
      (2) Otherwise, creates a new link button at the drag start location,
-         linked to the drag end location.  Action Key creates an explicit button;
-         Assist Key creates an implicit button.
+         linked to the drag end location.  Action Key creates an implicit button;
+         Assist Key creates an explicit button.
 
          In Hyperbole versions prior to 9, Assist Key drags between windows would
          swap buffers.  In version 9 and above, start or end the drag between
@@ -9728,6 +9823,7 @@ If dragged from an Emacs window to outside of Emacs:
 * Smart Key - Ivy::
 * Smart Key - Treemacs::
 * Smart Key - Dired Sidebar Mode::
+* Smart Key - ERT Results Mode::
 * Smart Key - Emacs Pushbuttons::
 * Smart Key - Argument Completion::
 * Smart Key - ID Edit Mode::
@@ -9739,7 +9835,9 @@ If dragged from an Emacs window to outside of Emacs:
 * Smart Key - View Mode::
 * Smart Key - Helm Mode::
 * Smart Key - Delimited Things::
+* Smart Key - Occurrence Matches::
 * Smart Key - The Koutliner::
+* Smart Key - Flymake Mode::
 * Smart Key - RDB Mode::
 * Smart Key - Help Buffers::
 * Smart Key - Custom Mode::
@@ -9755,7 +9853,6 @@ If dragged from an Emacs window to outside of Emacs:
 * Smart Key - Objective-C Source Code::
 * Smart Key - Fortran Source Code::
 * Smart Key - Identifier Menu Mode ::
-* Smart Key - Occurrence Matches::
 * Smart Key - Calendar Mode::
 * Smart Key - Man Page Apropos::
 * Smart Key - Emacs Outline Mode::
@@ -9804,7 +9901,7 @@ When in an Org mode context and @code{hsys-org-enable-smart-keys} is non-nil:
      (1) If on an Org todo keyword, cycle through the keywords in
          that set or if final done keyword, remove it.
 
-     (2) If on an Org agenda item, jump to the item for editing.
+     (2) If on an Org agenda view item, jump to the item for editing.
 
      (3) Within a radio or internal target or a link to it, jump between
          the target and the first link to it, allowing two-way navigation.
@@ -9838,8 +9935,8 @@ When in an Org mode context and @code{hsys-org-enable-smart-keys} is non-nil:
      (1) If on an Org todo keyword, move to the first todo keyword in
          the next set, if any.
 
-     (2) If on an Org mode link, ID reference or agenda item, display Hyperbole
-         context-sensitive help.
+     (2) If on an Org mode link, ID reference or agenda view item, display
+         Hyperbole context-sensitive help.
 
      (3) On a Hyperbole button, perform the Assist Key function, generally
          showing help for the button.
@@ -9905,7 +10002,7 @@ When in a Treemacs file browser buffer:
 @end group
 @end format
 
-@node Smart Key - Dired Sidebar Mode, Smart Key - Emacs Pushbuttons, Smart Key - Treemacs, Smart Keyboard Keys
+@node Smart Key - Dired Sidebar Mode, Smart Key - ERT Results Mode, Smart Key - Treemacs, Smart Keyboard Keys
 @subsection Smart Key - Dired Sidebar Mode
 
 @cindex dired-sidebar-mode
@@ -9933,7 +10030,35 @@ When in a dired-sidebar buffer:
 @end group
 @end format
 
-@node Smart Key - Emacs Pushbuttons, Smart Key - Argument Completion, Smart Key - Dired Sidebar Mode, Smart Keyboard Keys
+@node Smart Key - ERT Results Mode, Smart Key - Emacs Pushbuttons, Smart Key - Dired Sidebar Mode, Smart Keyboard Keys
+@subsection Smart Key - ERT Results Mode
+
+@cindex ert-results-mode
+@cindex elisp testing
+@cindex ert
+@cindex regression testing
+@format
+@group
+When in an Emacs Regression Test (ERT) results buffer:
+  ACTION KEY
+     Filters @code{ert-results-mode} test results entries to those
+     matching the result status of the entry at point.  Does nothing
+     if there is no entry at point.
+
+     With point on any of the statistics lines in the top section of the
+     results buffer, does the following:
+       Selector: - toggles showing/hiding all test results
+       Passed:   - shows passed tests only
+       Failed:   - shows failed tests only
+       Skipped:  - shows skipped tests only
+       Total:    - shows all tests
+  ASSIST KEY
+     Displays help documentation for the @code{ert-results-mode} test at point,
+     if any.  Triggers an error if there is no test result at or before point."
+@end group
+@end format
+
+@node Smart Key - Emacs Pushbuttons, Smart Key - Argument Completion, Smart Key - ERT Results Mode, Smart Keyboard Keys
 @subsection Smart Key - Emacs Pushbuttons
 
 @format
@@ -10183,7 +10308,7 @@ If pressed within a buffer in helm major mode:
 @end group
 @end format
 
-@node Smart Key - Delimited Things, Smart Key - The Koutliner, Smart Key - Helm Mode, Smart Keyboard Keys
+@node Smart Key - Delimited Things, Smart Key - Occurrence Matches, Smart Key - Helm Mode, Smart Keyboard Keys
 @subsection Smart Key - Delimited Things
 
 @cindex thing
@@ -10224,8 +10349,18 @@ original location and yanks it at the new location.
 @end group
 @end format
 
+@node Smart Key - Occurrence Matches, Smart Key - The Koutliner, Smart Key - Delimited Things, Smart Keyboard Keys
+@subsection Smart Key - Occurrence Matches
 
-@node Smart Key - The Koutliner, Smart Key - RDB Mode, Smart Key - Delimited Things, Smart Keyboard Keys
+@format
+@group
+When pressed within an occur-mode, moccur-mode or amoccur-mode buffer:
+  ACTION KEY or ASSIST KEY
+     Jumps to the source buffer and line of the current occurrence.
+@end group
+@end format
+
+@node Smart Key - The Koutliner, Smart Key - Flymake Mode, Smart Key - Occurrence Matches, Smart Keyboard Keys
 @subsection Smart Key - The Koutliner
 @format
 @group
@@ -10258,7 +10393,96 @@ When pressed within a Hyperbole Koutliner buffer (kotl-mode):
 @end group
 @end format
 
-@node Smart Key - RDB Mode, Smart Key - Help Buffers, Smart Key - The Koutliner, Smart Keyboard Keys
+@node Smart Key - Flymake Mode, Smart Key - RDB Mode, Smart Key - The Koutliner, Smart Keyboard Keys
+@subsection Smart Key - Flymake Mode
+
+@cindex linter
+@cindex flymake
+@format
+@group
+When pressed within a line of the flymake linter list of issues buffer:
+  ACTION KEY
+     jumps to the source buffer line and point where the issue occurred
+  ASSIST KEY
+     displays/pulses, but does not jump to, the source buffer line and point
+     where the issue occurred
+@end group
+@end format
+
+@cindex flymake keymap
+The flymake library comes with only a pulldown menu and no other
+source buffer key bindings, forcing you to first display the list of
+issues and then find the issue of interest and jump to it.  Hyperbole
+adds a source buffer keymap on the @bkbd{C-c C-l} prefix that lets you
+navigate and remediate flymake issues exclusively in the source
+buffer.  It also makes it more convenient to jump to the issue listing
+buffer, to toggle @code{flymake-mode} on and off and to toggle whether
+the movement between issue commands wrap around at the end of the
+buffer or not.
+
+
+@table @asis
+@findex flymake-show-buffer-diagnostics
+@kindex C-c C-l d
+@kitem C-c C-l d
+@code{flymake-show-buffer-diagnostics} - Display list of flymake
+issues with this buffer.
+
+@findex hsys-flymake-display-this-or-next-issue
+@kindex C-c C-l g
+@kitem C-c C-l g
+@code{hsys-flymake-display-this-or-next-issue} - Display issue at
+point or if no issue there, move to next issue location and display
+it.
+
+@findex hsys-flymake-insert-issue-at-point)
+@kindex C-c C-l i
+@kitem C-c C-l i
+@code{hsys-flymake-insert-issue-at-point} - Insert issue at point on a
+separate new line below the current line so that its text can be
+utilized.
+
+@findex flymake-switch-to-log-buffer
+@kindex C-c C-l l
+@kitem C-c C-l l
+@code{flymake-switch-to-log-buffer} - For developers of new language flymake backends:
+Jump to a log of internal flymake processing.
+
+@findex flymake-goto-next-error
+@kindex C-c C-l n
+@kitem C-c C-l n
+@code{flymake-goto-next-error} - In source buffer, move to next
+flymake issue.  Wrap around at the end of the buffer if
+@code{flymake-wrap-around} is non-nil.  Repeat with @bkbd{n}.
+
+@findex flymake-goto-prev-error
+@kindex C-c C-l p
+@kitem C-c C-l p
+@code{flymake-goto-prev-error} - In source buffer, move to previous
+flymake issue.  Wrap around at the beginning of the buffer if
+@code{flymake-wrap-around} is non-nil.  Repeat with @bkbd{p}.
+
+@findex flymake-start
+@kindex C-c C-l s
+@kitem C-c C-l s
+@code{flymake-start} - Force a run of flymake to update issues with the
+current buffer.
+
+@cindex key binding, C-c C-l t
+@findex hsys-flymake-toggle
+@kindex C-c C-l t
+@kitem C-c C-l t
+@code{hsys-flymake-toggle} - Toggle whether minor mode
+@code{flymake-mode} is enabled in the current buffer.
+
+@findex hsys-flymake-toggle-wraparound
+@kindex C-c C-l w
+@kitem C-c C-l w
+@code{hsys-flymake-toggle-wraparound} - Toggle whether next and previous issue commands
+wrap around at the end and beginning of the buffer.  Repeat with @bkbd{w}.
+@end table
+
+@node Smart Key - RDB Mode, Smart Key - Help Buffers, Smart Key - Flymake Mode, Smart Keyboard Keys
 @subsection Smart Key - RDB Mode
 @cindex rdb-mode
 @cindex database
@@ -10626,7 +10850,7 @@ When pressed within a Fortran source code file:
 @end group
 @end format
 
-@node Smart Key - Identifier Menu Mode , Smart Key - Occurrence Matches, Smart Key - Fortran Source Code, Smart Keyboard Keys
+@node Smart Key - Identifier Menu Mode , Smart Key - Calendar Mode, Smart Key - Fortran Source Code, Smart Keyboard Keys
 @subsection Smart Key - Identifier Menu Mode 
 
 @format
@@ -10647,18 +10871,7 @@ When pressed on an identifier name after an identifier index has been generated:
 @end group
 @end format
 
-@node Smart Key - Occurrence Matches, Smart Key - Calendar Mode, Smart Key - Identifier Menu Mode , Smart Keyboard Keys
-@subsection Smart Key - Occurrence Matches
-
-@format
-@group
-When pressed within an occur-mode, moccur-mode or amoccur-mode buffer:
-  ACTION KEY or ASSIST KEY
-     Jumps to the source buffer and line of the current occurrence.
-@end group
-@end format
-
-@node Smart Key - Calendar Mode, Smart Key - Man Page Apropos, Smart Key - Occurrence Matches, Smart Keyboard Keys
+@node Smart Key - Calendar Mode, Smart Key - Man Page Apropos, Smart Key - Identifier Menu Mode , Smart Keyboard Keys
 @subsection Smart Key - Calendar Mode
 
 @format
@@ -11018,9 +11231,10 @@ If pressed on a World-Wide Web universal resource locator (URL):
 @cindex hyrolo matches
 @format
 @group
-If pressed within an entry in the HyRolo search results buffer:
+If pressed within the HyRolo search results buffer:
   ACTION KEY or ASSIST KEY
-     The entry is edited in the other window.
+     On an entry, the entry is displayed for editing in its source buffer.
+     On a file header, the file location is displayed for editing.
 @end group
 @end format
 

@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    28-Feb-21 at 23:26:00
-;; Last-Mod:     14-Nov-23 at 00:35:22 by Bob Weiner
+;; Last-Mod:     28-Dec-23 at 22:41:51 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -284,6 +284,100 @@
       (goto-char 3)
       (should-not (hpath:at-p))
       (should-not (hpath:is-p fn)))))
+
+(ert-deftest hpath--expand-no-wildcards-existing-path ()
+  "Verify expand with no wildcards gives path back."
+  (let ((file (make-temp-file "hypb")))
+    (unwind-protect
+        (should (string= (hpath:expand file) file))
+      (hy-delete-file-and-buffer file))))
+
+(ert-deftest hpath--expand-variations-non-existing-path ()
+  "Verify expand non existing paths."
+  (should (string= (hpath:expand "/not/existing/file") "/not/existing/file"))
+  (should-not (hpath:expand "/not/existing/file" t))
+  (should (string= (hpath:expand "/not/existing/file*" t) "/not/existing/file*"))
+  (should (string= (hpath:expand "/not/existing/file[]" t) "/not/existing/file[]"))
+  (should (string= (hpath:expand "/not/existing/file?" t) "/not/existing/file?")))
+
+(ert-deftest hpath--expand-elisp-variable ()
+  "Verify an elisp ${variable} is expanded."
+  (let ((hyperb-no-trailing-slash (substring hyperb:dir 0 -1)))
+    (should (string= (hpath:expand "${hyperb:dir}") hyperb-no-trailing-slash))
+    (should (string= (hpath:expand "${hyperb:dir}" t) hyperb-no-trailing-slash))
+    (should (string= (hpath:expand "${hyperb:dir}/notexisting") "${hyperb:dir}/notexisting"))
+    (should-not (hpath:expand "${hyperb:dir}/notexisting" t))))
+
+(ert-deftest hpath--expand-environment-variable ()
+  "Verify that a $VAR environment is expanded."
+  (let ((envvar "hpath_test"))
+    (unwind-protect
+        (progn
+          (setenv "HPATH" envvar)
+          (should (string= (hpath:expand "$HPATH") envvar))
+          ; Should next not work? See below where is works
+          ;(should (string= (hpath:expand "${HPATH}") envvar))
+          (should-not (hpath:expand "$HPATH" t))
+          (should-not (hpath:expand "${HPATH}" t)))
+      (setenv "HPATH")))
+  (let ((file (make-temp-file "hypb")))
+    (unwind-protect
+        (progn
+          (setenv "HPATH" file)
+          (should (string= (hpath:expand "$HPATH") file))
+          (should (string= (hpath:expand "${HPATH}") file))
+          (should (string= (hpath:expand "$HPATH" t) file))
+          (should (string= (hpath:expand "${HPATH}" t) file)))
+      (setenv "HPATH")
+      (hy-delete-file-and-buffer file))))
+
+(ert-deftest hpath--expand-auto-variable-alist ()
+  "Verify relative paths matching auto-variable-alist are expanded."
+  (let ((hpath:auto-variable-alist '(("\\.el" . load-path))))
+    (should (string= (hpath:expand "dired.el")
+		     (locate-library "dired.el")))
+    (should (string= (hpath:expand "dired.elc")
+		     (hpath:resolve "dired.elc")))))
+
+(ert-deftest hpath--resolve-auto-variable-alist ()
+  "Verify relative paths matching auto-variable-alist are resolved."
+  (let ((hpath:auto-variable-alist '(("\\.el" . load-path))))
+    (should (string= (hpath:resolve "dired.el")
+		     (locate-library "dired.el")))
+    (should (string= (hpath:resolve "dired.elc")
+		     (hpath:expand "dired.elc")))))
+
+(ert-deftest hpath--expand-list-return-a-list ()
+  "Verify expand-list returns a list of paths."
+  (let ((file (make-temp-file "hypb")))
+    (unwind-protect
+        (progn
+          (should (equal (hpath:expand-list '("/file1")) '("/file1")))
+          (should (equal (hpath:expand-list '("/file1") ".*" t) '()))
+          (should (equal (hpath:expand-list (list file)) (list file)))
+          (should (equal (hpath:expand-list (list file) ".*" t) (list file)))
+          (should (equal (hpath:expand-list '("/file1" "/file2")) '("/file1" "/file2")))
+          (should (equal (hpath:expand-list (list "/file1" file)) (list "/file1" file)))
+          (should (equal (hpath:expand-list (list "/file1" file) ".*" t) (list file))))
+      (hy-delete-file-and-buffer file))))
+
+(ert-deftest hpath--expand-list-match-regexp ()
+  "Verify expand-list selects files using match regexp."
+  (let* ((temp-dir (make-temp-file "hypb-dir" t))
+	 (file-prefix (expand-file-name "hypb" temp-dir))
+         (org1-file (make-temp-file file-prefix nil ".org"))
+         (org2-file (make-temp-file file-prefix nil ".org"))
+         (kotl-file (make-temp-file file-prefix nil ".kotl")))
+    (unwind-protect
+        (progn
+          (should (= (length (hpath:expand-list (list temp-dir))) 3))
+          (should (= (length (hpath:expand-list (list temp-dir) ".*")) 3))
+          (should (= (length (hpath:expand-list (list temp-dir) "\\.org$")) 2))
+          (should (= (length (hpath:expand-list (list temp-dir) "\\.kotl$")) 1))
+          (should (= (length (hpath:expand-list (list temp-dir) "\\.md$")) 0)))
+      (dolist (f (list org1-file org2-file kotl-file))
+        (hy-delete-file-and-buffer f))
+      (delete-directory temp-dir))))
 
 (provide 'hpath-tests)
 ;;; hpath-tests.el ends here

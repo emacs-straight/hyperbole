@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
-;; Last-Mod:     19-Nov-23 at 13:18:47 by Bob Weiner
+;; Last-Mod:     21-Jan-24 at 23:26:00 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1993-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1993-2024  Free Software Foundation, Inc.
 ;; See the "../HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -20,8 +20,8 @@
 ;;; ************************************************************************
 
 (eval-when-compile '(require 'klink)) ;; hibtypes.el loads this at run-time
-(eval-and-compile (mapc #'require '(cl-lib delsel hsettings hmail hypb kfile klabel
-				    outline org org-table kotl-orgtbl)))
+(eval-and-compile (mapc #'require '(cl-lib delsel hsettings hmail hypb hyrolo
+				    kfile klabel outline org org-table kotl-orgtbl)))
 
 ;;; ************************************************************************
 ;;; Public declarations
@@ -38,18 +38,11 @@
 ;;; Public variables
 ;;; ************************************************************************
 
-(defvar kotl-mode-map nil
-  "Keymap containing koutliner editing and viewing commands.")
-
-(defvar kotl-previous-mode nil
-  "Default mode of koutline buffers prior to invocation of kotl-mode.")
-
-(defcustom kotl-mode:shrink-region-flag nil
-  "*Non-nil means Koutliner commands automatically shrink the region.
-The region is shrinked within the visible bounds of a single cell
-before editing it.  The region then falls within the first
-visible cell that was part of the region or that followed it.
-Default value is nil."
+(defcustom kotl-mode:indent-tabs-mode t
+  "*Non-nil means {\\[kotl-mode:tab-command]} may insert literal tab characters.
+Tab characters are inserted rather than space characters when
+`kotl-mode:tab-flag' is non-nil.  Default value is t.  The value
+of this variable is local to each Koutline buffer."
   :type 'boolean
   :group 'hyperbole-koutliner)
 
@@ -61,6 +54,15 @@ during such operations, regardless of the value of this flag."
   :type 'boolean
   :group 'hyperbole-koutliner)
 
+(defcustom kotl-mode:shrink-region-flag nil
+  "*Non-nil means Koutliner commands automatically shrink the region.
+The region is shrinked within the visible bounds of a single cell
+before editing it.  The region then falls within the first
+visible cell that was part of the region or that followed it.
+Default value is nil."
+  :type 'boolean
+  :group 'hyperbole-koutliner)
+
 (defcustom kotl-mode:tab-flag nil
   "*Non-nil means {\\[kotl-mode:tab-command]} inserts a literal tab character and {\\[kotl-mode:untab-command]} deletes backward.
 Nil means {\\[kotl-mode:tab-command]} demotes the current tree and
@@ -68,13 +70,25 @@ Nil means {\\[kotl-mode:tab-command]} demotes the current tree and
   :type 'boolean
   :group 'hyperbole-koutliner)
 
-(defcustom kotl-mode:indent-tabs-mode t
-  "*Non-nil means {\\[kotl-mode:tab-command]} may insert literal tab characters.
-Tab characters are inserted rather than space characters when
-`kotl-mode:tab-flag' is non-nil.  Default value is t.  The value
-of this variable is local to each Koutline buffer."
-  :type 'boolean
-  :group 'hyperbole-koutliner)
+(defvar kotl-mode:to-valid-position-commands
+  '(kotl-mode:orgtbl-self-insert-command
+    kotl-mode:kill-or-copy-region
+    kotl-mode:kill-line
+    kotl-mode:kill-region
+    kotl-mode:kill-sentence
+    kotl-mode:yank
+    kotl-mode:yank-pop
+    orgtbl-self-insert-command
+    self-insert-command
+    yank-from-kill-ring
+    yank-rectangle)
+  "List of command symbols to move to a valid Koutline position before executing.")
+
+(defvar kotl-mode-map nil
+  "Keymap containing koutliner editing and viewing commands.")
+
+(defvar kotl-previous-mode nil
+  "Default mode of koutline buffers prior to invocation of kotl-mode.")
 
 ;; Define these newer Emacs variables if Emacs has not already done so.
 (defvar yank-window-start nil)
@@ -103,6 +117,9 @@ It provides the following keys:
   (interactive)
   (mapc #'make-local-variable
 	'(hyrolo-entry-regexp
+	  hyrolo-hdr-and-entry-regexp
+	  hyrolo-entry-group-number
+	  hyrolo-entry-trailing-space-group-number
 	  indent-line-function
 	  indent-region-function
 	  kotl-previous-mode
@@ -144,8 +161,14 @@ It provides the following keys:
   ;; from save-some-buffers, {C-x s}.
   (add-hook 'write-file-functions #'kotl-mode:update-buffer nil 'local)
   ;; Used by kimport.el functions.
-  (unless (and (boundp 'kotl-previous-mode) kotl-previous-mode)
+  (unless (and (boundp 'kotl-previous-mode) kotl-previous-mode
+	       (eq kotl-previous-mode #'kotl-mode)
+	       (not (string-prefix-p hyrolo-display-buffer (buffer-name))))
     (setq hyrolo-entry-regexp (concat "^" kview:outline-regexp)
+	  hyrolo-hdr-and-entry-regexp (concat hyrolo-hdr-prefix-regexp hyrolo-entry-regexp)
+	  hyrolo-entry-group-number 2
+	  hyrolo-entry-trailing-space-group-number 3
+
 	  kotl-previous-mode major-mode
 	  ;; Override orgtbl-mode keys with kotl-mode-specific ones.
 	  minor-mode-overriding-map-alist (list (cons 'orgtbl-mode
@@ -160,11 +183,10 @@ It provides the following keys:
 	  ;; Remove indication that buffer is narrowed.
 	  mode-line-format (copy-sequence mode-line-format)
 	  mode-line-format (set:remove "%n" mode-line-format)
-	  outline-level  #'kcell-view:level
-	  outline-regexp kview:outline-regexp))
+	  outline-level  #'hyrolo-outline-level
+	  outline-regexp hyrolo-hdr-and-entry-regexp))
   ;;
-  (when (fboundp 'add-to-invisibility-spec)
-    (add-to-invisibility-spec '(outline . t)))
+  (hypb:add-to-invisibility-spec '(outline . t))
   (setq indent-line-function 'kotl-mode:indent-line
 	indent-region-function 'kotl-mode:indent-region
 	outline-isearch-open-invisible-function 'kotl-mode:isearch-open-invisible
@@ -191,31 +213,38 @@ It provides the following keys:
 
   (setq auto-fill-function 'kfill:do-auto-fill)
 
-  ;; If buffer has not yet been formatted for editing, format it.
-  (let (version)
-    ;; Koutline file that has been loaded but not yet formatted for editing.
-    (if (setq version (kfile:is-p))
-        ;; Koutline file that has been loaded and formatted for editing.
-	(if (kview:is-p kotl-kview)
-	    ;; The buffer might have been widened for inspection, so narrow to cells
-	    ;; only.
-	    (kfile:narrow-to-kcells)
-	  (kfile:read
-	   (current-buffer)
-	   (and buffer-file-name (file-exists-p buffer-file-name))
-	   version)
-	  (kvspec:activate))
-      ;; New koutline buffer or a foreign text buffer that must be converted to
-      ;; koutline format.
-      (kfile:create (current-buffer))
-      (kvspec:activate)))
-  ;; We have been converting a buffer from a foreign format to a koutline.
-  ;; Now that it is converted, ensure that `kotl-previous-mode' is set to
-  ;; koutline.
-  (hyperb:with-suppressed-warnings ((free-vars kotl-previous-mode))
-    (setq kotl-previous-mode 'kotl-mode))
-  (run-hooks 'kotl-mode-hook)
-  (add-hook 'change-major-mode-hook #'kotl-mode:show-all nil t))
+  ;; May be a portion of a Koutline in a HyRolo match buffer; we set
+  ;; kotl-mode then to use its local variable settings but don't want
+  ;; to do any of the following formatting.
+  (if (string-prefix-p hyrolo-display-buffer (buffer-name))
+      (unless (and (boundp 'kotl-kview) (kview:is-p kotl-kview))
+	(kview:create (buffer-name))) ;; sets buffer-local `kotl-kview'
+    ;; If buffer has not yet been formatted for editing, format it.
+    (let (version)
+      ;; Koutline file that has been loaded but not yet formatted for editing.
+      (if (setq version (kfile:is-p))
+          ;; Koutline file that has been loaded and formatted for editing.
+	  (if (kview:is-p kotl-kview)
+	      ;; The buffer might have been widened for inspection, so narrow to cells
+	      ;; only.
+	      (kfile:narrow-to-kcells)
+	    (kfile:read
+	     (current-buffer)
+	     (and buffer-file-name (file-exists-p buffer-file-name))
+	     version)
+	    (kvspec:activate))
+	;; New koutline buffer or a foreign text buffer that must be converted to
+	;; koutline format.
+	(kfile:create (current-buffer))
+	(kvspec:activate)))
+    ;; We have been converting a buffer from a foreign format to a koutline.
+    ;; Now that it is converted, ensure that `kotl-previous-mode' is set to
+    ;; koutline.
+    (hyperb:with-suppressed-warnings ((free-vars kotl-previous-mode))
+      (setq kotl-previous-mode 'kotl-mode))
+    (run-mode-hooks 'kotl-mode-hook)
+    (unless (string-prefix-p hyrolo-display-buffer (buffer-name))
+      (add-hook 'change-major-mode-hook #'kotl-mode:show-all nil t))))
 
 ;;;###autoload
 (defun kotl-mode:example (&optional example replace-flag)
@@ -234,7 +263,7 @@ Hyperbole EXAMPLE."
   (interactive
    (list (when current-prefix-arg
 	   (read-file-name "Path to replace and save EXAMPLE.kotl file: "
-			   nil nil nil "EXAMPLE.kotl"))))
+			   "~/" nil nil "EXAMPLE.kotl"))))
   (when (and current-prefix-arg (called-interactively-p 'interactive))
     (setq replace-flag t))
   (let (personal-example
@@ -1348,8 +1377,8 @@ Leave point at original location but return the tree's new start point."
 More precisely, reinsert the most recent kill, which is the
 stretch of killed text most recently killed OR yanked.  Put point
 at the end, and set mark at the beginning without activating it.
-With just \\[universal-argument] as argument, put point at beginning, and mark at end.
-With argument N, reinsert the Nth most recent kill.
+With just \\[universal-argument] as argument, put point at beginning,
+and mark at end.  With argument N, reinsert the Nth most recent kill.
 
 When this command inserts text into the buffer, it honors the
 `yank-handled-properties' and `yank-excluded-properties'
@@ -3374,10 +3403,7 @@ newlines at end of tree."
 Mouse may have moved point outside of an editable area.
 `kotl-mode' adds this function to `pre-command-hook'."
   (when (and
-	 (memq this-command '(kotl-mode:orgtbl-self-insert-command
-			      ;; kotl-mode:self-insert-command
-			      orgtbl-self-insert-command
-			      self-insert-command))
+	 (memq this-command kotl-mode:to-valid-position-commands)
 	 (not (kview:valid-position-p))
 	 ;; Prevent repeatedly moving point to valid position when moving trees
 	 ;; (not (hyperb:stack-frame '(kcell-view:to-label-end)))
@@ -3407,8 +3433,14 @@ but always operates upon the current view."
   (kotl-mode:show-tree))
 ;; Adapted from outline-reveal-toggle-invisible; called by isearch.
 (defun kotl-mode:reveal-toggle-invisible (o hidep)
-  (if (not (eq major-mode 'kotl-mode))
-      (outline-reveal-toggle-invisible o hidep)
+  (if (not (derived-mode-p 'kotl-mode))
+      (if (and (eq (current-buffer) (get-buffer hyrolo-display-buffer))
+	       (eq (hyrolo-cache-get-major-mode-from-pos (point))
+		   'kotl-mode))
+	  (hyrolo-funcall-match
+	   (lambda () (outline-reveal-toggle-invisible o hidep))
+	   t)
+	(outline-reveal-toggle-invisible o hidep))
     (save-excursion
       (goto-char (overlay-start o))
       (if hidep
@@ -3458,36 +3490,42 @@ but always operates upon the current view."
 		9999
 	      (current-column)))))
 
-(defun kotl-mode:to-visible-position (&optional backward-p)
+(defun kotl-mode:to-visible-position (&optional backward-flag)
   "Move point to nearest visible and editable position within current koutline.
-With optional BACKWARD-P, move backward if possible to get to valid position."
+With optional BACKWARD-FLAG, move backward if possible to get to valid position."
   ;; Empty, visible cell
   (unless (and (kotl-mode:bocp) (kotl-mode:eocp) (not (kcell-view:invisible-p (point))))
-    (if (if backward-p
+    (if (if backward-flag
 	    (invisible-p (1- (point)))
 	  (invisible-p (point)))
-	(goto-char (if backward-p
+	(goto-char (if backward-flag
 		       (kview:previous-visible-point)
 		     (kview:first-visible-point))))
-    (kotl-mode:to-valid-position backward-p)))
+    (kotl-mode:to-valid-position backward-flag)))
 
 ;;;###autoload
-(defun kotl-mode:to-valid-position (&optional backward-p)
+(defun kotl-mode:to-valid-position (&optional backward-flag)
   "Move point to the nearest editable position within the current koutline view.
-With optional BACKWARD-P, move backward if possible to get to valid position."
+With optional BACKWARD-FLAG, move backward if possible to get to valid position."
   (unless (kview:valid-position-p)
     (let ((lbl-sep-len (kview:label-separator-length kotl-kview)))
-      (cond ((kotl-mode:bobp)
-	     (goto-char (kcell-view:start nil lbl-sep-len)))
-	    ((kotl-mode:eobp)
-	     (skip-chars-backward "\n\r"))
-	    (t (when (bolp)
-		 (if backward-p
-		     (skip-chars-backward "\n\r")
-		   (skip-chars-forward "\n\r")))
-	       (let ((indent (kcell-view:indent nil lbl-sep-len)))
-		 (when (< (current-column) indent)
-		   (move-to-column indent))))))))
+      (condition-case ()
+	  (cond ((kotl-mode:bobp)
+		 (goto-char (kcell-view:start nil lbl-sep-len)))
+		((kotl-mode:eobp)
+		 (skip-chars-backward "\n\r"))
+		(t (when (bolp)
+		     (if backward-flag
+			 (skip-chars-backward "\n\r")
+		       (skip-chars-forward "\n\r")))
+		   (let ((indent (kcell-view:indent nil lbl-sep-len)))
+		     (when (< (current-column) indent)
+		       (move-to-column indent)))))
+	(error
+	 ;; May be on a file header in *HyRolo* match buffer; then
+	 ;; move to next cell
+	 (unless backward-flag
+	   (kcell-view:next nil lbl-sep-len)))))))
 
 (defun kotl-mode:transpose-lines-internal (start end)
   "Transpose lines at START and END markers within an outline.

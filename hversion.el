@@ -4,7 +4,7 @@
 ;; Maintainer:   Bob Weiner, Mats Lidell
 ;;
 ;; Orig-Date:     1-Jan-94
-;; Last-Mod:     30-Oct-23 at 23:49:10 by Mats Lidell
+;; Last-Mod:     19-Feb-24 at 12:31:39 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -35,7 +35,7 @@
 ;;; Public variables
 ;;; ************************************************************************
 
-(defconst hyperb:version "8.0.1pre" "GNU Hyperbole revision number.")
+(defconst hyperb:version "8.0.2pre" "GNU Hyperbole revision number.")
 
 (defvar hyperb:mouse-buttons
   (if (or (and hyperb:microsoft-os-p (not (memq window-system '(w32 w64 x))))
@@ -58,9 +58,10 @@ your specific mouse.")
 ;; Called in hyperbole.el.
 (defun hyperb:stack-frame (function-list &optional debug-flag)
   "Return the nearest Elisp stack frame that called a function from FUNCTION-LIST.
-Return nil if there is no match.  FUNCTION-LIST entries must be symbols.
-If FUNCTION-LIST contains \\='load, \\='autoload or \\='require, detect autoloads
-not visible within the Lisp level stack frames.
+Return nil if there is no match.  FUNCTION-LIST entries must be
+symbols.  If FUNCTION-LIST contains \\='load, \\='autoload or
+\\='require, detect autoloads not visible within the Lisp level
+stack frames.
 
 With optional DEBUG-FLAG non-nil, if no matching frame is found, return list
 of stack frames (from innermost to outermost)."
@@ -98,7 +99,8 @@ of stack frames (from innermost to outermost)."
 
 (defun hyperb:window-sys-term (&optional frame)
   "Return first part of the term-type if running under a window system, else nil.
-Where a part in the term-type is delimited by a `-' or  an `_'."
+Where a part in the term-type is delimited by a `-' or  an `_'.
+FRAME defaults to the selected frame."
   (unless frame (setq frame (selected-frame)))
   (let* ((display-type window-system)
 	 (term (cond ((or (memq display-type '(x gtk mswindows win32 w32 ns dps pm))

@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     6-Oct-91 at 03:42:38
-;; Last-Mod:     30-Nov-23 at 11:18:54 by Bob Weiner
+;; Last-Mod:     18-Feb-24 at 23:50:41 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -19,7 +19,9 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
-(eval-and-compile (mapc #'require '(compile hversion hact locate cl-lib)))
+;; Load Org here for `org-fold-show-all'.
+(eval-and-compile (mapc #'require '(compile hversion hact locate
+				    cl-lib org package)))
 
 ;;; ************************************************************************
 ;;; Public declarations
@@ -117,6 +119,25 @@ It must end with a space."
 ;;; ************************************************************************
 ;;; Public functions
 ;;; ************************************************************************
+
+;; Adapted from "subr.el" but doesn't add if ELEMENT already exists
+;; Used in `kotl-mode', so autoload.
+;;;###autoload
+(defun hypb:add-to-invisibility-spec (element)
+  "Add ELEMENT to `buffer-invisibility-spec'.
+See documentation for `buffer-invisibility-spec' for the kind of elements
+that can be added.
+
+If `buffer-invisibility-spec' isn't a list before calling this
+function, `buffer-invisibility-spec' will afterwards be a list
+with the value `(t ELEMENT)'.  This means that if text exists
+that invisibility values that aren't either t or ELEMENT, that
+text will become visible."
+  (if (eq buffer-invisibility-spec t)
+      (setq buffer-invisibility-spec (list t)))
+  (unless (member element buffer-invisibility-spec)
+    (setq buffer-invisibility-spec
+	  (cons element buffer-invisibility-spec))))
 
 ;;;###autoload
 (defun hypb:activate-interaction-log-mode ()
@@ -358,9 +379,11 @@ Use optional OUT-BUF if present, else the current buffer."
       (load "hbut.el"))
   (setq debug-on-error t))
 
-;; Copied from eww.el so as to not require that package.
-(defun hypb:decode-url (string)
-  (let* ((binary (url-unhex-string string))
+;; Copied from eww.el, eww-decode-url-file-name, so as to not require
+;; that package.
+(defun hypb:decode-url (url-file-name)
+  "Decode a URL-FILE-NAME."
+  (let* ((binary (url-unhex-string url-file-name))
          (decoded
           (decode-coding-string
            binary
@@ -381,7 +404,7 @@ Use optional OUT-BUF if present, else the current buffer."
       ;; If we can't encode the decoded file name (due to language
       ;; environment settings), then we return the original, hexified
       ;; string.
-      string)))
+      url-file-name)))
 
 ;; Similar keyboard macro to next function, but less flexible: {C-x 1 M-o F M-o a C-x b *scratch* RET M-< M-o s C-@ C-M-h M-o t a C-u C-@ C-u C-@ M-o a C-M-p}
 
@@ -441,7 +464,9 @@ This will install the Emacs devdocs package if not yet installed."
       (concat "@" dname))))
 
 (defun hypb:error (&rest args)
-  "Signal an error typically to be caught by `hyperbole'."
+  "Signal an error typically to be caught by `hyperbole'.
+The error message is formatted passing the rest of the ARGS to
+the `format' function."
   (let ((msg (if (< (length args) 2)
 		 (car args)
 	       (apply 'format (cons (car args)
@@ -542,7 +567,7 @@ Use the current syntax table or optional SYNTAX-TABLE."
   (aref (or syntax-table (syntax-table)) char))
 
 (defun hypb:glob-to-regexp (str)
-  "Convert any file glob syntax to Emacs regexp syntax."
+  "Convert any file glob syntax in STR to Emacs regexp syntax."
   (when (stringp str)
     (setq str (replace-regexp-in-string "\\`\\*" ".*" str nil t)
 	  str (replace-regexp-in-string "\\([^\\.]\\)\\*" "\\1.*" str))
@@ -633,9 +658,9 @@ Resolves autoloadable function symbols properly."
 
 (defun hypb:insert-region (buffer start end invisible-flag)
   "Insert into BUFFER the contents of the region from START to END.
-Contents is fetch from within the current buffer.
-INVISIBLE-FLAG, if non-nil, means invisible text in an outline
-region is copied, otherwise, it is omitted."
+Contents come from the current buffer.  INVISIBLE-FLAG, if
+non-nil, means invisible text in an outline region is copied,
+otherwise, it is omitted."
   (if invisible-flag
       ;; Skip hidden blank lines between cells but include hidden outline text.
       (while (< start end)
@@ -793,6 +818,32 @@ PACKAGE-NAME may be a symbol or a string."
       (keyboard-quit)))
   (require package-name))
 
+;; Adapted from cl--do-remf in "cl-extra.el" but uses 'equal' for comparisons.
+;;;###autoload
+(defun hypb:do-remove-from-plist (plist name)
+  "Remove from property list PLIST a NAME string."
+  (let ((p (cdr plist)))
+    ;; Can't use `plist-member' here because it goes to the cons-cell
+    ;; of NAME and we need the one before.
+    (while (and (cdr p) (not (equal (cadr p) name)))
+      (setq p (cddr p)))
+    (and (cdr p) (progn (setcdr p (cdddr p)) t))))
+
+;; Adapted from cl-remf in "cl-macs.el" but uses 'equal' for comparisons.
+;;;###autoload
+(defmacro hypb:remove-from-plist (place name)
+  "Remove from property list PLACE a NAME string.
+PLACE may be a symbol, or any generalized variable allowed by
+`setf'.  The form generated by the macro returns true if NAME was
+found and removed, nil otherwise."
+  (declare (debug (place form)))
+  (gv-letplace (tval setter) place
+    (macroexp-let2 macroexp-copyable-p tname name
+      `(if (equal ,tname (car ,tval))
+           (progn ,(funcall setter `(cddr ,tval))
+                  t)
+         (hypb:do-remove-from-plist ,tval ,tname)))))
+
 (defun hypb:remove-lines (regexp)
   "Remove lines containing match for REGEXP.
 Apply within an active region or to the end of buffer."
@@ -822,7 +873,7 @@ Removes any trailing newline at the end of the output."
   "Recursively grep with symbol at point or PATTERN.
 Grep over all non-backup and non-autosave files in the current
 directory tree.  If in an Emacs Lisp mode buffer and no optional
-PREFIX-ARG is given, limit search to only .el and .el.gz files."
+PREFX-ARG is given, limit search to only .el and .el.gz files."
   (interactive (list (if (and (not current-prefix-arg) (equal (buffer-name) "*Locate*"))
 			 (read-string "Grep files listed here for: ")
 		       (let ((default (symbol-at-point)))
@@ -881,7 +932,7 @@ Set in the current syntax table or optional SYNTAX-TABLE.  Return
 the RAW-DESCRIPTOR.  Use the `syntax-after' function to retrieve
 the raw descriptor for a buffer position.
 
-Similar to modify-syntax-entry but uses a raw descriptor
+Similar to `modify-syntax-entry' but uses a raw descriptor
 previously extracted from a syntax table to set the value rather
 than a string.
 
@@ -1021,17 +1072,44 @@ If FILE is not an absolute path, expand it relative to `hyperb:dir'."
     (error "(hypb:display-file-with-logo): 'file' must be a string, not '%s'" file))
   (unless (file-name-absolute-p file)
     (setq file (expand-file-name file hyperb:dir)))
-  (let ((existing-buf (when (stringp file) (get-file-buffer file))))
-    ;; A stub for this function is defined in hversion.el when not running in InfoDock.
-    (id-browse-file file)
+  (let ((existing-buf (when (stringp file) (get-file-buffer file)))
+	(hsys-org-enable-smart-keys hsys-org-enable-smart-keys))
+
+    ;; Ensure Smart Keys do not defer to Org mode when running tests noninteractively
+    (when noninteractive
+      (setq hsys-org-enable-smart-keys t))
+
+    (when (and existing-buf noninteractive)
+      ;; Likely are running tests when running non-interactively, so
+      ;; kill existing buffer, so each test run starts from scratch
+      ;; and is consistent.  Trigger an error if buffer has been
+      ;; modified.
+      (when (buffer-modified-p existing-buf)
+	(error "(hypb:display-file-with-logo): Attempt to kill modified buffer: %s" existing-buf))
+      (when (kill-buffer existing-buf)
+	(setq existing-buf nil)))
+
+    ;; A stub for the `id-browse-file' function is defined in
+    ;; "hversion.el" when not running in InfoDock.
+    (if (eq (symbol-function #'id-browse-file) #'view-file)
+	(find-file file)
+      ;; Running under InfoDock
+      (id-browse-file file))
+
     (unless existing-buf
       (let ((buffer-read-only))
 	(hypb:insert-hyperbole-banner))
       (goto-char (point-min))
-      (skip-syntax-forward "-")
       (set-window-start (selected-window) 1)
       (set-buffer-modified-p nil)
+      (org-mode)
+      (setq-local org-cycle-global-at-bob t)
       (view-mode)
+      ;; Ensure no initial folding of the buffer, possibly from a hook
+      (with-suppressed-warnings ((obsolete org-show-all))
+        (if (fboundp 'org-fold-show-all)
+	    (org-fold-show-all)
+	  (org-show-all)))
       ;; On some versions of Emacs like Emacs28, need a slight delay
       ;; for file loading before searches will work properly.
       ;; Otherwise, "test/demo-tests.el" may fail.
@@ -1076,7 +1154,7 @@ Without file, the banner is prepended to the current buffer."
 	(insert "\n")
 	(insert-image hyperbole-banner)
 	(insert "\n")
-	(setq button (make-button (- (point) 3) (- (point) 2) :type 'hyperbole-banner))
+	(setq button (make-button (- (point) 2) (- (point) 1) :type 'hyperbole-banner))
 	(button-put button 'help-echo (concat "Click to visit " hypb:home-page))
 	(button-put button 'action #'hypb:browse-home-page)
 	(button-put button 'face 'default)

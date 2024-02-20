@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    19-Sep-91 at 20:45:31
-;; Last-Mod:     25-Nov-23 at 17:18:25 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 20:15:45 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2023 Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024 Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -76,6 +76,7 @@
 (declare-function symtable:add "hact")
 
 (declare-function hyrolo-get-file-list "hyrolo")
+(declare-function ert-test-boundp "ert")
 
 ;;; ************************************************************************
 ;;; Public implicit button types
@@ -86,6 +87,10 @@
 ;; Don't use require below here for any libraries with ibtypes in
 ;; them.  Use load instead to ensure are reloaded when resetting
 ;; ibtype priorities.
+
+;;; ========================================================================
+;;; Jumps to source line from Python traceback lines
+;;; ========================================================================
 
 (defib python-tb-previous-line ()
   "Move to prior line with potential Python line ref.
@@ -338,6 +343,33 @@ in all buffers."
         (hact 'mail-other-window nil address)))))
 
 ;;; ========================================================================
+;;; Handles internal references within an annotated bibliography, delimiters=[]
+;;; ========================================================================
+
+(defib annot-bib ()
+  "Display annotated bibliography entries referenced internally.
+References must be delimited by square brackets, must begin with a word
+constituent character, not contain @ or # characters, must not be
+in buffers whose names begin with a space or asterisk character, must
+not be in a programming mode, Markdown or Org buffer and must have an
+attached file."
+  (and (not (bolp))
+       buffer-file-name
+       (let ((chr (aref (buffer-name) 0)))
+         (not (or (eq chr ?\ ) (eq chr ?*))))
+       (not (apply #'derived-mode-p '(prog-mode c-mode objc-mode c++-mode java-mode markdown-mode org-mode)))
+       (let ((ref (hattr:get 'hbut:current 'lbl-key))
+	     (lbl-start (hattr:get 'hbut:current 'lbl-start)))
+         (and ref
+	      lbl-start
+	      (eq ?w (char-syntax (aref ref 0)))
+              (not (string-match "[#@]" ref))
+	      (save-excursion
+		(goto-char lbl-start)
+		(ibut:label-p t "[" "]" t))
+              (hact 'annot-bib ref)))))
+
+;;; ========================================================================
 ;;; Follows Org links that are in non-Org mode buffers
 ;;; ========================================================================
 
@@ -360,33 +392,6 @@ handle any links they recognize first."
       (when start-end
         (hsys-org-set-ibut-label start-end)
         (hact #'org-open-at-point-global)))))
-
-;;; ========================================================================
-;;; Handles internal references within an annotated bibliography, delimiters=[]
-;;; ========================================================================
-
-(defib annot-bib ()
-  "Display annotated bibliography entries referenced internally.
-References must be delimited by square brackets, must begin with a word
-constituent character, not contain @ or # characters, must not be
-in buffers whose names begin with a space or asterisk character, must
-not be in a programming mode, Markdown or Org buffers and must have an
-attached file."
-  (and (not (bolp))
-       buffer-file-name
-       (let ((chr (aref (buffer-name) 0)))
-         (not (or (eq chr ?\ ) (eq chr ?*))))
-       (not (apply #'derived-mode-p '(prog-mode c-mode objc-mode c++-mode java-mode markdown-mode org-mode)))
-       (let ((ref (hattr:get 'hbut:current 'lbl-key))
-	     (lbl-start (hattr:get 'hbut:current 'lbl-start)))
-         (and ref
-	      lbl-start
-	      (eq ?w (char-syntax (aref ref 0)))
-              (not (string-match "[#@]" ref))
-	      (save-excursion
-		(goto-char lbl-start)
-		(ibut:label-p t "[" "]" t))
-              (hact 'annot-bib ref)))))
 
 ;;; ========================================================================
 ;;; Displays in-file Markdown link referents.
@@ -623,11 +628,12 @@ anything."
   "Jump to the text file section referenced by a table of contents entry at point.
 Buffer must be in a text mode or must contain DEMO, README or
 TUTORIAL and there must be a `Table of Contents' or `Contents'
-label on a line by itself (it may begin with an asterisk),
-preceding the table of contents.  Each toc entry must begin with
-some whitespace followed by one or more asterisk characters.
-Each section header linked to by the toc must start with one or
-more asterisk characters at the very beginning of the line."
+label on a line by itself (it optionally may begin with an
+asterisk), preceding the table of contents.  Each toc entry must
+begin with optional whitespace followed by one or more asterisks.
+Each section header linked to by the toc must start with optional
+whitespace and then one or more asterisks at the beginning of the
+line."
   (let (section)
     (when (and (or (derived-mode-p 'text-mode)
 		   (string-match "DEMO\\|README\\|TUTORIAL" (buffer-name)))
@@ -637,7 +643,7 @@ more asterisk characters at the very beginning of the line."
                (save-excursion
                  (beginning-of-line)
                  ;; Entry line within a TOC
-                 (when (and (or 
+                 (when (and (or
 			     ;; Next line is typically in RFCs,
 			     ;; e.g. "1.1.  Scope ..... 1"
 			     (looking-at "^[ \t]*\\([0-9.]+\\([ \t]+[^ \t\n\r]+\\)+\\) \\.+")
@@ -869,7 +875,7 @@ See `hpath:find' function documentation for special file display options."
 
 ;;; ========================================================================
 ;;; Jumps to source line associated with ipython, ripgrep, grep or
-;;; compilation errors.
+;;; compilation errors or HyRolo stuck position error messages.
 ;;; ========================================================================
 
 (defib ipython-stack-frame ()
@@ -960,6 +966,23 @@ than a helm completion buffer)."
                 (ibut:label-set but-label)
                 (hact 'link-to-file-line file line-num)))))))))
 
+(defib hyrolo-stuck-msg ()
+  "Jump to the position where a HyRolo search has become stuck from the error.
+Such errors are recognized in any buffer (other than a helm completion
+buffer)."
+  (unless (derived-mode-p 'helm-major-mode)
+    (save-excursion
+      (beginning-of-line)
+      ;; HyRolo stuck error
+      (when (looking-at ".*(hyrolo-grep-file): Stuck looping in buffer \\\\?\"\\([^\\\t\n\r\f\"'`]+\\)\\\\?\" at position \\([0-9]+\\)")
+        (let* ((buffer-name (match-string-no-properties 1))
+               (pos  (or (match-string-no-properties 2) "1"))
+               (but-label (concat buffer-name ":P" pos)))
+	  (when (buffer-live-p (get-buffer buffer-name))
+            (setq pos (string-to-number pos))
+            (ibut:label-set but-label)
+            (hact 'link-to-buffer-tmp buffer-name pos)))))))
+
 (defib grep-msg ()
   "Jump to the line associated with line numbered grep or compilation error msgs.
 Messages are recognized in any buffer (other than a helm completion
@@ -971,6 +994,8 @@ in grep and shell buffers."
     (save-excursion
       (beginning-of-line)
       (when (or
+             ;; HyRolo stuck error
+             (looking-at ".*(hyrolo-grep-file): Stuck looping in \\(buffer\\) \\\\?\"\\([^\\\t\n\r\f\"'`]+\\)\\\\?\" at position \\([0-9]+\\)")
 	     ;; Emacs native compiler file lines
 	     (looking-at "Compiling \\(\\S-+\\)\\.\\.\\.$")
 	     (looking-at "Loading \\(\\S-+\\) (\\S-+)\\.\\.\\.$")
@@ -1025,7 +1050,7 @@ in grep and shell buffers."
 
 ;;; ========================================================================
 ;;; Jumps to source line associated with debugger stack frame or breakpoint
-;;; lines.  Supports gdb, dbx, and xdb.
+;;; lines.  Supports pdb, gdb, dbx, and xdb.
 ;;; ========================================================================
 
 (defun hib-python-traceback ()
@@ -1374,7 +1399,8 @@ Activates only if point is within the first line of the Info-node name."
                                (hbut:label-p t "`" "'" t t)))
          (ref (car node-ref-and-pos))
          (node-ref (and (stringp ref)
-                        (string-match-p "\\`([^\): \t\n\r\f]+)" ref)
+                        (or (string-match-p "\\`([^\): \t\n\r\f]+)\\'" ref)
+                            (string-match-p "\\`([^\): \t\n\r\f]+)[^ :;\"'`]" ref))
                         (hpath:is-p ref nil t))))
     (and node-ref
          (ibut:label-set node-ref-and-pos)
@@ -1445,14 +1471,16 @@ original DEMO file."
 (defib action ()
   "The Action Button type.
 At point, activate any of: an Elisp variable, a Hyperbole
-action-type, or an Elisp function call surrounded by <> rather
-than ().
+action-type, an Elisp function call or an Ert test name
+surrounded by <> rather than ().
+
 If an Elisp variable, display a message showing its value.
 
 There may not be any <> characters within the expression.  The
 first identifier in the expression must be an Elisp variable,
-action type or a function symbol to call, i.e. '<'actype-or-elisp-symbol
-arg1 ... argN '>'.  For example, <mail nil \"user@somewhere.org\">."
+action type, function symbol to call or test to execute, i.e.
+'<'actype-or-elisp-symbol arg1 ... argN '>'.  For example,
+<mail nil \"user@somewhere.org\">."
   (let ((hbut:max-len 0)
 	(lbl-key (hattr:get 'hbut:current 'lbl-key))
 	(start-pos (hattr:get 'hbut:current 'lbl-start))
@@ -1490,7 +1518,8 @@ arg1 ... argN '>'.  For example, <mail nil \"user@somewhere.org\">."
 			    actype-sym)
 		       (and (setq actype-sym (intern-soft actype))
 			    (or (fboundp actype-sym) (boundp actype-sym)
-				(special-form-p actype-sym))
+				(special-form-p actype-sym)
+				(ert-test-boundp actype-sym))
 			    actype-sym)))
       (when actype
 	;; For <hynote> buttons, need to double quote each argument so
@@ -1519,6 +1548,10 @@ arg1 ... argN '>'.  For example, <mail nil \"user@somewhere.org\">."
 		 ;; Is a variable, display its value as the action
 		 (setq args `(',actype)
 		       actype #'display-variable))
+		((and (null args) (symbolp actype) (ert-test-boundp actype))
+		 ;; Is an ert-deftest, display the value from executing it
+		 (setq actype #'display-value
+		       args `('(hypb-ert-run-test ,lbl))))
 		(t
 		 ;; All other expressions, display the action result in the minibuffer
 		 (setq actype #'display-value

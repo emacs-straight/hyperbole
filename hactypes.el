@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    23-Sep-91 at 20:34:36
-;; Last-Mod:     25-Nov-23 at 16:36:26 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 15:36:54 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -562,7 +562,7 @@ on the implicit button to which to link."
   "Display FILE with kcell given by CELL-REF at window top.
 See documentation for `kcell:ref-to-id' for valid cell-ref formats.
 
-If FILE is nil, use the current buffer.
+If FILE is nil, use any source location or the current buffer.
 If CELL-REF is nil, show the first cell in the view."
   (interactive (hargs:iform-read '(interactive "fKotl file to link to: \n+KKcell to link to: ")))
   (require 'kfile)
@@ -581,9 +581,12 @@ If CELL-REF is nil, show the first cell in the view."
 		   (string-empty-p file)
 		   (equal (file-name-nondirectory file)
 			  (file-name-nondirectory buffer-file-name))))
+    (when (or (null file) (string-empty-p file))
+      (setq file (hbut:get-key-src t)))
     (if (stringp file)
 	(hpath:find file)
-      (hpath:display-buffer (current-buffer))))
+      ;; file can be a buffer from get-key-src call
+      (hpath:display-buffer (or file (current-buffer)))))
   (kotl-mode:goto-cell-ref cell-ref))
 
 (defact link-to-mail (mail-msg-id &optional mail-file)
@@ -742,14 +745,22 @@ Optional SECTIONS-START limits toc entries to those after that point."
       (goto-char opoint))))
 
 (defact text-toc (section)
-  "Jump to the text file SECTION referenced by a table of contents entry at point."
+  "Jump to the text file SECTION referenced by a table of contents entry at point.
+SECTION is a string and can be just the leading part of a section heading."
   (interactive "sGo to section named: ")
   (when (stringp section)
-    (actypes::link-to-regexp-match section 2 (current-buffer) t))
-  (while (and (= (forward-line -1) 0)
-	      (looking-at "[ \t]*[-=][-=]")))
-  (forward-line 1)
-  (recenter 0))
+    (setq section (string-trim section))
+    (if (string-match "\\`\\(\\*+\\)[ \t]*" section)
+	(actypes::link-to-regexp-match
+	 (concat "^[ \t]*" (regexp-quote (match-string 1 section))
+		 "[ \t]*" (regexp-quote (substring section (match-end 0))))
+	 2 (current-buffer) t)
+      (actypes::link-to-regexp-match (concat "^[ \t]*" (regexp-quote section))
+				     2 (current-buffer) t))
+    (while (and (= (forward-line -1) 0)
+		(looking-at "[ \t]*[-=][-=]")))
+    (forward-line 1)
+    (recenter 0)))
 
 (provide 'hactypes)
 

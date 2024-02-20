@@ -3,7 +3,7 @@
 ;; Author:       Masanobu Umeda             / Bob Weiner
 ;;
 ;; Orig-Date:    14-Oct-91 at 07:22:08
-;; Last-Mod:      3-Oct-23 at 23:26:02 by Mats Lidell
+;; Last-Mod:     19-Jan-24 at 12:13:19 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -132,8 +132,7 @@ prepended.  Timezone in DATE is optional, it defaults to the
 value of `htz:local'.
 
 Recognizes the following styles:
- (1) \"(1 30 1999)\" or \"(1 30 1999)\"  `calendar-julian-date'
-     requires PARSED-CURRENT-DATE arg
+ (1) \"(1 30 1999)\" `calendar-julian-date' requires PARSED-CURRENT-DATE arg
  (2) \"14 Apr 89 03:20[:12] [GMT]\"
  (3) \"Fri, 17 Mar [19]89 4:01[:33] [GMT]\"
  (4) \"Mon Jan 16 16:12[:37] [GMT] 1989\"
@@ -364,7 +363,7 @@ Optional argument TIMEZONE specifies a time zone."
       (zerop (% year 400))))
 
 (defun htz:time-fix (year month day hour minute second)
-  "Fix date and time."
+  "Fix date and time given by YEAR, MONTH, DAY, HOUR, MINUTE and SECOND."
   (cond ((<= 24 hour)			; 24 -> 00
 	 (setq hour (- hour 24))
 	 (setq day  (1+ day))

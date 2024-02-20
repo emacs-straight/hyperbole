@@ -3,11 +3,11 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     26-Mar-22 at 11:25:43 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 15:43:57 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -26,6 +26,7 @@
 (declare-function hy-test-helpers:should-last-message "hy-test-helpers")
 
 (ert-deftest kbd-key-hy-about-test ()
+  "Test if HY-ABOUT file is displayed properly from the Hyperbole menus."
   (skip-unless (not noninteractive))
   (unwind-protect
       (progn
@@ -35,14 +36,10 @@
     (kill-buffer "HY-ABOUT")))
 
 (ert-deftest kbd-key-hy-demo-factorial-test ()
+  "Test if factorial button from DEMO file works properly."
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
-        ;; Preload demo files to avoid race with *ert* buffer and set
-        ;; *ert* buffer current
-        (hypb:display-file-with-logo "DEMO")
-        (set-buffer "*ert*")
-
+      (let ((enable-local-variables nil))
         (should (hact 'kbd-key "C-u C-h h d d"))
         (hy-test-helpers:consume-input-events)
         (should (string= (buffer-name (current-buffer)) "DEMO"))

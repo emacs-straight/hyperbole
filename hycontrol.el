@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     1-Jun-16 at 15:35:36
-;; Last-Mod:     25-Nov-23 at 16:47:02 by Mats Lidell
+;; Last-Mod:     18-Feb-24 at 12:42:03 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2016-2022  Free Software Foundation, Inc.
+;; Copyright (C) 2016-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -502,7 +502,7 @@ Format it with 2 arguments: `prefix-arg' and a plural string indicating if
 (defvar hycontrol--exit-status nil
   "Internal HyControl status indicator of how it was exited.
 After exit, it should be one of the following symbols triggered by the
-associated key: quit {q}, abort {C-g}, or toggle {t}.")
+associated key: quit {q}, abort {\\`C-g'}, or toggle {t}.")
 
 
 (defvar hycontrol--fconfig nil
@@ -813,7 +813,7 @@ by `hycontrol-frame-offset' (x . y) pixels."
       ('right (set-frame-position nil (+ x pixels) y)))))
 
 (defun hycontrol-numeric-keypad (e _arg)
-  "Move frame to screen location based on the last pressed numeric keypad key."
+  "Move frame to screen location based on the last pressed numeric keypad key E."
   (let ((num (if (integerp e)
 		 e
 	       ;; kp-<num> symbol
@@ -899,11 +899,10 @@ Used after selected buffer list is exhausted.")
   "Given a WINDOW, choose the next appropriate buffer to display.
 Uses `hycontrol--buffer-list'.
 
-When `hycontrol--invert-display-buffer-predicates' is non-nil and
-not \\='ignore, the list of buffers used is further filtered using
-the functions and sexpressions in
-`hycontrol-display-buffer-predicate-list', which by default
-filters a frame's buffer-list to just those buffers with attached
+When `hycontrol--invert-display-buffer-predicates' is non-nil and not
+\\='ignore, the list of buffers used is further filtered using the
+functions and sexpressions in `hycontrol-display-buffer-predicate-list',
+which by default filters a frame's buffers to just those with attached
 files.
 
 Filtering is disabled if a specific list of buffers is sent to the
@@ -959,7 +958,7 @@ to distribute among the windows."
 
 
 (defun hycontrol-message (max-msgs &rest msg-args)
-  "Log MAX-MSGS, adding MSG to the *Messages* buffer log."
+  "Log MAX-MSGS, adding MSG-ARGS to the *Messages* buffer log."
   (let ((message-log-max max-msgs))
     (apply #'message msg-args)))
 
@@ -1010,7 +1009,7 @@ is set to 1.  If it is > `hycontrol-maximum-units', it is set to
   (hycontrol-windows-mode -1))
 
 (defun hycontrol-abort ()
-  "Abort HyControl, typically on a press of {C-g}."
+  "Abort HyControl, typically on a press of {\\`C-g'}."
   (interactive)
   (hycontrol-disable-modes)
   (keyboard-quit))
@@ -1281,7 +1280,7 @@ Over 100 is set to 100.  Under 0 is set to 0.  Floats between 0 and 1
 are taken as percentages and used.  Other floats are rounded.
 non-integer arguments are ignored and the default value is used."
   (cond ((numberp arg)
-	 (cond 
+	 (cond
 	  ((= arg 0) 1)
 	  ((= arg 1) 0.5)
 	  ((and (> arg 1) (<= arg 100)) (/ arg 100.0))
@@ -1392,7 +1391,7 @@ The smallest noumber is an approximation."
   "Resize the selected frame to be approximately PERCENT of the screen.
 PERCENT may be given as a decimal percentage or a number between 0 and 100.
 Optional DIMENSION if given must be either of the symbols, height or
-width to affect only that dimension." 
+width to affect only that dimension."
   (interactive "nResize frame to be this percent of the screen (1-100): ")
   (if (and (numberp percent)
 	   (progn
@@ -1439,7 +1438,7 @@ width to affect only that dimension."
 	  (hycontrol-frame-to-bottom))
 	;; Return the scaled percentage for setting as numeric argument.
 	(floor (* percent 100)))
-    (error "(hycontrol-frame-fraction-of-screen): `%s', must be a percent value above 0 and less than or equal to 100." percent)))
+    (error "(hycontrol-frame-fraction-of-screen): `%s', must be a percent value above 0 and less than or equal to 100" percent)))
 
 (defun hycontrol-frame-height-percentage-of-screen (percent)
   "Resize the selected frame's height to be approximately PERCENT of the screen."
@@ -1603,15 +1602,12 @@ Enabled if `hycontrol-invert-mode-line-flag' is non-nil."
 (defun hycontrol-windows-grid-buffer-list ()
   "Return buffer list for grid.
 Buffers are either any marked items in Dired, Buffer Menu or
-IBuffer mode or the existing frame's buffer list.  If selecting
-buffers by major-mode, then ignore any marked items."
-  (if (and (boundp 'mode) (symbolp mode))
-      (buffer-list (selected-frame))
-    ;; Get the list of marked items if in an item list buffer and
-    ;; convert items to buffers.
-    ;; Return either non-nil items or frame's full buffer list.
-    (or (hycontrol-windows-grid-marked-items)
-	(buffer-list (selected-frame)))))
+IBuffer mode or the existing frame's buffer list."
+  ;; Get the list of marked items if in an item list buffer and
+  ;; convert items to buffers.
+  ;; Return either non-nil items or frame's full buffer list.
+  (or (hycontrol-windows-grid-marked-items)
+      (buffer-list (selected-frame))))
 
 ;;; Split selected frame into a grid of windows given by row and
 ;;; column count, displaying different buffers in each window.
@@ -1619,7 +1615,7 @@ buffers by major-mode, then ignore any marked items."
 (defun hycontrol-windows-grid (arg)
   "Display a grid of windows in the selected frame, sized to prefix ARG.
 Left digit of ARG is the number of grid rows and the right digit
-is the number of grid columns.  Use {C-h h h} to restore the
+is the number of grid columns.  Use {\\`C-h' h h} to restore the
 prior frame configuration after a grid is displayed.
 
 If ARG is 0, prompt for a major mode whose buffers should be
@@ -1650,7 +1646,7 @@ argument.
 
 If the key that invokes this command in `hyperbole-minor-mode' is also
 bound in the current major mode map, then interactively invoke that
-command instead.  Typically prevents clashes over {C-c @}."
+command instead.  Typically prevents clashes over {\\`C-c' @}."
   (interactive "P")
   (let ((numeric-arg (prefix-numeric-value current-prefix-arg)))
     (if (or (<= numeric-arg 0) (> numeric-arg 11))
@@ -1926,7 +1922,7 @@ See documentation of `hycontrol-windows-grid' for further details."
 	       (setq hycontrol-arg 1))
       (error (set-window-configuration wconfig)
 	     (and hycontrol-help-flag (or hycontrol-frames-mode hycontrol-windows-mode)
-		 (pop-to-buffer (messages-buffer)))
+		  (pop-to-buffer (messages-buffer)))
 	     (error "(HyDebug): Grid Size: %d; %s" arg err)))
     ;; No error, save prior frame configuration for easy return
     (hhist:add hist-elt)
@@ -1936,8 +1932,8 @@ See documentation of `hycontrol-windows-grid' for further details."
 (defun hycontrol-delete-other-windows ()
   "Confirm and then delete all other windows in the selected frame."
   (interactive)
-  (if (y-or-n-p "Delete all windows in this frame other than the selected one?")
-      (delete-other-windows)))
+  (when (y-or-n-p "Delete all windows in this frame other than the selected one?")
+    (delete-other-windows)))
 
 (defun hycontrol-window-maximize-lines ()
   "Grow window to its maximum possible number of lines without removing windows."

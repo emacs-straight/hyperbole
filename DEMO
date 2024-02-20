@@ -1,5 +1,3 @@
--*- Mode: org; org-cycle-global-at-bob: t; hsys-org-enable-smart-keys: t -*-
-
 * GNU Hyperbole Full Demo/Tutorial by Bob Weiner
 
   Send an email or a testimonial if you like Hyperbole to <rsw@gnu.org>.
@@ -542,7 +540,7 @@ the Action Key is pressed.
   1. If on an Org todo keyword, cycle through the keywords in
      that set or if final done keyword, remove it.
 
-  2. If on an Org agenda item, jump to the item for editing.
+  2. If on an Org agenda view item, jump to the item for editing.
 
   3. Within a radio or internal target or a link to it, jump between
      the target and the first link to it, allowing two-way navigation.
@@ -767,10 +765,10 @@ file and you see that it is displayed as expected.  (Remember to use the
 Hyperbole history command to return here.)  You can get help on these buttons
 just like any others.
 
-In README files, such as Hyperbole's "README", table of contents entries
-act similarly.  Press on "README" to view that file and then press on a
-table of contents entry to jump to the associated section in the "README"
-file.  Or "README#User Quotes" goes directly to that section.
+In README files, such as Hyperbole's "README.md", table of contents entries
+act similarly.  Press on "README.md" to view that file and then press on a
+table of contents entry to jump to the associated section in the "README.md"
+file.  Or "README.md#User Quotes" goes directly to that section.
 
 ** World Wide Web URL Buttons
 
@@ -827,6 +825,13 @@ brackets, < >, and come in three types:
      button, precede the name with a '$', e.g.
 
           <$hbut:max-len>
+
+  4. ert-deftest tests - these consist of the test name only as tests take
+     no arguments, e.g.
+
+          <hbut-tests-ibut-insert-kbd-key>
+
+     This runs one of the Hyperbole regression tests.
 
 An Action Button is recognized only if the first name within the angle
 brackets is an existing action type or Emacs Lisp symbol.  Otherwise, other
@@ -1176,22 +1181,22 @@ on the *first* line of the button, within the button delimiters:
 Creating explicit buttons is fun and easy.  You can always try them out
 immediately after creating them or can utilize the Assist Key to verify what
 buttons do.  There are two ways to create them: by dragging between windows
-with the Action Mouse Key or by using the Hyperbole menus.
+with the Assist Mouse Key or by using the Hyperbole menus.
 
 *** Creation via Dragging
 
 An efficient way to create an explicit button interactively is to use
-the Action Mouse Key to drag from a window where you want the button
+the Assist Mouse Key to drag from a window where you want the button
 created (button source window) to a window showing its link referent.
 The drag must start outside of a draggable item which includes Hyperbole
-button, dired items and buffer menu items.
+buttons, dired items and buffer menu items.
 
 More specifically, you should split your current Emacs frame into two
 windows: one which contains the point at which you want a button to be
 inserted and another which shows the point to which you want to link,
-the referent.  Depress the Action Mouse Key at the source point for
+the referent.  Depress the Assist Mouse Key at the source point for
 the button (anywhere but on a paired delimiter such as double quotes
-or parentheses).  Then drag to the other window and release the Action
+or parentheses).  Then drag to the other window and release the Assist
 Mouse Key at the start point of the link referent.  The process
 becomes quite simple with a little practice.
 
@@ -1211,20 +1216,19 @@ the variable with a matching value when the link is later resolved.  This
 allows the sharing of links over wide areas, where links contain variables
 whose values differ between link creator and link activator.
 
-If you do the same think with the Assist Mouse Key instead of the Action
+If you do the same thing with the Action Mouse Key instead of the Assist
 Mouse Key, Hyperbole will create an implicit link button instead of an
 explicit one.  Such buttons are created without names but you can add
-a name preceding such buttons with {C-h h i l} to label them.
+a name preceding such buttons by using {C-u C-h h i l} instead.
 
 *** Creation via Ace Window
 
-For the fastest link button creation, use the Emacs package
-'ace-window' (see "(hyperbole)Keyboard Drags" for setup).  Once this
-is configured, then {M-o w <window id>} may be used to quickly create
-an explicit link button in the selected window that links to any other
-window chosen via the Ace Window.  Use a C-u prefix argument to create
-an unnamed implicit link button instead and a M-1 prefix argument to
-create a named implicit link button.
+For the fastest link button creation, use the Emacs package 'ace-window' (see
+"(hyperbole)Keyboard Drags" for setup).  Once this is configured, then {M-o w`j
+<window id>} may be used to quickly create an unnamed implicit link button in
+the selected window that links to any other window chosen via the Ace Window.
+Use a M-1 prefix argument to create a named implicit link button.  If you
+want to create an explicit button instead, use the C-u prefix argument.
 
 *** Creation via Menu
 
@@ -1257,10 +1261,14 @@ buffer as the same button.
 
 If you create link buttons using the Hyperbole menus, the best technique is
 to place on screen both the source buffer for the button and the buffer to
-which it will link.  Mark the region of text to use as your button label,
-invoke the button create command from the menu, choose an action type which
-begins with `link-to-' and then use the direct selection techniques mentioned
-in "(hyperbole)Smart Key Argument Selection", to select the link referent.
+which it will link (referent buffer).  Leave point where you want to link
+to in the referent buffer, switch to the source buffer and put point where
+ you want to insert the link button.  If the button name is already there
+in the buffer, mark it as the region to use for your button label.  Then
+press {C-h h e l} and that will figure out the proper link type, prompt for
+any needed arguments and then insert the button.  You can use the direct
+selection techniques mentioned in "(hyperbole)Smart Key Argument Selection",
+to select any arguments.
 
 See "(hyperbole)Utilizing Explicit Buttons" for much more detail on how to
 work with explicit buttons.

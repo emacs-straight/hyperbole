@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    15-Apr-91 at 00:48:49
-;; Last-Mod:      3-Oct-23 at 17:22:51 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 15:49:24 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -26,6 +26,7 @@
 ;;; Other required Elisp libraries
 ;;; ************************************************************************
 
+(require 'cl-lib)
 (require 'hversion)
 (require 'hvar)
 (require 'browse-url)
@@ -100,8 +101,7 @@ The Smart Menu system must have already been loaded.  If a Smart
 Menu is already displayed, perform another Action or Assist Key function.")
 
 (defcustom hmouse-middle-flag (and (boundp 'infodock-version) infodock-version t)
-  "*Under InfoDock or when t, additionally bind the middle mouse button as an
-Action Key."
+  "*Non-nil means additionally bind the middle mouse button as an Action Key."
   :type 'boolean
   :group 'hyperbole-keys)
 
@@ -145,9 +145,7 @@ ignores current line and always scrolls up or down a windowful."
   (hyperbole-minibuffer-menu))
 
 (defcustom hyperbole-default-web-search-term-max-lines 2
-  "Provide a default search term using the selected text if the
-active region contains less than or equal to this number of
-lines"
+  "Provide a default search term from max this number of lines from selected text."
   :type 'integer
   :group 'hyperbole-commands)
 
@@ -162,21 +160,31 @@ lines"
   "Read from the keyboard a list of (web-search-service-string search-term-string).
 With optional non-empty SERVICE-NAME and SEARCH-TERM arguments,
 use those instead of reading from the keyboard."
-  (let ((completion-ignore-case t))
+  (let ((completion-ignore-case t)
+	cmd-or-url)
     (while (or (not (stringp service-name)) (equal service-name ""))
       (setq service-name (completing-read "Search service: " hyperbole-web-search-alist
 					  nil t)))
-    (while (or (not (stringp search-term)) (equal search-term ""))
-      (setq search-term (read-string (format "Search %s for: " service-name)
-				     (hyperbole-default-web-search-term))))
+    (setq cmd-or-url (cdr (assoc service-name hyperbole-web-search-alist)))
+    (unless (functionp cmd-or-url)
+      (while (or (not (stringp search-term)) (equal search-term ""))
+	(setq search-term (read-string (format "Search %s for: " service-name)
+				       (hyperbole-default-web-search-term)))))
     (list service-name search-term)))
 
 (defun hyperbole-web-search (&optional service-name search-term return-search-expr-flag)
-  "Search web SERVICE-NAME for SEARCH-TERM.
-Both arguments are optional and are prompted for when not given or when null.
-Uses `hyperbole-web-search-alist' to match each service to its search url.
-Uses `hyperbole-web-search-browser-function' and the `browse-url'
-package to display search results."
+  "Search web SERVICE-NAME for SEARCH-TERM (both arguments are optional).
+With optional RETURN-SEARCH-EXPR-FLAG, return the search expression.
+
+Use `hyperbole-web-search-alist' to match each service to its search
+url or function.
+Use `hyperbole-web-search-browser-function' and the `browse-url'
+package to display search results.
+
+If SERVICE-NAME is not given or is null and it is associated with
+a function rather than a search url in `hyperbole-web-search-alist',
+don't prompt for SEARCH-TERM; the function will prompt for that when
+run."
   (interactive)
   (cl-multiple-value-bind (service-name search-term)
       (hyperbole-read-web-search-arguments service-name search-term)
@@ -184,17 +192,18 @@ package to display search results."
 	  (search-pat (cdr (assoc service-name hyperbole-web-search-alist
 				  (lambda (service1 service2)
 				    (equal (downcase service1) (downcase service2)))))))
-      (setq search-term (browse-url-url-encode-chars search-term "[*\"()',=;?% ]"))
+      (unless (null search-term)
+	(setq search-term (browse-url-url-encode-chars search-term "[*\"()',=;?% ]")))
       (if return-search-expr-flag
 	  (cond ((stringp search-pat)
 		 (format search-pat search-term))
 		((functionp search-pat)
-		 (list search-pat search-term))
+		 (list search-pat))
 		(t (user-error "(Hyperbole): Invalid web search service `%s'" service-name)))
 	(cond ((stringp search-pat)
 	       (browse-url (format search-pat search-term)))
 	      ((functionp search-pat)
-	       (funcall search-pat search-term))
+	       (funcall search-pat))
 	      (t (user-error "(Hyperbole): Invalid web search service `%s'" service-name)))))))
 
 ;; This must be defined before the defcustom `inhbit-hyperbole-messaging'.
@@ -251,6 +260,7 @@ Hyperbole, and then restart Emacs."
     ("Bing" . "http://www.bing.com/search?q=%s")
     ;; Wikipedia Dictionary
     ("Dictionary" . "https://en.wiktionary.org/wiki/%s")
+    ("ducKduckgo" . "https://duckduckgo.com/?q=%s")
     ("Elisp" . "http://www.google.com/search?q=%s+filetype:el")
     ;; Facebook Hashtags
     ("Facebook" . "https://www.facebook.com/hashtag/%s")
@@ -284,7 +294,8 @@ then runs the search."
 ;;; ************************************************************************
 
 ;; No-op unless set by one of the conditionals below.
-(defun hui:but-flash ())
+(defun hui:but-flash ()
+  "Button flash No-op.")
 
 (cond ((not noninteractive)
        (require 'hui-em-but)

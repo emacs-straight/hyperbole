@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    26-Feb-23 at 11:20:15 by Bob Weiner
-;; Last-Mod:     29-Oct-23 at 16:08:40 by Bob Weiner
+;; Last-Mod:     20-Jan-24 at 15:39:49 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2023  Free Software Foundation, Inc.
+;; Copyright (C) 2023-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -22,6 +22,11 @@
 ;;   assign them UUIDs required for indexing by Org Roam.
 
 ;;; Code:
+;;; ************************************************************************
+;;; Other required Elisp libraries
+;;; ************************************************************************
+
+(require 'package)
 
 ;;; ************************************************************************
 ;;; Public declarations
@@ -37,7 +42,7 @@
 
 ;;;###autoload
 (defun hsys-org-roam-consult-grep ()
-  "Prompt for search terms and run consult grep over `org-roam-directory'
+  "Prompt for search terms and run consult grep over `org-roam-directory'.
 Actual grep function used is given by the variable,
 `consult-org-roam-grep-func'."
   (interactive)
@@ -55,4 +60,3 @@ Actual grep function used is given by the variable,
 (provide 'hsys-org-roam)
 
 ;;; hsys-org-roam.el ends here
-

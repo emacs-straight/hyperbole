@@ -1,10 +1,8 @@
--*- Mode: org; org-cycle-global-at-bob: t; hsys-org-enable-smart-keys: t -*-
-
 *			  What's New in GNU Hyperbole
 				 by Bob Weiner
 
 ===========================================================================
-*                                   V8.0.1pre
+*                                   V8.0.2pre
 ===========================================================================
 
 ** ACE WINDOW PACKAGE INTEGRATION - fast window and buffer switching
@@ -486,7 +484,7 @@
 
       (hyrolo-mode): Set the local value of `outline-level' to
       `hyrolo-mode-outline-level' and define that function to support star
-      outlines and Koutlines.  Also, made `hyrolo-entry-regexp' local and set
+      outlines and Koutlines.  Also, made `hyrolo-hdr-and-entry-regexp' local and set
       it to its default value, after which it may be modified.
 
   *** (hyrolo-fgrep-file, hyrolo-grep-file, hyrolo-fgrep, hyrolo-grep,
@@ -2214,7 +2212,7 @@
     - Added pointer to HyControl video and {C-c \} binding which invokes
       HyControl window control.
 
-    - README File: New Org-mode user testimonial.
+    - README.md File: New Org-mode user testimonial.
 
     - DEMO File: Added description and exercise using the new Find/Web menu.
 

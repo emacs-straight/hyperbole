@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    31-Oct-91 at 23:17:35
-;; Last-Mod:      1-Dec-23 at 11:23:52 by Bob Weiner
+;; Last-Mod:     20-Jan-24 at 19:43:53 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -508,23 +508,25 @@ If point follows an sexpression end character, the preceding sexpression
 is returned.  If point precedes an sexpression start character, the
 following sexpression is returned.  Otherwise, the innermost sexpression
 that point is within is returned or nil if none."
-  (save-excursion
-    (ignore-errors
-	(let ((not-quoted
-	       '(not (and (eq (char-syntax (char-after (- (point) 2))) ?\\)
-			  (not (eq (char-syntax (char-after (- (point) 3))) ?\\))))))
-	  (cond ((and (eq (char-syntax (preceding-char)) ?\))
-		      ;; Ignore quoted end chars.
-		      (eval not-quoted))
-		 (buffer-substring (point)
-				   (progn (forward-sexp -1) (point))))
-		((and (eq (char-syntax (following-char)) ?\()
-		      ;; Ignore quoted begin chars.
-		      (eval not-quoted))
-		 (buffer-substring (point)
-				   (progn (forward-sexp) (point))))
-		(no-recurse nil)
-		(t (save-excursion (up-list 1) (hargs:sexpression-p t))))))))
+  (let ((not-quoted
+	 '(condition-case ()
+	      (not (and (eq (char-syntax (char-after (- (point) 2))) ?\\)
+			(not (eq (char-syntax (char-after (- (point) 3))) ?\\))))
+	    (error t))))
+    (save-excursion
+      (ignore-errors
+	(cond ((and (eq (char-syntax (preceding-char)) ?\))
+		    ;; Ignore quoted end chars.
+		    (eval not-quoted))
+	       (buffer-substring (point)
+				 (progn (forward-sexp -1) (point))))
+	      ((and (eq (char-syntax (following-char)) ?\()
+		    ;; Ignore quoted begin chars.
+		    (eval not-quoted))
+	       (buffer-substring (point)
+				 (progn (forward-sexp) (point))))
+	      (no-recurse nil)
+	      (t (save-excursion (up-list 1) (hargs:sexpression-p t))))))))
 
 ;;; ************************************************************************
 ;;; Public functions
@@ -658,9 +660,9 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	       ((hpath:at-p 'file))
 	       ;; Unquoted remote file name.
 	       ((hpath:is-p (hpath:remote-at-p) 'file))
-	       ;; Possibly non-existent file name
-	       ((when no-default (hpath:at-p 'file 'non-exist)))
 	       (no-default nil)
+	       ;; Possibly non-existent file name
+	       ((hpath:at-p 'file 'non-exist))
 	       ((buffer-file-name))))
 	((eq hargs:reading-type 'directory)
 	 (cond ((derived-mode-p 'dired-mode)
@@ -672,9 +674,9 @@ Handles all of the interactive argument types that `hargs:iform-read' does."
 	       ((hpath:at-p 'directory))
 	       ;; Unquoted remote directory name.
 	       ((hpath:is-p (hpath:remote-at-p) 'directory))
-	       ;; Possibly non-existent directory name
-	       ((when no-default (hpath:at-p 'directory 'non-exist)))
 	       (no-default nil)
+	       ;; Possibly non-existent directory name
+	       ((hpath:at-p 'directory 'non-exist))
 	       (default-directory)))
 	((eq hargs:reading-type 'string)
 	 (or (hargs:delimited "\"" "\"") (hargs:delimited "'" "'")

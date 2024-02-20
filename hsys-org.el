@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     2-Jul-16 at 14:54:14
-;; Last-Mod:     25-Nov-23 at 16:45:25 by Mats Lidell
+;; Last-Mod:     18-Feb-24 at 23:44:42 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2016-2021  Free Software Foundation, Inc.
+;; Copyright (C) 2016-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -35,6 +35,8 @@
 (require 'org)
 (require 'org-element)
 (require 'org-fold nil t)
+(require 'org-macs)
+(require 'package)
 ;; Avoid any potential library name conflict by giving the load directory.
 (require 'set (expand-file-name "set" hyperb:dir))
 
@@ -49,13 +51,13 @@
    :type 'function
    :group 'org)
 
-;; `org-show-context' is obsolete as of Org 9.6, use `org-fold-show-context'
-;; instead.
-(unless (fboundp #'org-fold-show-context)
-  (with-suppressed-warnings ((obsolete org-show-context))
-    (defalias 'org-fold-show-context #'org-show-context)))
-
 (defvar hyperbole-mode-map)             ; "hyperbole.el"
+(defvar org--inhibit-version-check)     ; "org-macs.el"
+
+(declare-function org-babel-get-src-block-info "org-babel")
+(declare-function org-fold-show-context "org-fold")
+(declare-function org-link-open-from-string "ol")
+(declare-function outline-on-heading-p "outline")
 
 (declare-function smart-eobp "hui-mouse")
 (declare-function smart-eolp "hui-mouse")
@@ -65,15 +67,17 @@
 (declare-function action-key "hmouse-drv")
 (declare-function hkey-either "hmouse-drv")
 
+(declare-function find-library-name "find-func")
+
 ;;;###autoload
 (defcustom hsys-org-enable-smart-keys 'unset
   "This applies in Org major/minor modes only when `hyperbole-mode' is active.
-If set to \\='unset prior to loading Hyperbole, then Hyperbole
-initialization will set its value.
+If set to \\='unset prior to loading Hyperbole, then Hyperbole initialization
+will set its value.
 
-The following table shows what the Smart Keys do in various contexts
-with different settings of this option.  For example, a nil value makes
-{M-RET} operate as it normally does within Org mode contexts.
+The following table shows what the Smart Keys do in various contexts with
+different settings of this option.  For example, a nil value makes {M-RET}
+operate as it normally does within Org mode contexts.
 
 |---------+-------------------+------------------+----------+------------------|
 | Setting | Smart Key Context | Hyperbole Button | Org Link | Fallback Command |
@@ -100,12 +104,23 @@ with different settings of this option.  For example, a nil value makes
 ;;; Public Action Types
 ;;; ************************************************************************
 
+(defcustom hsys-org-cycle-bob-file-list
+  '("${hyperb:dir}/DEMO" "${hyperb:dir}/FAST-DEMO" "${hyperb:dir}/MANIFEST"
+     "${hyperb:dir}/HY-ABOUT" "${hyperb:dir}/HY-NEWS")
+  "List of files to globally `org-cycle' when at the beginning of the buffer."
+  :type '(repeat file)
+  :group 'hyperbole)
+
 (defact org-link (&optional link)
   "Follow an optional Org mode LINK to its target.
 If LINK is nil, follow any link at point.  Otherwise, trigger an error."
   (if (stringp link)
+      ;; open as if in Org mode even if not
       (org-link-open-from-string link)
-    (org-open-at-point))) ;; autoloaded
+    ;; autoloaded, open link at point whether in or out of Org mode
+    (if (derived-mode-p 'org-mode)
+	(org-open-at-point)
+      (org-open-at-point-global))))
 
 (defact org-internal-target-link (&optional internal-target)
   "Follow an optional Org mode <<INTERNAL-TARGET>> back to any first link to it.
@@ -142,6 +157,104 @@ an error."
 ;;; ************************************************************************
 
 ;;;###autoload
+(defun hsys-org-fix-version ()
+  "If multiple Org versions are loaded, use the one first on `load-path'.
+Always ensure Org libraries have been required.
+Return t if Org is reloaded, else nil."
+  ;; Not all versions of org include these variables, so set them
+  (setq org--inhibit-version-check nil
+	org-list-allow-alphabetical nil)
+  (let ((org-dir (ignore-errors (org-find-library-dir "org")))
+	(org-install-dir
+	 (ignore-errors (org-find-library-dir "org-loaddefs"))))
+    (cond ((and org-dir org-install-dir (string-equal org-dir org-install-dir)
+		;; Still may have a situation where the Org version matches the
+		;; builtin Org but the directories are for a newer Org
+		;; package version.
+		(if (string-match "[\\/]org-\\([0-9.]+-?[a-z]*\\)" org-dir)
+		    (string-equal (match-string 1 org-dir) ;; org-dir version
+				  (remove ?- (org-release)))
+		  t))
+	   ;; Ensure Org folding is configured for `reveal-mode' compatibility
+	   (hsys-org--set-fold-style)
+	   ;; Just require these libraries used for Hyperbole testing
+	   ;; (when they are available) to ensure they are loaded from
+	   ;; the single Org version used.
+	   (mapc (lambda (lib-sym) (require lib-sym nil t))
+		 '(org-version org-macs org-keys org-compat ol org-table org-id
+		   org-element org-list org-element org-src org-fold org))
+	   nil)
+	  (t
+	   ;; Ensure using any local available packaged version of Org mode
+	   ;; rather than built-in which may have been activated before
+	   ;; load-path was set correctly.  Avoids mixed version load of Org.
+	   (let ((org-libraries-to-reload (hsys-org-get-libraries-to-reload))
+		 lib-sym)
+	     ;; Unload org libraries loaded with wrong path
+	     (mapc (lambda (lib)
+		     (setq lib-sym (intern-soft lib))
+		     (when (featurep lib-sym) (unload-feature lib-sym t)))
+		   org-libraries-to-reload)
+
+	     ;; Ensure user's external Org package version is configured for loading
+	     (unless (and package--initialized (not after-init-time))
+	       (package-initialize))
+	     ;; Ensure Org folding is configured for `reveal-mode' compatibility
+	     (hsys-org--set-fold-style)
+	     (let ((pkg-desc (car (cdr (assq 'org package-archive-contents)))))
+	       (package-activate pkg-desc t))
+
+	     ;; Load org libraries with right path but save "org" for last
+	     (mapc #'load (remove "org" org-libraries-to-reload))
+	     (load "org")
+	     ;; Next setting may have been deleted with the library
+	     ;; unloading, so restore it.
+	     (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+	     t)))))
+
+(defun hsys-org-get-libraries-to-reload ()
+  "Return all org libraries that need to be reloaded to avoid mixed versions."
+  (interactive)
+  (let* ((builtin-org-dir (expand-file-name "../lisp/org/" data-directory))
+	 (default-directory builtin-org-dir)
+	 (builtin-org-files (nconc (file-expand-wildcards "*.el.gz")
+				   (file-expand-wildcards "*.el")))
+	 (feature-sym)
+	 (file-to-load)
+	 (builtin-org-libraries-loaded
+	  (delq nil (mapcar (lambda (f)
+			      (setq file-to-load
+				    ;; Get rid of both .el and .el.gz suffixes
+				    (file-name-sans-extension
+				     (file-name-sans-extension f))
+				    feature-sym (intern-soft file-to-load))
+			      (and (featurep feature-sym)
+				   (string-prefix-p builtin-org-dir
+						    (symbol-file feature-sym))
+				   file-to-load))
+			    builtin-org-files))))
+    builtin-org-libraries-loaded))
+
+;;;###autoload
+(defun hsys-org-log-and-fix-version ()
+  "Log before/after state of Org libraries when fixing a mixed installation."
+  (terpri)
+  (princ (format "Org source dir = %S" (ignore-errors (org-find-library-dir "org"))))
+  (terpri)
+  (princ (format "Org load dir   = %S" (ignore-errors (org-find-library-dir "org-loaddefs"))))
+  (terpri)
+  (princ (format "Org version    = %S" (org-release)))
+  (terpri)
+
+  (let ((org-reloaded (hsys-org-fix-version)))
+    (if org-reloaded
+	(princ (format "Mixed Org versions fixed and reloaded\n  version is now %s\n  source dir is now %S"
+		       org-version (ignore-errors (org-find-library-dir "org"))))
+      (princ "The above is the active, single version of Org")))
+  (terpri)
+  (terpri))
+
+;;;###autoload
 (defun hsys-org-meta-return-shared-p ()
   "Return non-nil if hyperbole-mode is active and shares the org-meta-return key."
   (let ((org-meta-return-keys (where-is-internal #'org-meta-return org-mode-map)))
@@ -161,7 +274,7 @@ an error."
 
 ;;;###autoload
 (defun hsys-org-consult-grep ()
-  "Prompt for search terms and run consult grep over `org-directory'
+  "Prompt for search terms and run consult grep over `org-directory'.
 Actual grep function used is given by the variable,
 `hsys-org-consult-grep-func'."
   (interactive)
@@ -263,7 +376,7 @@ Return the (start . end) buffer positions of the region."
       (cons start-point (next-single-property-change start-point property)))))
 
 (defun hsys-org-agenda-item-at-p ()
-  "Return non-nil if point is on an Org Agenda item line, else nil."
+  "Return non-nil if point is on an Org Agenda view item line, else nil."
   (and (derived-mode-p 'org-agenda-mode)
        (org-get-at-bol 'org-marker)))
 
@@ -444,6 +557,14 @@ TARGET must be a string."
 ;;; ************************************************************************
 ;;; Private functions
 ;;; ************************************************************************
+
+(defun hsys-org--set-fold-style ()
+  "Set `org-fold-core-style' to \\='overlays for `reveal-mode' compatibility.
+This must be called before Org mode is loaded."
+  (when (and (ignore-errors (find-library-name "org-fold-core"))
+	     (not (boundp 'org-fold-core-style)))
+    (load "org-fold-core"))
+  (custom-set-variables '(org-fold-core-style 'overlays)))
 
 (provide 'hsys-org)
 

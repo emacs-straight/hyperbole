@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    24-Aug-91
-;; Last-Mod:      1-Dec-23 at 23:32:23 by Mats Lidell
+;; Last-Mod:     28-Jan-24 at 18:36:34 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1991-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1991-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -27,27 +27,7 @@
     ;; command.
     (load "etags.elc" t nil t)))
 
-;; If etags utilizes the new xref.el library, define some helper
-;; functions to simplify programming and fix one existing function.
-(when (require 'xref nil t)
-  ;; Fix next xref function to handle when called at beginning of buffer
-  (defun xref--item-at-point ()
-    (get-text-property
-     (max (point-min) (if (eolp) (1- (point)) (point)))
-     'xref-item))
-  (when (not (fboundp 'xref-definition))
-    (defun xref-definition (identifier)
-      "Return the first definition of string IDENTIFIER."
-      (car (xref-backend-definitions (xref-find-backend) identifier)))
-    (defun xref-definitions (identifier)
-      "Return a list of all definitions of string IDENTIFIER."
-      (xref-backend-definitions (xref-find-backend) identifier))
-    (defun xref-item-buffer (item)
-      "Return the buffer in which xref ITEM is defined."
-      (marker-buffer (save-excursion (xref-location-marker (xref-item-location item)))))
-    (defun xref-item-position (item)
-      "Return the buffer position where xref ITEM is defined."
-      (marker-position (save-excursion (xref-location-marker (xref-item-location item)))))))
+(require 'hsys-xref)
 
 ;;; ************************************************************************
 ;;; Public declarations
@@ -82,12 +62,6 @@
 (declare-function org-in-src-block-p "org")
 (declare-function ibtype:def-symbol "hbut")
 
-;; Forward declare needed? Because of optional defined above? Can we
-;; skip checking if xref is available since it has been at least since
-;; 26.1 or even earlier? Then we should not need these declares.
-(declare-function xref-item-position "hmouse-tag")
-(declare-function xref-item-buffer "hmouse-tag")
-
 ;;; ************************************************************************
 ;;; Public variables
 ;;; ************************************************************************
@@ -112,13 +86,27 @@ should insert the implicit button type definition name.")
 Note it must contain a ‘%s’ at the place where ‘format’
 should insert the implicit link type definition name.")
 
+;; Change ert-deftest lookups to use this regexp rather than the
+;; default, `xref-find-definitions', so is not dependent on TAGS
+;; tables or the `default-directory' in the ERT results buffer.  When
+;; a test is loaded, its symbol property, `ert--test', holds the
+;; absolute path to its file, and find-function uses that when its
+;; entry in `find-function-regexp-alist' is a regexp.
+(defconst find-ert-test-regexp "^\\s-*(ert-deftest\\s-+%s\\s-"
+  "The regexp used to search for an ert test definition.
+Note it must contain a ‘%s’ at the place where ‘format’
+should insert the implicit link type definition name.")
+
 ;; Add Hyperbole def types to `find-function-regexp-alist'.
 (mapc (lambda (item)
-	(add-to-list 'find-function-regexp-alist item))
-      '((defact . find-defact-regexp)
-	(defal  . find-defal-regexp)
-	(defib  . find-defib-regexp)
-	(defil  . find-defil-regexp)))
+	(setq find-function-regexp-alist
+	      (assq-delete-all (car item) find-function-regexp-alist))
+	(push item find-function-regexp-alist))
+      '((defact    . find-defact-regexp)
+	(defal     . find-defal-regexp)
+	(defib     . find-defib-regexp)
+	(defil     . find-defil-regexp)
+	(ert--test . find-ert-test-regexp)))
 
 (define-obsolete-variable-alias 'smart-asm-include-dirs
   'smart-asm-include-path "06.00")
@@ -207,7 +195,7 @@ Keyword matched is grouping 1.  Referent is grouping 2.")
 ;;; ************************************************************************
 
 (defun smart-asm (&optional identifier next)
-  "Jumps to the definition of optional assembly IDENTIFIER or the one at point.
+  "Jump to the definition of optional assembly IDENTIFIER or the one at point.
 Optional second arg NEXT means jump to next matching assembly tag.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -233,7 +221,8 @@ If:
 
 ;;;###autoload
 (defun smart-asm-at-tag-p (&optional no-flash)
-  "Return assembly tag name that point is within, else nil."
+  "Return assembly tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "_.$a-zA-Z0-9")
 	 (identifier (concat "[_.$a-zA-Z][" identifier-chars "]*")))
     (save-excursion
@@ -247,7 +236,7 @@ If:
 
 ;;;###autoload
 (defun smart-c++ (&optional identifier next)
-  "Jumps to the definition of optional C++ IDENTIFIER or the one at point.
+  "Jump to the definition of optional C++ IDENTIFIER or the one at point.
 Optional second arg NEXT means jump to next matching C++ tag.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -275,6 +264,8 @@ Otherwise:
 
 ;;;###autoload
 (defun smart-c++-tag (&optional identifier next)
+  "Jump to the definition of optional C++ IDENTIFIER or the one at point.
+Optional second arg NEXT means jump to next matching C++ tag."
   (let ((tag (or identifier (smart-c++-at-tag-p))))
     (message "Looking for `%s'..." tag)
     (condition-case ()
@@ -398,7 +389,8 @@ If:
 
 ;;;###autoload
 (defun smart-c-at-tag-p (&optional no-flash)
-  "Return C tag name that point is within, else nil."
+  "Return C tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "_a-zA-Z0-9")
 	 (identifier (concat "[_a-zA-Z][" identifier-chars "]*")))
     (save-excursion
@@ -417,21 +409,25 @@ If:
   (ignore-errors (require 'cc-mode) (c-initialize-cc-mode))
   nil)
 
-(defun smart-emacs-lisp-mode-p ()
-  "Return non-nil if in a mode which uses Emacs Lisp symbols."
+(defun smart-emacs-lisp-mode-p (&optional skip-identifier-flag)
+  "Return non-nil if in a mode using Emacs Lisp symbols."
   ;; Beyond Lisp files, Emacs Lisp symbols appear frequently in Byte-Compiled
   ;; buffers, debugger buffers, program ChangeLog buffers, Help buffers,
-  ;; *Warnings*, *Flymake log* and *Flymake diagnostics... buffers.
-  (or (memq major-mode #'(emacs-lisp-mode lisp-interaction-mode debugger-mode))
+  ;; *Warnings*, *Flymake log* and *Flymake diagnostics buffers.
+  (or (apply #'derived-mode-p '(emacs-lisp-mode lisp-interaction-mode
+				debugger-mode ert-results-mode))
       (string-match-p (concat "\\`\\*\\(Warnings\\|Flymake log\\|Compile-Log\\(-Show\\)?\\)\\*"
 			      "\\|\\`\\*Flymake diagnostics")
 		      (buffer-name))
-      (and (or (memq major-mode #'(help-mode change-log-mode))
+      ;; Consider the following buffer types only if on an Emacs Lisp
+      ;; symbol that can be looked up, e.g. in a TAGS file or via a
+      ;; previous symbol load.
+      (and (or (apply #'derived-mode-p '(help-mode change-log-mode))
 	       (string-match-p "\\`\\*Help\\|Help\\*\\'" (buffer-name)))
-	   (smart-lisp-at-known-identifier-p))))
+	   (or skip-identifier-flag (smart-lisp-at-known-identifier-p)))))
 
 (defun smart-fortran (&optional identifier next)
-  "Jumps to the definition of optional Fortran IDENTIFIER or the one at point.
+  "Jump to the definition of optional Fortran IDENTIFIER or the one at point.
 Optional second arg NEXT means jump to next matching Fortran tag.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -472,7 +468,8 @@ in the current directory or any of its ancestor directories."
 
 ;;;###autoload
 (defun smart-fortran-at-tag-p (&optional no-flash)
-  "Return Fortran tag name that point is within, else nil."
+  "Return Fortran tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "_a-zA-Z0-9")
 	 (identifier (concat "[_a-zA-Z][" identifier-chars "]*")))
     (save-excursion
@@ -486,7 +483,7 @@ in the current directory or any of its ancestor directories."
 
 ;;;###autoload
 (defun smart-java (&optional identifier next)
-  "Jumps to the definition of optional Java IDENTIFIER or the one at point.
+  "Jump to the definition of optional Java IDENTIFIER or the one at point.
 Optional second arg NEXT means jump to next matching Java tag.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -511,6 +508,8 @@ Otherwise:
 
 ;;;###autoload
 (defun smart-java-tag (&optional identifier next)
+  "Jump to the definition of optional Java IDENTIFIER or the one at point.
+Optional second arg NEXT means jump to next matching Java tag."
   (let ((tag (or identifier (smart-java-at-tag-p t))))
     (message "Looking for `%s'..." tag)
     (condition-case ()
@@ -522,7 +521,7 @@ Otherwise:
 
 ;;; The following should be called only if the OO-Browser is available.
 (defun smart-java-oo-browser (&optional _junk)
-  "Jumps to the definition of selected Java construct via OO-Browser support.
+  "Jump to the definition of selected Java construct via OO-Browser support.
 Optional JUNK is ignored.  Does nothing if the OO-Browser is not available.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -553,7 +552,8 @@ If key is pressed:
 
 ;;;###autoload
 (defun smart-java-at-tag-p (&optional no-flash)
-  "Return Java tag name that point is within, else nil."
+  "Return Java tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "_$.a-zA-Z0-9")
 	 (identifier
 	  (concat "[_$a-zA-Z][" identifier-chars "]*")))
@@ -599,7 +599,8 @@ in the current directory or any of its ancestor directories."
 
 ;;;###autoload
 (defun smart-javascript-at-tag-p (&optional no-flash)
-  "Return JavaScript tag name that point is within, else nil."
+  "Return JavaScript tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (if (if (memq major-mode '(html-mode web-mode))
 	  ;; Must be within a <script> tag or this predicate function
 	  ;; fails (returns nil).
@@ -623,7 +624,7 @@ in the current directory or any of its ancestor directories."
   "Regexp matching the first character of a Lisp identifier.")
 
 ;;;###autoload
-(defconst smart-lisp-identifier-chars "-_:/*+=%$&?!<>a-zA-Z0-9~^"
+(defconst smart-lisp-identifier-chars "-_:/*+=%$&?!<>a-zA-Z0-9~^@"
   "Regexp matching a valid char in a Lisp identifier except the first char.
 Excludes character matching square brackets, so may be used with
 skip-characters-forward/backward.")
@@ -698,8 +699,10 @@ Use `hpath:display-buffer' to show definition or documentation."
 			      (if current-prefix-arg
 				  "Show doc for" "Find")))
 	 current-prefix-arg))
+  (when (and tag (symbolp tag))
+    (setq tag (symbol-name tag)))
   (unless (stringp tag)
-    (setq tag (or hkey-value (smart-lisp-at-tag-p t))))
+    (setq tag (if (stringp hkey-value) hkey-value (smart-lisp-at-tag-p t))))
   (let* ((elisp-flag (smart-emacs-lisp-mode-p))
 	 (tag-sym (intern-soft tag)))
     (cond ((and show-doc elisp-flag)
@@ -775,7 +778,7 @@ Return matching Elisp tag name that point is within, else nil."
   (when (derived-mode-p 'change-log-mode)
     (let ((identifier (smart-lisp-at-tag-p)))
       (and identifier (intern-soft identifier)
-	   (string-match "[^-]-[^-]" identifier)
+	   (string-match-p "[^-]-[^-]" identifier)
 	   identifier))))
 
 (defun smart-lisp-htype-tag (tag)
@@ -803,7 +806,8 @@ Return matching Elisp tag name that point is within, else nil."
 
 (defun smart-lisp-at-tag-p (&optional no-flash)
   "Return possibly non-existent Lisp tag name that point is within, else nil.
-Return nil when point is on the first line of a non-alias Lisp definition.
+When optional NO-FLASH, do not flash.  Return nil when point is
+on the first line of a non-alias Lisp definition.
 
 Resolve Hyperbole implicit button type and action type references."
   (smart-lisp-htype-tag
@@ -811,7 +815,8 @@ Resolve Hyperbole implicit button type and action type references."
 
 (defun smart-lisp-at-non-htype-tag-p (&optional no-flash)
   "Return possibly non-existent Lisp tag name that point is within, else nil.
-Return nil when point is on the first line of a non-alias Lisp definition."
+When optional NO-FLASH, do not flash.  Return nil when point is
+on the first line of a non-alias Lisp definition."
   (unless (smart-lisp-at-definition-p)
     (save-excursion
       (skip-chars-backward smart-lisp-identifier-chars)
@@ -821,29 +826,35 @@ Return nil when point is on the first line of a non-alias Lisp definition."
 		(looking-at "\"\\|\\$[{(]\\|[{]\\$]"))
 	(when (and (looking-at smart-lisp-identifier)
 		   ;; Ignore any punctuation matches.
-		   (save-match-data
-		     (not (string-match "\\`[-<>*]+\\'" (match-string 0)))))
+		   (not (string-match-p "\\`[-<>*]+\\'" (match-string 0))))
 	  ;; Ignore any leading '<' character from action buttons or
 	  ;; other links, i.e. only when followed by an alphabetic character.
-	  (when (and (eq (following-char) ?\<) (eq ?w (char-syntax (1+ (point)))))
-	    (goto-char (1+ (point))))
-	  (if no-flash
-	      (if (eq (char-after (1- (match-end 0))) ?:)
-		  (buffer-substring-no-properties (point) (1- (match-end 0)))
-		(buffer-substring-no-properties (point) (match-end 0)))
-	    (if (eq (char-after (1- (match-end 0))) ?:)
+	  (let* ((action-button-prefix-flag
+		  (and (eq (following-char) ?\<)
+		       (memq (char-syntax (1+ (point))) '(?_ ?w))))
+		 (suffix-flag
+		  (or (eq (char-after (1- (match-end 0))) ?:)
+		      (and action-button-prefix-flag
+			   (eq (char-after (1- (match-end 0))) ?\>)))))
+	    (when action-button-prefix-flag
+	      (goto-char (1+ (point))))
+	    (if no-flash
+		(if suffix-flag
+		    (buffer-substring-no-properties (point) (1- (match-end 0)))
+		  (buffer-substring-no-properties (point) (match-end 0)))
+	      (if suffix-flag
+		  (smart-flash-tag
+		   (buffer-substring-no-properties (point) (1- (match-end 0)))
+		   (point) (1- (match-end 0)))
 		(smart-flash-tag
-		 (buffer-substring-no-properties (point) (1- (match-end 0)))
-		 (point) (1- (match-end 0)))
-	      (smart-flash-tag
-	       (buffer-substring-no-properties (point) (match-end 0))
-	       (point) (match-end 0)))))))))
+		 (buffer-substring-no-properties (point) (match-end 0))
+		 (point) (match-end 0))))))))))
 
 ;;;###autoload
 (defun smart-lisp-mode-p ()
   "Return t if in a mode which use Lisp symbols."
   (or (smart-emacs-lisp-mode-p)
-      (memq major-mode '(lisp-mode scheme-mode))))
+      (apply #'derived-mode-p '(lisp-mode scheme-mode))))
 
 ;;;###autoload
 (defun smart-objc (&optional identifier next)
@@ -915,7 +926,7 @@ If key is pressed:
  (4) on a global variable or function identifier, its definition is shown.
 
  (2) and (3) require that an OO-Browser Environment has been loaded with
-     the {M-x br-env-load RET} command."
+     the {\\`M-x' br-env-load RET} command."
 
   (interactive)
   (objc-to-definition t))
@@ -926,7 +937,8 @@ If key is pressed:
   "Sorted list of Objective-C keywords, all in lowercase.")
 
 (defun smart-objc-at-tag-p (&optional no-flash)
-  "Return Objective-C tag name that point is within, else nil."
+  "Return Objective-C tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "_a-zA-Z0-9")
 	 (identifier
 	  (concat "\\([-+][ \t]*\\)?\\([_a-zA-Z][" identifier-chars "]*\\)")))
@@ -973,7 +985,7 @@ See https://tkf.github.io/emacs-jedi/latest/."
 
 ;;;###autoload
 (defun smart-python (&optional identifier next)
-  "Jumps to the definition of optional Python IDENTIFIER or the one at point.
+  "Jump to the definition of optional Python IDENTIFIER or the one at point.
 Optional second arg NEXT means jump to next matching Python tag.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -998,6 +1010,8 @@ in the current directory or any of its ancestor directories."
 
 ;;;###autoload
 (defun smart-python-tag (&optional identifier next)
+  "Jump to the definition of optional Python IDENTIFIER or the one at point.
+Optional second arg NEXT means jump to next matching Python tag."
   (let ((tag (or identifier (smart-python-at-tag-p t))))
     (message "Looking for `%s'..." tag)
     (condition-case ()
@@ -1009,7 +1023,7 @@ in the current directory or any of its ancestor directories."
 
 ;;; The following should be called only if the OO-Browser is available.
 (defun smart-python-oo-browser (&optional _junk)
-  "Jumps to the definition of selected Python construct via OO-Browser support.
+  "Jump to the definition of selected Python construct via OO-Browser support.
 Optional JUNK is ignored.  Does nothing if the OO-Browser is not available.
 
 It assumes that its caller has already checked that the key was pressed in an
@@ -1033,7 +1047,8 @@ If key is pressed:
 
 ;;;###autoload
 (defun smart-python-at-tag-p (&optional no-flash)
-  "Return Python tag name that point is within, else nil."
+  "Return Python tag name that point is within, else nil.
+When optional NO-FLASH, do not flash."
   (let* ((identifier-chars "a-zA-Z0-9_")
 	 (identifier-fragment (concat "[a-zA-Z_][" identifier-chars "]*"))
 	 (identifier (concat identifier-fragment "\\(\\."
@@ -1460,8 +1475,8 @@ See the \"${hyperb:dir}/smart-clib-sym\" script for more information."
 		(setq find-tag-result (funcall func tag)))
 	   (cond ((or (eq (type-of find-tag-result) 'xref-item)
 		      (vectorp find-tag-result))
-		  (hpath:display-buffer (xref-item-buffer find-tag-result))
-		  (goto-char (xref-item-position find-tag-result)))
+		  (hpath:display-buffer (hsys-xref-item-buffer find-tag-result))
+		  (goto-char (hsys-xref-item-position find-tag-result)))
 		 (t
 		  ;; Emacs with some unknown version of tags.
 		  ;; Signals an error if tag is not found which is caught by
@@ -1546,7 +1561,7 @@ to look.  If no tags file is found, an error is signaled."
   "Return the best available function for finding a tag definition.
 The function does not select the tag definition."
   (car (delq nil (mapcar (lambda (func) (if (fboundp func) func))
-			 #'(xref-definition find-tag-noselect find-tag-internal)))))
+			 '(hsys-xref-definition find-tag-noselect find-tag-internal)))))
 
 (provide 'hmouse-tag)
 

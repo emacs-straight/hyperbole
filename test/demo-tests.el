@@ -3,11 +3,11 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     22-Nov-23 at 23:22:33 by Mats Lidell
+;; Last-Mod:      3-Feb-24 at 23:32:21 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -39,7 +39,7 @@
 (ert-deftest demo-smart-mouse-keys-ref-test ()
   "Go to the header from a #ref."
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
         (re-search-forward "#Smart Keys")
@@ -50,7 +50,7 @@
 
 (ert-deftest demo-smart-mouse-keys-ebut-test ()
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
         (re-search-forward "<(Smart")
@@ -61,20 +61,20 @@
 
 (ert-deftest demo-table-of-contents-test ()
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
         (re-search-forward " \\* Koutl")
         (action-key)
         (should (bolp))
-        (should (looking-at "^* Koutliner")))
+        (should (looking-at "^[ \t]*\\* Koutliner")))
     (hy-test-helpers:kill-buffer "DEMO")))
 
 ;; Smart scrolling
 (ert-deftest demo-smart-scrolling-proportional-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
         (re-search-forward "Table of Contents")
@@ -88,7 +88,7 @@
 
 (ert-deftest demo-smart-scrolling-non-proportional-test ()
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
         (re-search-forward "Table of Contents")
@@ -127,7 +127,7 @@
 (ert-deftest demo-window-grid-22-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (should (hact 'kbd-key "C-h h s f @ 22 RET Q"))
         (hy-test-helpers:consume-input-events)
@@ -137,7 +137,7 @@
 (ert-deftest demo-window-grid-33-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (should (hact 'kbd-key "C-h h s f @ 33 RET Q"))
         (hy-test-helpers:consume-input-events)
@@ -190,7 +190,8 @@
       (with-temp-buffer
         (insert (format "\"%s\"" (expand-file-name "DEMO" hyperb:dir)))
         (goto-char 2)
-        (action-key)
+	(let ((enable-local-variables nil))
+          (action-key))
         (should (string= "DEMO" (buffer-name))))
     (hy-test-helpers:kill-buffer "DEMO")))
 
@@ -199,7 +200,8 @@
       (with-temp-buffer
         (insert "<link-to-file-line \"${hyperb:dir}/DEMO\" 5>")
         (goto-char 5)
-        (action-key)
+	(let ((enable-local-variables nil))
+          (action-key))
         (should (string= "DEMO" (buffer-name)))
         (should (= 5 (line-number-at-pos (point)))))
     (hy-test-helpers:kill-buffer "DEMO")))
@@ -238,13 +240,6 @@
     (action-key)
     (hy-test-helpers:should-last-message "Result = nil; Boolean value = False")))
 
-(ert-deftest demo-implicit-button-action-button-variable-display-test ()
-  (with-temp-buffer
-    (insert "<fill-column>")
-    (goto-char 2)
-    (action-key)
-    (hy-test-helpers:should-last-message (format "fill-column = %d" (current-fill-column)))))
-
 (ert-deftest demo-implicit-button-hash-link-test ()
   (unwind-protect
       (with-temp-buffer
@@ -279,7 +274,6 @@
       (should (not (org-check-for-hidden 'headlines)))
       (save-excursion
 	(action-key))
-;;; (org-hide-entry)
       (should (org-check-for-hidden 'headlines)))))
 
 ;; Manifest
@@ -382,7 +376,7 @@
 (ert-deftest demo-occur-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (should (hact 'kbd-key "C-h h f o Hyperbole RET"))
         (hy-test-helpers:consume-input-events)
@@ -405,7 +399,7 @@
 (ert-deftest demo-factorial-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (should (hact 'kbd-key "C-h h a factorial RET"))
         (hy-test-helpers:consume-input-events)
@@ -415,13 +409,72 @@
 (ert-deftest demo-factorial-ebutton-test ()
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (re-search-forward "<(factorial)>")
         (forward-char -5)
         (action-key)
         (hy-test-helpers:should-last-message "Factorial of 5 = 120"))
     (hy-test-helpers:kill-buffer "DEMO")))
+
+;;; Fast demo
+;; Implicit Buttons
+(ert-deftest fast-demo-outline-section-anchor-and-relative-line-number ()
+  "Verify star outline section links with line and column works."
+  (dolist (link '("\"HY-NEWS#ORG MODE:3:6\"" "\"HY-NEWS#ORG MODE:L3:C6\""))
+    (unwind-protect
+        (let ((default-directory hyperb:dir))
+          (with-temp-buffer
+            (insert link)
+            (goto-char 3)
+            (action-key)
+            (should (string= (buffer-name (current-buffer)) "HY-NEWS"))
+            (should (looking-at-p "M-RET: Reworked"))))
+      (hy-test-helpers:kill-buffer "HY-NEWS"))))
+
+(ert-deftest fast-demo-markdown-anchor-with-spaces ()
+  "Verify anchor with spaces works."
+  (unwind-protect
+      (let ((default-directory hyperb:dir))
+        (with-temp-buffer
+          (insert "\"README.md#Hyperbole Components\"")
+          (goto-char 3)
+          (action-key)
+          (should (string= (buffer-name (current-buffer)) "README.md"))
+          (should (looking-at-p "## Hyperbole Components"))))
+    (hy-test-helpers:kill-buffer "README.md")))
+
+(ert-deftest fast-demo-elisp-or-env-vars ()
+  "Verify Elisp or env variables work in paths."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "\"${hyperb:dir}/HY-NEWS\"")
+        (goto-char 3)
+        (action-key)
+        (should (string= (buffer-name (current-buffer)) "HY-NEWS")))
+  (hy-test-helpers:kill-buffer "HY-NEWS")))
+
+(ert-deftest fast-demo-elisp-library-in-load-path ()
+  "Verify ibut to Elisp library works."
+  (let (bufname)
+    (unwind-protect
+        (with-temp-buffer
+          (insert "\"subr.el\"")
+          (goto-char 3)
+          (action-key)
+          (setq bufname (buffer-name (current-buffer)))
+          (should (string-prefix-p "subr.el" bufname))))
+    (hy-test-helpers:kill-buffer bufname)))
+
+(ert-deftest fast-demo-info-manual-references ()
+  "Verify info manual references works."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "\"(hyperbole)action-key-modeline-function\"")
+        (goto-char 3)
+        (action-key)
+        (should (string= Info-current-node "Smart Mouse Key Modeline Clicks")))
+    (hy-test-helpers:kill-buffer "*info*")))
 
 ;; Fast demo key series
 (ert-deftest fast-demo-key-series-help-buffer ()
@@ -465,7 +518,7 @@ Note: Depends on key series in FAST-DEMO and how many files in
 hyberbole folder that starts with kotl."
   (skip-unless (not noninteractive))
   (unwind-protect
-      (progn
+      (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "FAST-DEMO")
 	(goto-char (point-min))
         (search-forward "{C--1 C-c @")
@@ -604,7 +657,8 @@ enough files with matching mode loaded."
 
 (ert-deftest fast-demo-key-series-shell-apropos ()
   "Action key executes apropos shell command."
-  (skip-unless (not noninteractive))
+  (skip-unless (and (not noninteractive)
+                    (executable-find "apropos")))
   (let* ((shell-file-name (executable-find "sh"))
          (shell-buffer-name "*shell*")
 	 (existing-shell-flag (get-buffer-process shell-buffer-name)))
@@ -678,6 +732,102 @@ enough files with matching mode loaded."
 ;;  Local Variables:
 ;;  no-byte-compile: t
 ;;  End:
+
+
+;; Fast Demo Grep Messages, Stack Trace, Man Page Apropos
+(ert-deftest fast-demo-grep ()
+  "Verify ibuts from grep searches works."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "hactypes.el:454:					      (mapcar #'list (gbut:label-list))\nhbut.el:605:				       (mapcar #'list (gbut:label-list))\n")
+        (goto-char 3)
+        (action-key)
+        (should (string= (buffer-name (current-buffer)) "hactypes.el"))
+        (should (= (line-number-at-pos) 454)))
+    (hy-test-helpers:kill-buffer "hactypes.el")))
+
+(ert-deftest fast-demo-python-trace-back ()
+  "Verify ibuts from python traceback works."
+  (unwind-protect
+      (let ((default-directory hyperb:dir))
+        (with-temp-buffer
+          (insert "Traceback (most recent call last):\n  File \"topwin.py\", line 18, in <module>\n    import Quartz\n")
+          (goto-char (point-min))
+          (forward-line 1)
+          (goto-char (+ (point) 3))
+          (action-key)
+          (should (string= (buffer-name (current-buffer)) "topwin.py"))
+          (should (= (line-number-at-pos) 18))))
+    (hy-test-helpers:kill-buffer "topwin.py")))
+
+(ert-deftest fast-demo-man-k ()
+  "Verify ibut in man -k output displays the associated man page."
+  (with-temp-buffer
+    (insert "aspell(1)                - interactive spell checker")
+    (goto-char 3)
+    (with-mock
+      (mock (man "aspell(1)") => t)
+      (action-key))))
+
+;; Fast Demo Action Buttons
+(ert-deftest fast-demo-action-button-shell ()
+  "Verify a shell is created when action button for shell is invoked."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "<shell>")
+        (goto-char 3)
+        (action-key)
+        (should (string= (buffer-name (current-buffer)) "*shell*")))
+    (let (kill-buffer-hook kill-buffer-query-functions)
+      (hy-test-helpers:kill-buffer "*shell*"))))
+
+(ert-deftest fast-demo-action-button-fill-column ()
+  "Verify the value of `fill-column' is displayed in the minibuffer."
+  (with-temp-buffer
+    (insert "<fill-column>")
+    (goto-char 2)
+    (action-key)
+    (hy-test-helpers:should-last-message (format "fill-column = %d" (current-fill-column)))))
+
+(ert-deftest fast-demo-display-demo-using-action-buttons ()
+  "Verify the three ways show in the demo works."
+  (unwind-protect
+      (with-temp-buffer
+        (insert "<find-file-other-window (expand-file-name \"DEMO\" hyperb:dir)>")
+        (goto-char 5)
+	(let ((enable-local-variables nil))
+          (action-key))
+        (should (string= "DEMO" (buffer-name))))
+    (hy-test-helpers:kill-buffer "DEMO"))
+  (unwind-protect
+      (with-temp-buffer
+        (insert "<hpath:find \"${hyperb:dir}/DEMO\")>")
+        (goto-char 5)
+	(let ((enable-local-variables nil))
+          (action-key))
+        (should (string= "DEMO" (buffer-name))))
+    (hy-test-helpers:kill-buffer "DEMO"))
+  (unwind-protect
+      (with-temp-buffer
+        (insert "\"${hyperb:dir}/DEMO\"") ; Need double quotes - Error!?
+        (goto-char 5)
+	(let ((enable-local-variables nil))
+          (action-key))
+        (should (string= "DEMO" (buffer-name))))
+    (hy-test-helpers:kill-buffer "DEMO")))
+
+(ert-deftest fast-demo-display-kotl-starting-from-cell ()
+  "Verify a kotl file can be displayed from cell ref."
+  (unwind-protect
+      (let ((default-directory hyperb:dir))
+        (with-temp-buffer
+          (insert "<kotl/EXAMPLE.kotl#3b10|c2en>")
+          (goto-char 5)
+          (action-key)
+          (should (string= "EXAMPLE.kotl" (buffer-name)))
+          ;; FIXME: Add verification of lines per cell
+          (should (looking-at-p "Cell Transposition:"))))
+    (hy-test-helpers:kill-buffer "EXAMPLE.kotl")))
 
 (provide 'demo-tests)
 ;;; demo-tests.el ends here

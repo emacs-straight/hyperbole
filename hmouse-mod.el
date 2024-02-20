@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     8-Oct-92 at 19:08:31
-;; Last-Mod:     26-Jul-22 at 23:56:52 by Mats Lidell
+;; Last-Mod:     20-Jan-24 at 20:16:52 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 1992-2022  Free Software Foundation, Inc.
+;; Copyright (C) 1992-2024  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -117,7 +117,7 @@ mode, if no other key is pressed while a Smart Key is depressed."
 ;;; ************************************************************************
 
 (defun hmouse-mod-disable ()
-  "Restore the global keymap to its state prior to enabling of `hmouse-mod-mode'.
+  "Restore the global keymap to its state prior to enabling `hmouse-mod-mode'.
 This stops the Smart Keys from acting as modifier keys."
   (use-global-map (if (keymapp hmouse-mod--prior-global-map)
 		      hmouse-mod--prior-global-map
@@ -138,7 +138,7 @@ It accounts for modifier Smart Keys."
   (use-global-map hmouse-mod--global-map))
 
 (defun hmouse-mod-execute-command (key count)
-  "Execute command associated with keyboard KEY or if KEY is a prefix, record it.
+  "Execute command on keyboard KEY or if KEY is a prefix, record it.
 Second argument COUNT is used as a prefix argument to the command."
   (if (stringp key) (setq key (concat hmouse-mod--prefix key)))
   (let ((binding (key-binding key))
@@ -168,7 +168,9 @@ Second argument COUNT is used as a prefix argument to the command."
 	   (message "(HyDebug): hmouse-mod-execute-command - `%s' invalid key" key)))))
 
 (defun hmouse-mod-insert-command (count)
-  "Surrogate function for `self-insert-command'.  Accounts for modifier Smart Keys."
+  "Surrogate function for `self-insert-command'.
+Accounts for modifier Smart Keys.  COUNT is used as a prefix
+argument to the command."
   (interactive "p")
   (if (and (boundp 'action-key-depressed-flag)
 	   (boundp 'assist-key-depressed-flag))
@@ -204,7 +206,8 @@ Second argument COUNT is used as a prefix argument to the command."
   (keyboard-quit))
 
 (defun hmouse-mod-last-char ()
-  (when (characterp last-command-event)
+  "When last command was a character return the event."
+(when (characterp last-command-event)
     last-command-event))
 
 (provide 'hmouse-mod)
