@@ -8,9 +8,9 @@
 ;; Maintainer:   Mats Lidell <matsl@gnu.org>
 ;; Maintainers:  Robert Weiner <rsw@gnu.org>, Mats Lidell <matsl@gnu.org>
 ;; Created:      06-Oct-92 at 11:52:51
-;; Last-Mod:     19-Feb-24 at 12:31:45 by Bob Weiner
-;; Released:     03-Dec-23
-;; Version:      8.0.2pre
+;; Last-Mod:     10-Mar-24 at 12:50:16 by Bob Weiner
+;; Released:     10-Mar-24
+;; Version:      9.0.1
 ;; Keywords:     comm, convenience, files, frames, hypermedia, languages, mail, matching, mouse, multimedia, outlines, tools, wp
 ;; Package:      hyperbole
 ;; Package-Requires: ((emacs "27.1"))
@@ -432,17 +432,10 @@ frame, those functions by default still return the prior frame."
 ;; Mh-e
 (var:append 'mh-inc-folder-hook '(Mh-init))
 ;;
-;; VM support is based on V5.72 beta of VM.  If you have a version of VM
-;; earlier than 5.70 beta, you should either upgrade or comment out the
-;; following line so that Hyperbole support for VM is not enabled.
-(var:append 'vm-mode-hook       '(Vm-init))
-;;
 ;; Hyperbole mail composer support configuration.
 ;;
 (var:append 'message-mode-hook   (list (lambda () (require 'hsmail))))
 (var:append 'mh-letter-mode-hook (list (lambda () (require 'hsmail))))
-(var:append 'vm-mail-mode-hook   (list (lambda () (require 'hsmail))))
-
 
 ;;; ************************************************************************
 ;;; URL Browsing

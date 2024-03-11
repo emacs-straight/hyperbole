@@ -3,7 +3,7 @@
 # Author:       Bob Weiner
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
-# Last-Mod:      3-Mar-24 at 18:29:05 by Bob Weiner
+# Last-Mod:     10-Mar-24 at 13:02:13 by Bob Weiner
 #
 # Copyright (C) 1994-2023  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
@@ -89,7 +89,7 @@
 
 # This ver setup won't work under any make except GNU make, so set it manually.
 #HYPB_VERSION = "`head -3 hversion.el | tail -1 | sed -e 's/.*|\(.*\)|.*/\1/'`"
-HYPB_VERSION = 8.0.2pre
+HYPB_VERSION = 9.0.1
 
 # Emacs executable used to byte-compile .el files into .elc's.
 # To override which executable is used from the commandline, do something like this:
@@ -193,7 +193,7 @@ EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hyrolo-demo.el hyrolo-logic.el hyrolo-menu.el hyrolo.el hywconfig.el set.el hypb-ert.el \
 	     hui-dired-sidebar.el hypb-maintenance.el hui-em-but.el hui-register.el
 
-EL_SRC = $(EL_COMPILE) hvm.el
+EL_SRC = $(EL_COMPILE)
 
 EL_KOTL = kotl/kexport.el kotl/kfile.el kotl/kfill.el kotl/kimport.el kotl/klabel.el \
 	  kotl/klink.el kotl/kmenu.el kotl/kotl-mode.el kotl/kotl-orgtbl.el \
@@ -343,14 +343,14 @@ clean:
 
 version:
 	@ echo ""
-	@ fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-NEWS README.md hversion.el hyperbole.el man/hyperbole.texi man/version.texi > WRONG-VERSIONS
+	@ rm -f WRONG-VERSIONS
+	@ fgrep -L $(HYPB_VERSION) Makefile HY-ABOUT HY-ANNOUNCE HY-NEWS README.md hversion.el hyperbole.el man/hyperbole.texi man/version.texi > WRONG-VERSIONS
 	@ # If any file(s) have wrong version number, print them and exit with code 1
 	@ if [ -s WRONG-VERSIONS ]; then \
 	  echo "The following files do not have the proper Hyperbole version number, $(HYPB_VERSION):"; \
 	  cat WRONG-VERSIONS; rm -f WRONG-VERSIONS; exit 1; \
-	else \
-	  rm -f WRONG-VERSIONS; \
 	fi
+	@ rm -f WRONG-VERSIONS
 	@ echo ""
 
 # Build the README.md.html and Info, HTML and Postscript versions of the user manual
