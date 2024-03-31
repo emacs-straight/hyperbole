@@ -1,3 +1,30 @@
+2024-03-30  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-highlight-matches): Limit search to within 'end' bound.
+            (hyrolo-add-match): Add 'headline-only' flag to limit match highlighting
+    to within the headline of an entry only (its first line).
+            (hyrolo-grep-file): Send 'hyrolo-add-match' the 'headline-only' flag; this
+    fixes match highlighting to just within headlines when the flag is given.
+
+* hyrolo (hyrolo-grep-file): Fix to highlight only the original pattern match, not
+    the bol-anchored search-pattern used when 'headline-only' non-nil is used.
+
+* hyrolo.el (hyrolo-next-match-function): Change doc so function takes only one arg now
+    and not a second arg of 'headline-only'.  That arg is now only sent to the higher
+    level 'hyrolo-grep-file' function for efficiency.
+            (hyrolo-next-regexp-match): Remove second 'headline-only' flag.
+            (hyrolo-grep-file): With 'headline-only' flag, anchor pattern to match
+     headline lines only and don't send 'headline-only' flag to 'hyrolo-next-match-function'
+     call.  This fixes headline-only searching which previously did not work properly.
+  hyrolo-logic.el (hyrolo-<logical-operator>): No longer send a nil second arg to the
+     'hyrolo-next-match-function' call; no longer needed.
+
+2024-03-29  Mats Lidell  <matsl@gnu.org>
+
+* Makefile: Add install-melpa target. Used to validate hyperbole can be
+    installed from melpa.
+* install-test/melpa/.emacs: .emacs used for the melpa install test.
+
 2024-03-24  Mats Lidell  <matsl@gnu.org>
 
 * test/hui-tests.el (hui--ibut-link-directly-to-file)
