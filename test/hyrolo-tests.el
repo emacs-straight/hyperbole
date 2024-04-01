@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    19-Jun-21 at 22:42:00
-;; Last-Mod:     22-Mar-24 at 08:37:53 by Bob Weiner
+;; Last-Mod:     31-Mar-24 at 22:29:58 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1633,6 +1633,31 @@ body
 "                           )))
       (kill-buffer hyrolo-display-buffer)
       (hy-delete-files-and-buffers hyrolo-file-list))))
+
+(ert-deftest hyrolo-test--grep-count ()
+  "Verify number of matched entries are correct."
+  (unwind-protect
+      (with-temp-buffer
+        (org-mode)
+        (insert "\
+* match
+match
+* match
+other
+* other
+match
+")
+        ;; Count number of entries that have a match
+        (should (= (hyrolo-grep "match" nil (current-buffer) t nil) 3))
+        ;; Count number of entries that only match on the first line
+        (should (= (hyrolo-grep "match" nil (current-buffer) t t) 2))
+        ;; Count max number of entries
+        (should (= (hyrolo-grep "match" 1 (current-buffer) t nil) 1))
+        ;; Nothing if there is no match
+        (should (= (hyrolo-grep "nothing" nil (current-buffer) t nil) 0)))
+    (and (get-buffer hyrolo-display-buffer)
+         (kill-buffer hyrolo-display-buffer)
+         (ert-fail "Buffer %s should not have been created" hyrolo-display-buffer))))
 
 (provide 'hyrolo-tests)
 
