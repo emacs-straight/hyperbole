@@ -1,4 +1,26 @@
+2024-06-23  Bob Weiner  <rsw@gnu.org>
+
+* Makefile: (dockerized-run): Add to intweractively run dockerized versions
+    of Emacs with Hyperbole.  Update Commentary to summarize dockerized
+    targets that build, byte-compile and run Hyperbole.
+
+2024-06-22  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el
+    (hywiki-tests--get-page-list-when-new-wiki-directory): Verify cache is
+    empty for a new hywiki-directory.
+
+* Makefile (dockerized-update): Target to update (pull) the Emacs docker
+    image.
+    (dockerized): Copy source to docker so not local workspace is affected
+    when running targets in the docker environment.
+
 2024-06-22  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-org-mode): Fix Org mode breakage with Emacs 30 and Org 9.7
+    and up by removing internal variable ref in
+    'org-fold-core-set-folding-spec-property' call and using 'org-link symbol
+    instead.
 
 * hywiki.el (hywiki-active-in-current-buffer-p): Fix to highlight HyWikiWords
     in 'kotl-mode' which is a special class buffer.
