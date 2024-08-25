@@ -3,7 +3,7 @@
 # Author:       Bob Weiner
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
-# Last-Mod:     15-Aug-24 at 00:32:27 by Bob Weiner
+# Last-Mod:     24-Aug-24 at 10:41:04 by Mats Lidell
 #
 # Copyright (C) 1994-2023  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
@@ -79,7 +79,7 @@
 #
 #               To interactively run a docker version of Emacs with Hyperbole:
 #                   make docker-run              - default to running master
-#                   make docker-run version=27.1 - run Emacs V27.1
+#                   make docker-run version=27.2 - run Emacs V27.2
 #
 #               To build and test a dockerized version of Emacs with Hyperbole:
 #                   make docker                  - defaults: version=master targets='clean bin test'
@@ -512,9 +512,9 @@ endif
 
 # For full backtrace run make test FULL_BT=<anything or even empty>
 ifeq ($(origin FULL_BT), command line)
-HYPB_ERT_BATCH_BT = (ert-batch-backtrace-line-length nil)
+HYPB_ERT_BATCH_BT = (ert-batch-backtrace-line-length t) (backtrace-line-length nil)
 else
-HYPB_ERT_BATCH_BT = (ert-batch-backtrace-line-length 256)
+HYPB_ERT_BATCH_BT = (ert-batch-backtrace-line-length 256) (backtrace-line-length 5000)
 endif
 
 # Run non-interactive tests in batch mode
@@ -522,7 +522,7 @@ test-ert:
 	@echo "# Tests: $(TEST_ERT_FILES)"
 	$(EMACS_BATCH) --eval "(load-file \"test/hy-test-dependencies.el\")" \
 	--eval "(let ((auto-save-default) (ert-batch-print-level 10) \
-	              (ert-batch-print-length nil) (backtrace-line-length 5000) \
+	              (ert-batch-print-length nil) \
 	              $(HYPB_ERT_BATCH_BT) (ert-batch-backtrace-right-margin 2048)) \
 	           $(LOAD_TEST_ERT_FILES) $(HYPB_ERT_BATCH))"
 
