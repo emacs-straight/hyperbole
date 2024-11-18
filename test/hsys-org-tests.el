@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    23-Apr-21 at 20:55:00
-;; Last-Mod:     31-Jul-24 at 01:46:48 by Bob Weiner
+;; Last-Mod:     16-Nov-24 at 09:45:51 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -224,6 +224,53 @@ This is independent of the setting of `hsys-org-enable-smart-keys'."
             (hsys-org-at-tags-p => t)
             (hsys-org--agenda-tags-string => ":tag"))
     (should (string= "agenda-func" (hsys-org-get-agenda-tags #'agenda-func)))))
+
+(ert-deftest hsys-org--meta-return-on-end-of-line ()
+  "Verify end-of-line behaves as `org-mode' when smart keys not enabled."
+  (dolist (v '(nil :buttons))
+    (let ((hsys-org-enable-smart-keys v))
+      ;; One line with text, no return: smart-org triggers with nil or :buttons setting
+      (with-temp-buffer
+        (org-mode)
+        (insert "* h1")
+        (goto-char 1)
+        (end-of-line)
+        (with-mock
+          (mock (hsys-org-meta-return) => t)
+          (should (equal hsys-org-enable-smart-keys v)) ; Ert traceability
+          (should (action-key))))
+      ;; Two lines with text and returns: smart-org triggers with nil or :buttons setting
+      (with-temp-buffer
+        (org-mode)
+        (insert "* h1\n* h2\n")
+        (goto-char 1)
+        (end-of-line)
+        (with-mock
+          (mock (hsys-org-meta-return) => t)
+          (should (equal hsys-org-enable-smart-keys v)) ; Ert traceability
+          (should (action-key))))))
+  (let ((hsys-org-enable-smart-keys t)
+        (v t))
+    ;; One line with text, no return: smart-eolp triggers with t setting
+    (with-temp-buffer
+      (org-mode)
+      (insert "* h1")
+      (goto-char 1)
+      (end-of-line)
+      (with-mock
+        (mock (smart-scroll-up) => t)
+        (should (equal hsys-org-enable-smart-keys v)) ; Ert traceability
+        (should (action-key))))
+    ;; Two lines with text and returns: smart-eolp triggers with t setting
+    (with-temp-buffer
+      (org-mode)
+      (insert "* h1\n* h2\n")
+      (goto-char 1)
+      (end-of-line)
+      (with-mock
+        (mock (smart-scroll-up) => t)
+        (should (equal hsys-org-enable-smart-keys v)) ; Ert traceability
+        (should (action-key))))))
 
 (provide 'hsys-org-tests)
 
