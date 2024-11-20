@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:     17-Nov-24 at 10:27:44 by Bob Weiner
+;; Last-Mod:     19-Nov-24 at 00:21:19 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1188,7 +1188,7 @@ If in a programming mode, must be within a comment.  Use
 		     (progn
 		       (setq hywiki--page-name (match-string-no-properties 1)
 			     hywiki--start (match-beginning 0)
-			     hywiki--end   (1- (match-end 0)))
+			     hywiki--end   (match-beginning 3))
 		       (and (hywiki-get-page hywiki--page-name)
 			    ;; Ignore wikiwords preceded by any non-whitespace character
 			    ;; (or (bolp) (memq (preceding-char) '(?\  ?\t)))
@@ -1293,10 +1293,15 @@ the current page unless they have sections attached."
 		;; Remove any potential earlier highlighting since the
 		;; previous word may have changed.
 		(skip-syntax-backward "^-$()<>._\"\'")
-		(when (and hywiki--start hywiki--end)
-		  (hproperty:but-clear-all-in-list
-		   (hproperty:but-get-all-in-region hywiki--start hywiki--end
-						    'face hywiki-word-face))))))))))
+		(if (setq hywiki--buts (hproperty:but-get-all-in-region
+					(point) (1+ (point)) 'face hywiki-word-face))
+		    (if (> (length hywiki--buts) 1)
+			(hproperty:but-clear-all-in-list hywiki--buts)
+		      ;; There is only one existing button
+		      (setq hywiki--buts (car hywiki--buts)
+			    hywiki--but-start (hproperty:but-start hywiki--buts)
+			    hywiki--but-end   (hproperty:but-end hywiki--buts))
+		      (hproperty:but-delete hywiki--buts))))))))))
 
 (defun hywiki-maybe-highlight-between-page-names ()
   "Highlight any non-Org link HyWiki page#section names between point.
