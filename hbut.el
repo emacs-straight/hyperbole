@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     26-Dec-24 at 13:22:18 by Bob Weiner
+;; Last-Mod:      5-Jan-25 at 11:27:31 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -552,7 +552,7 @@ button is found in the current buffer."
 		   (re-search-backward regexp nil t)))
 	     (goto-char (+ (match-beginning 0) (length ebut:label-start))))))
 
-    (when (or (not buffer-file-name) (hmail:editor-p) (hmail:reader-p))
+    (when (or (not (hypb:buffer-file-name)) (hmail:editor-p) (hmail:reader-p))
       (widen)
       (hmail:msg-narrow))
 
@@ -614,7 +614,7 @@ labels only; optional MATCH-PART enables partial matches."
 	      (setq currbuf (and (file-readable-p currfile)
 				 (find-file-noselect currfile))
 		    dir (file-name-directory currfile))
-	    (setq currfile (buffer-file-name currbuf)))
+	    (setq currfile (hypb:buffer-file-name currbuf)))
 	  (and currfile currbuf
 	       (unwind-protect
 		   (setq src-matches
@@ -834,7 +834,7 @@ delimiters.  With POS-FLAG non-nil, return the list of label-or-key,
 but-start-position, but-end-position.  Positions include
 delimiters.  With TWO-LINES-FLAG non-nil, constrain label search
 to two lines."
-  (when (equal buffer-file-name (gbut:file))
+  (when (equal (hypb:buffer-file-name) (gbut:file))
     (hbut:label-p as-label start-delim end-delim pos-flag two-lines-flag)))
 
 (defun    gbut:save-buffer ()
@@ -1055,7 +1055,7 @@ Default is the symbol hbut:current."
 		    (delim-text-start (hattr:get hbut 'lbl-start))
 		    (delim-text-end (hattr:get hbut 'lbl-end)))
 	       (if (and name-key
-			(or (equal loc buffer-file-name)
+			(or (equal loc (hypb:buffer-file-name))
 			    (equal loc (current-buffer)))
 			(equal name-key (ibut:label-to-key (hattr:get hbut 'name))))
 		   (unless (and delim-text-start delim-text-end
@@ -1064,7 +1064,7 @@ Default is the symbol hbut:current."
 		     (goto-char delim-text-start)
 		     (skip-chars-forward "^-_a-zA-Z0-9"))
 		 ;; Here handle when there is no name preceding the implicit button.
-		 (unless (and (or (equal loc buffer-file-name)
+		 (unless (and (or (equal loc (hypb:buffer-file-name))
 				  (equal loc (current-buffer)))
 			      delim-text-start delim-text-end
 			      (< delim-text-start (point))
@@ -1297,10 +1297,10 @@ is given."
 						 cd 0 (string-match "\\s +\\'" cd)))
 				       (expand-file-name cd wd))
 			      wd)))
-			 (buffer-file-name
+			 ((hypb:buffer-file-name)
 			  (if full-flag
-			      buffer-file-name
-			    (file-name-nondirectory buffer-file-name)))
+			      (hypb:buffer-file-name)
+			    (file-name-nondirectory (hypb:buffer-file-name))))
 			 ;; Handle any preceding @loc hyp-source implicit button location references.
 			 ;; This is used in report buffers of explicit buttons, i.e. hui:hbut-report
 			 ;; as well as the *HyRolo* display matches buffer.
@@ -1347,10 +1347,10 @@ This is used to obtain the source of Hyperbole buttons for buffers that
 represent the output of particular document formatters."
   (when (or (eq major-mode 'Info-mode)
 	    (string-match "\\.info\\(-[0-9]+\\)?$" (buffer-name)))
-    (let ((src (and buffer-file-name
+    (let ((src (and (hypb:buffer-file-name)
 		    (substring
-		     buffer-file-name
-		     0 (string-match "\\.[^.]+$" buffer-file-name)))))
+		     (hypb:buffer-file-name)
+		     0 (string-match "\\.[^.]+$" (hypb:buffer-file-name))))))
       (cond ((file-exists-p (concat src ".texi"))
 	     (concat src ".texi"))
 	    ((file-exists-p (concat src ".texinfo"))
@@ -1747,7 +1747,7 @@ button label.  Return the symbol for the button, else nil."
 Keys in optional KEY-SRC or the current buffer."
   (save-excursion
     (save-restriction
-      (if (hbdata:to-entry-buf (or key-src (buffer-file-name)))
+      (if (hbdata:to-entry-buf (or key-src (hypb:buffer-file-name)))
 	  (let (hbuts)
 	    (save-restriction
 	      (narrow-to-region (point) (if (search-forward "\f" nil t)
@@ -1848,9 +1848,9 @@ button text (not name); without these, try a series of matching
 delimiters (double quotes, angle brackets, braces and square
 brackets).
 
-This will not set the \\='name attribute unless there is a <[name]>
-prefix.  This will not set the \\='lbl-key or the \\='lbl-end location
-attribute unless the button text is delimited.
+This will not set any button attributes aside from \\='lbl-start
+unless valid button text is found and is delimited.  For example,
+this will return nil on a non-delimited pathname implicit button.
 
 Any implicit button name must contain at least two characters,
 excluding delimiters, not just one."
@@ -1900,9 +1900,9 @@ excluding delimiters, not just one."
 	      ;; Remove any HyWiki org-link-type prefix
 	      (setq lbl-key (substring lbl-key 3)
 		    lbl-start (+ lbl-start (length hywiki-org-link-type) 1))))
-	  (hattr:set 'hbut:current   'loc (save-excursion
-					    (hbut:to-key-src 'full)))
 	  (when lbl-start
+	    (hattr:set 'hbut:current   'loc (save-excursion
+					      (hbut:to-key-src 'full)))
 	    (hattr:set 'hbut:current 'categ 'implicit)
 	    (hattr:set 'hbut:current 'lbl-key lbl-key)
 	    (hattr:set 'hbut:current 'lbl-start lbl-start)
@@ -1927,15 +1927,15 @@ excluding delimiters, not just one."
 		    name-start     (nth 1 name-start-end)
 		    name-end       (nth 2 name-start-end))))
 
-	  (when name
+	  (when (and lbl-start name)
 	    (hattr:set 'hbut:current 'name name))
-	  (when (and name-start name-end)
+	  (when (and lbl-start name-start name-end)
 	    (hattr:set 'hbut:current 'name-start name-start)
 	    (hattr:set 'hbut:current 'name-end name-end))
-	  (when (or lbl-key name)
+	  (when lbl-start
 	    t))
       (goto-char opoint)
-      (setq opoint nil))))
+      (set-marker opoint nil))))
 
 (cl-defun ibut:create (&optional &key but-sym name lbl-key lbl-start lbl-end
 				 loc dir categ actype args action)
@@ -2119,8 +2119,9 @@ If a new button is created, store its attributes in the symbol,
 
 	      (when (and lbl-key (eq actype #'hywiki-find-referent))
 		;; If a HyWikiWord ibut, save its referent as an attribute
-		(hattr:set 'hbut:current 'referent (hywiki-get-referent lbl-key)))
-
+		(let ((referent (hywiki-get-referent lbl-key)))
+		  (hattr:set 'hbut:current 'referent-type (car referent))
+		  (hattr:set 'hbut:current 'referent-value (cdr referent))))
 	      (when lbl-key
 		(when (called-interactively-p 'any)
 		  (let (help-window-select)
@@ -2327,16 +2328,21 @@ If LABEL is a list, it is assumed to contain all arguments.
 For legacy reasons, the label here is actually the text of the
 implicit button matched contextually and never the optional <[name]>
 preceding the text."
-  (cond ((stringp label)
-	 (hattr:set 'hbut:current 'lbl-key (hbut:label-to-key label))
-	 (when start (hattr:set    'hbut:current 'lbl-start start))
-	 (when end   (hattr:set    'hbut:current 'lbl-end   end)))
-	((and label (listp label))
-	 (hattr:set 'hbut:current 'lbl-key (hbut:label-to-key (car label)))
-	 (hattr:set 'hbut:current 'lbl-start (nth 1 label))
-	 (hattr:set 'hbut:current 'lbl-end (nth 2 label)))
-	(t (error "(ibut:label-set): Invalid label arg: `%s'" label)))
-  label)
+  (save-match-data
+    (cond ((stringp label)
+	   (hattr:set 'hbut:current 'loc (save-excursion
+					   (hbut:to-key-src 'full)))
+	   (hattr:set 'hbut:current 'lbl-key (hbut:label-to-key label))
+	   (when start (hattr:set    'hbut:current 'lbl-start start))
+	   (when end   (hattr:set    'hbut:current 'lbl-end   end)))
+	  ((and label (listp label))
+	   (hattr:set 'hbut:current 'loc (save-excursion
+					   (hbut:to-key-src 'full)))
+	   (hattr:set 'hbut:current 'lbl-key (hbut:label-to-key (car label)))
+	   (hattr:set 'hbut:current 'lbl-start (nth 1 label))
+	   (hattr:set 'hbut:current 'lbl-end (nth 2 label)))
+	  (t (error "(ibut:label-set): Invalid label arg: `%s'" label)))
+    label))
 
 (defun    ibut:label-sort-keys (lbl-keys)
   "Return a sorted list of ibutton LBL-KEYS with highest instance number first."
