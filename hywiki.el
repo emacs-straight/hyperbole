@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Acpr-24 at 22:41:13
-;; Last-Mod:      5-Feb-25 at 22:21:38 by Mats Lidell
+;; Last-Mod:      9-Feb-25 at 10:10:14 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -564,16 +564,18 @@ deletion commands and those in `hywiki-non-character-commands'."
 		   (active-minibuffer-window)))
     (when (or (memq this-command hywiki-non-character-commands)
 	      (and (symbolp this-command)
-		   (string-match-p "^\\(org-\\)?delete-\\|-delete-\\|insert\\(-\\|$\\)" (symbol-name this-command))))
+		   (string-match-p "^\\(org-\\)?\\(delete-\\|kill-\\)\\|\\(-delete\\|-kill\\|insert\\)\\(-\\|$\\)" (symbol-name this-command))))
       (if (and (marker-position hywiki--buttonize-start)
 	       (marker-position hywiki--buttonize-end))
+	  ;; This means the command just deleted an opening or closing
+	  ;; delimiter of a range that now needs any HyWikiWords
+	  ;; inside to be re-highlighted.
 	  (save-excursion
 	    (goto-char hywiki--buttonize-start)
 	    (let ((opening-char (char-after))
 		  closing-char)
 	      (when (memq opening-char '(?\( ?\"))
-		(delete-char 1)
-		(insert " "))
+		(delete-char 1))
 	      (goto-char hywiki--buttonize-end)
 	      (setq closing-char (char-before))
 	      (when (memq closing-char '(?\) ?\"))
@@ -582,7 +584,6 @@ deletion commands and those in `hywiki-non-character-commands'."
 	      (goto-char hywiki--buttonize-start)
 	      (hywiki-maybe-highlight-between-page-names)
 	      (when (memq opening-char '(?\( ?\"))
-		(delete-char 1)
 		(insert opening-char))
 	      (when (memq closing-char '(?\) ?\"))
 		(goto-char (1+ hywiki--buttonize-end))
@@ -599,7 +600,7 @@ deletion commands and those in `hywiki-non-character-commands'."
     (set-marker hywiki--buttonize-end nil))
   (when (or (memq this-command hywiki-non-character-commands)
 	    (and (symbolp this-command)
-		 (string-match-p "\\`\\(org-\\)?delete-\\|-delete-"
+		 (string-match-p "\\`\\(org-\\)?\\(delete-\\|kill-\\)\\|-delete-\\|-kill-"
 				 (symbol-name this-command))))
     (cl-destructuring-bind (start end)
 	(hywiki-get-delimited-range) ;; includes delimiters
@@ -1409,6 +1410,7 @@ per file to the absolute value of MAX-MATCHES, if given and not 0.  If
 (defun hywiki-convert-words-to-org-links ()
   "Convert all highlighted HyWiki words in current buffer to Org links."
   (barf-if-buffer-read-only)
+  (hywiki-maybe-highlight-page-names)
   (let ((make-index (hywiki-org-get-publish-property :makeindex))
 	wiki-word)
     (hywiki-map-words (lambda (overlay)
@@ -1542,10 +1544,16 @@ After successfully finding any kind of referent, run
 Have to add one character to the length of the yanked text so that any
 needed word-separator after the last character is included to induce
 highlighting any last HyWikiWord."
-  (hywiki-maybe-highlight-page-names start (min (1+ end) (point-max))))
+  ;; When yank only part of a delimited pair, expand the range to
+  ;; include the whole delimited pair before re-highlighting
+  ;; HyWikiWords therein, so that the whole delimited expression is
+  ;; included.
+  (cl-destructuring-bind (start end)
+      (hywiki--extend-yanked-region start end)
+    (hywiki-maybe-highlight-page-names start (min (1+ end) (point-max)))))
 
 (defun hywiki-map-words (func)
-  "Apply FUNC across all HyWikiWords in the current buffer and return nil.
+  "Apply FUNC across highlighted HyWikiWords in the current buffer and return nil.
 FUNC takes 1 argument, the Emacs overlay spanning the start and end buffer
 positions of each HyWikiWord and its optional #section."
   (save-excursion
@@ -2455,10 +2463,10 @@ save and potentially set `hywiki--directory-mod-time' and
 				       (progn (eval (read (buffer-string)))
 					      t)
 				     (error nil)))))))
-  (if (and hywiki-loaded-flag (not (hywiki-directory-modified-p)))
+    (if (and hywiki-loaded-flag (not (hywiki-directory-modified-p)))
 	;; Rebuild from loaded data
-	(setq hywiki--referent-hasht (hash-make hywiki--referent-alist t)
-	      hywiki--referent-alist nil)
+        (prog1 (setq hywiki--referent-hasht (hash-make hywiki--referent-alist t))
+	  (setq hywiki--referent-alist nil))
       ;; Read `hywiki-directory' for current page files and merge with
       ;; non-page referents
       (let* ((page-files (hywiki-get-page-files))
@@ -2482,11 +2490,18 @@ save and potentially set `hywiki--directory-mod-time' and
 (defun hywiki-non-page-elt (val-key)
   (unless (eq (caar val-key) 'page) val-key))
 
+(defun hywiki--sitemap-file ()
+  "Return file name for the sitemap file."
+  (expand-file-name
+   (org-publish-property :sitemap-filename (hywiki-org-get-publish-project))
+   (org-publish-property :base-directory (hywiki-org-get-publish-project))))
+
 (defun hywiki-org-export-function (&rest _)
   "Add to `write-contents-functions' to convert HyWikiWord links to Org links.
 This is done automatically by loading HyWiki."
   (require 'org-element)
   (when (and (derived-mode-p 'org-mode)
+             (not (string= (hywiki--sitemap-file) (buffer-file-name)))
 	     (hyperb:stack-frame '(org-export-copy-buffer)))
     (hywiki-convert-words-to-org-links)
     (hywiki-org-maybe-add-title)))
@@ -2925,6 +2940,56 @@ invalid.  Appended only if the referent-type supports suffixes."
 			(concat referent-value suffix)))
 		(cons referent-type referent-value))
 	    referent))))))
+
+(defun hywiki--extend-yanked-region (start end)
+  "Return a list of (START END) with the specified range extended to include any delimited regions.
+Typically used to extend a yanked region to fully include any strings or balanced pair delimiters."
+  (let ((delim-distance 0)
+	(result (list start end))
+	opoint)
+
+    ;; Skip past all delimited ranges and extend `end' as needed
+    (save-excursion
+      (goto-char start)
+      (while (and (<= (point) end)
+		  (not (zerop (setq delim-distance (skip-syntax-forward "^\(" end)))))
+	(condition-case nil
+	    (progn (goto-char (+ (point) delim-distance))
+		   (setq opoint (point))
+		   (setq end (max end (goto-char (scan-sexps (point) 1)))
+			 result (list start end)))
+	  (error (goto-char (min (1+ opoint) end))))))
+
+    ;; Skip past all double-quoted ranges and extend `start' and `end' as needed
+    (save-excursion
+      (goto-char start)
+      (while (and (<= (point) end)
+		  (not (zerop (setq delim-distance (skip-syntax-forward "^\"" end)))))
+	(condition-case nil
+	    (progn (goto-char (+ (point) delim-distance))
+		   (setq opoint (point))
+		   (if (hypb:in-string-p)
+		       (progn (goto-char (1+ (point)))
+			      (setq start (min start (goto-char (scan-sexps (1+ (point)) -1))))
+			      (goto-char (min (1+ opoint) end)))
+		     ;; before a string
+		     (setq end (max end (goto-char (scan-sexps (point) 1)))))
+		   (setq result (list start end)))
+	  (error (goto-char (min (1+ opoint) end))))))
+
+    ;; Skip past closing delimiter and extend `start' if needed
+    (save-excursion
+      (goto-char start)
+      (while (and (<= (point) end)
+		  (not (zerop (setq delim-distance (skip-syntax-forward "^\)" end)))))
+	(condition-case nil
+	    (progn (goto-char (+ (point) delim-distance))
+		   (setq opoint (point))
+		   (setq start (min start (goto-char (scan-sexps (1+ (point)) -1)))
+			 result (list start end))
+		   (goto-char (min (1+ opoint) end)))
+	  (error (goto-char (min (1+ opoint) end))))))
+      result))
 
 (defun hywiki--get-delimited-range-backward ()
   "Return a list of (start end) if not between/after end ]] or >>.
