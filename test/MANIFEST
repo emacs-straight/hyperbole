@@ -1,0 +1,34 @@
+--- HYPERBOLE TEST CASES ---
+demo-tests.el           - unit tests from examples in the DEMO
+hact-tests.el           - hact unit tests
+hactypes-tests.el       - Ert tests for hactypes
+hargs-tests.el          - hargs unit tests
+hbut-tests.el           - hbut unit tests
+hib-kbd-tests.el        - unit test for hib-kbd
+hib-social-tests.el     - Test for hib-social
+hibtypes-tests.el       - unit test for hib-kbd
+hmouse-drv-tests.el     - hmouse-drv unit tests
+hmouse-info-tests.el    - hmouse-info unit tests
+hpath-tests.el          - unit tests for hpath
+hsettings-test.el       - unit tests for hsettings
+hsys-org-tests.el       - hsys-org tests
+hui-mini-tests.el       - hui-mini tests
+hui-register-tests.el   - test for hui-register
+hui-select-tests.el     - hui-select tests
+hui-tests.el            - tests for hui.el Hyperbole UI
+hy-test-coverage.el     - provide test coverage information
+hy-test-dependencies.el - Hyperbole test dependencies
+hy-test-helpers.el      - unit test helpers
+hycontrol-tests.el      - hycontrol unit tests
+hypb-tests.el           - tests for hypb.el utility functions
+hyperbole-tests.el      - tests for hyperbole.el
+hyrolo-tests.el         - unit tests for hyrolo.el
+hywconfig-tests.el      - tests for hyperbole window configuration management
+kcell-tests.el          - test for kcells in Koutlines
+kexport-tests.el        - test exporting Koutlines to file types
+kimport-tests.el        - test importing file types to Koutlines
+kotl-mode-tests.el      - kotl-mode-el tests
+kotl-orgtbl-tests.el    - kotl orgtbl tests
+set-tests.el            - mathematical set library tests
+smart-org-tests.el      - smart-org-el tests
+test-helpers-tests.el   - unit test of the test helpers
