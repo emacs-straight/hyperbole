@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:      5-Jan-25 at 11:27:31 by Bob Weiner
+;; Last-Mod:     13-Apr-25 at 14:34:35 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -891,6 +891,13 @@ Return the symbol for the button when found, else nil."
 ;;; hattr class
 ;;; ========================================================================
 
+(defun hattr:actype-is-p (actype-symbol &optional hbut-symbol)
+  "Return t if ACTYPE-SYMBOL matches an hbut's 'actype attr value.
+The hbut used defaults to 'hbut:current or the optional HBUT-SYMBOL."
+  (hattr:is-p 'actype
+	      (or (actype:def-symbol actype-symbol) actype-symbol)
+	      hbut-symbol))
+
 (defun    hattr:attributes (obj-symbol)
   "Return a list of OBJ-SYMBOL's attributes as symbols."
   (when (symbolp obj-symbol)
@@ -946,6 +953,20 @@ Return TO-HBUT."
 (defun    hattr:get (obj-symbol attr-symbol)
   "Return value of OBJ-SYMBOL's attribute ATTR-SYMBOL."
   (get obj-symbol attr-symbol))
+
+(defun hattr:ibtype-is-p (ibtype-symbol &optional ibut-symbol)
+  "Return t if IBTYPE-SYMBOL matches an ibut's 'categ attr value.
+The ibut used defaults to 'hbut:current or the optional IBUT-SYMBOL."
+  (hattr:is-p 'categ
+	      (or (ibtype:elisp-symbol ibtype-symbol) ibtype-symbol)
+	      ibut-symbol))
+
+(defun hattr:is-p (attr value &optional hbut-symbol)
+  "Return t if ATTR has VALUE for 'hbut:current or optional HBUT-SYMBOL."
+  (and (symbolp attr) attr 
+       (eq (hattr:get (or (and (symbolp hbut-symbol) hbut-symbol) 'hbut:current)
+		      attr)
+	   value)))
 
 (defun    hattr:list (obj)
   "Return a property list of OBJ's attributes.
