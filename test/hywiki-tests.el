@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell
 ;;
 ;; Orig-Date:    18-May-24 at 23:59:48
-;; Last-Mod:     12-Apr-25 at 17:00:40 by Bob Weiner
+;; Last-Mod:     18-Apr-25 at 22:22:11 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1440,6 +1440,25 @@ Insert test in the middle of other text."
                 (goto-char 16)
                 (should-not (hywiki-word-at)))))
         (hy-delete-dir-and-buffer hywiki-directory)))))
+
+(ert-deftest hywiki-tests--wikiword-identified-in-strings-in-emacs-lisp-mode ()
+  "Verify WikiWord is identified when in strings in `emacs-lisp-mode'."
+  (hywiki-tests--preserve-hywiki-mode
+    (unwind-protect
+        (let ((words '("Foo" "Bar" "Baz" "Qux")))
+          (hywiki-mode 1)
+          (with-temp-buffer
+            (emacs-lisp-mode)
+            (insert
+             (format "\
+(defun a ()
+  \"%s.\"
+  nil)
+" (mapconcat 'identity words " ")))
+            (goto-line 2)
+            (dolist (v words)
+              (should (search-forward v))
+              (should (string= v (hywiki-word-at)))))))))
 
 (provide 'hywiki-tests)
 
