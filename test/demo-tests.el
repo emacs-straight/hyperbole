@@ -3,11 +3,11 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     20-Apr-25 at 14:55:17 by Bob Weiner
+;; Last-Mod:     10-Jun-25 at 17:44:05 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2021-2024  Free Software Foundation, Inc.
+;; Copyright (C) 2021-2025  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -19,6 +19,7 @@
 ;;; Code:
 
 (require 'ert)
+(require 'ert-x)
 (require 'hib-kbd)
 (require 'hmouse-drv)
 (require 'hhist)
@@ -32,7 +33,6 @@
 (require 'hy-test-helpers "test/hy-test-helpers")
 
 (declare-function hy-test-helpers:consume-input-events "hy-test-helpers")
-(declare-function hy-test-helpers:should-last-message "hy-test-helpers")
 (declare-function hyrolo-demo-quit "hyrolo-demo.el")
 (declare-function org-check-for-hidden "org-el")
 
@@ -42,7 +42,8 @@
       (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
         (goto-char (point-min))
-        (re-search-forward "#Smart Keys")
+	;; Omit last char of string from search so ends on a non-quote char
+        (re-search-forward "#Smart Key")
         (action-key)
         (should (bolp))
         (should (looking-at "^\\* Smart")))
@@ -210,8 +211,9 @@
   (with-temp-buffer
     (insert "<message \"%d\" (eval (+ 2 2))>")
     (goto-char 2)
-    (action-key)
-    (hy-test-helpers:should-last-message "4")))
+    (ert-with-message-capture cap
+      (action-key)
+      (hy-test-helpers:should-last-message "4" cap))))
 
 (ert-deftest demo-implicit-button-action-button-sexp-test ()
   (with-temp-buffer
@@ -223,22 +225,24 @@
 		      (mapcar #'buffer-name
 			      (nthcdr (- (length (buffer-list)) 3) (buffer-list))))>")
     (goto-char 2)
-    (action-key)
-    (let* ((bufs (reverse (buffer-list)))
- 	   (hsettings-buf (buffer-name (nth 0 bufs)))
-	   (hactypes-buf  (buffer-name (nth 1 bufs)))
-	   (hibtypes-buf  (buffer-name (nth 2 bufs))))
-      (should (and (hy-test-helpers:should-last-message "Last 3 buffers are")
-		   (string-match-p "hsettings\\.el" hsettings-buf)
-		   (string-match-p "hactypes\\.el"  hactypes-buf)
-		   (string-match-p "hibtypes\\.el"  hibtypes-buf))))))
+    (ert-with-message-capture cap
+      (action-key)
+      (let* ((bufs (reverse (buffer-list)))
+ 	     (hsettings-buf (buffer-name (nth 0 bufs)))
+	     (hactypes-buf  (buffer-name (nth 1 bufs)))
+	     (hibtypes-buf  (buffer-name (nth 2 bufs))))
+        (hy-test-helpers:should-last-message "Last 3 buffers are" cap)
+        (should (and (string-search "hsettings.el" hsettings-buf)
+		     (string-search "hactypes.el"  hactypes-buf)
+		     (string-search "hibtypes.el"  hibtypes-buf)))))))
 
 (ert-deftest demo-implicit-button-action-button-display-boolean-test ()
   (with-temp-buffer
     (insert "<string-empty-p \"False\">")
     (goto-char 2)
-    (action-key)
-    (hy-test-helpers:should-last-message "Result = nil; Boolean value = False")))
+    (ert-with-message-capture cap
+      (action-key)
+      (hy-test-helpers:should-last-message "Result = nil; Boolean value = False" cap))))
 
 (ert-deftest demo-implicit-button-hash-link-test ()
   (unwind-protect
@@ -387,11 +391,11 @@
       (hy-test-helpers:kill-buffer "DEMO")
       (hy-test-helpers:kill-buffer "*Occur*"))))
 
-;; Man appropos
-(ert-deftest demo-man-appropos-test ()
+;; Man apropos
+(ert-deftest demo-man-apropos-test ()
   (with-temp-buffer
     (insert "rm (1)   - remove")
-    (goto-char 4)
+    (goto-char 2)
     (with-mock
       (mock (man "rm(1)") => t)
       (action-key))))
@@ -402,9 +406,10 @@
   (unwind-protect
       (let ((enable-local-variables nil))
         (hypb:display-file-with-logo "DEMO")
-        (should (hact 'kbd-key "C-h h a factorial RET"))
-        (hy-test-helpers:consume-input-events)
-        (hy-test-helpers:should-last-message "Factorial of 5 = 120"))
+        (ert-with-message-capture cap
+          (should (hact 'kbd-key "C-h h a factorial RET"))
+          (hy-test-helpers:consume-input-events)
+          (hy-test-helpers:should-last-message "Factorial of 5 = 120" cap)))
     (hy-test-helpers:kill-buffer "DEMO")))
 
 (ert-deftest demo-factorial-ebutton-test ()
@@ -414,8 +419,9 @@
         (hypb:display-file-with-logo "DEMO")
         (re-search-forward "<(factorial)>")
         (forward-char -5)
-        (action-key)
-        (hy-test-helpers:should-last-message "Factorial of 5 = 120"))
+        (ert-with-message-capture cap
+          (action-key)
+          (hy-test-helpers:should-last-message "Factorial of 5 = 120" cap)))
     (hy-test-helpers:kill-buffer "DEMO")))
 
 ;;; Fast demo
@@ -450,10 +456,10 @@
   (unwind-protect
       (with-temp-buffer
         (insert "\"${hyperb:dir}/HY-NEWS\"")
-        (goto-char 3)
+        (goto-char 4)
         (action-key)
         (should (string= (buffer-name (current-buffer)) "HY-NEWS")))
-  (hy-test-helpers:kill-buffer "HY-NEWS")))
+    (hy-test-helpers:kill-buffer "HY-NEWS")))
 
 (ert-deftest fast-demo-elisp-library-in-load-path ()
   "Verify ibut to Elisp library works."
@@ -780,8 +786,9 @@ enough files with matching mode loaded."
   (with-temp-buffer
     (insert "<fill-column>")
     (goto-char 2)
-    (action-key)
-    (hy-test-helpers:should-last-message (format "fill-column = %d" (current-fill-column)))))
+    (ert-with-message-capture cap
+      (action-key)
+      (hy-test-helpers:should-last-message (format "fill-column = %d" (current-fill-column)) cap))))
 
 (ert-deftest fast-demo-display-demo-using-action-buttons ()
   "Verify the three ways show in the demo works."

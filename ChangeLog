@@ -1,4 +1,293 @@
+2025-06-15  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.py (highlight_matches): Fix so does not change the case of
+    matches found.
+            (highlight_re_matches): Add for future use for regex
+    searching.
+
+* hyrolo.el (hyrolo-update-file-list): Add to update 'hyrolo-file-list'
+    and the cached, fully expanded 'hyrolo--expanded-file-list'.
+
+* hyrolo.el (hyrolo-helm-org-rifle, hyrolo-helm-org-rifle-directory,
+             hyrolo-helm-org-rifle-directories): Remove all 'helm-org-rifle'
+    support from HyRolo in favor of 'consult', the much more widely used
+    package today.  'Org-rifle' has not updated to the recent 'helm'
+    development and bugs are showing, so drop it entirely.
+
+* hsys-consult.el (hsys-consult--grep-paths): Fix to ensure any env or lisp
+    variables in paths are replaced so grep does not ignore them.
+    (hsys-consult-flag): Add this customization, set to t by default, i.e.
+       use and install the 'custom' package when needed by Hyperbole.
+    (hsys-consult-get-exit-value, hsys-consult--org-roam-call-function,
+     hsys-consult-grep, hsys-consult-grep-headlines-read-regexp,
+     hsys-consult--grep-paths): Conditionalize these calls based on the value
+       of the above flag.
+
+* hpath.el (hpath:expand-list): Fix 'hpath:expand' call so it does not require
+    existing paths since its first arg may contain wildcards.  Simplify code
+    and expand all readable, non-symlink directories recursively.  If a string
+    is mistakenly sent instead of a list, make it a list.
+           (hpath:expand-with-variable): Fix so does not prepend
+    'hpath:auto-variable-alist' to paths with wildcards in them when
+    'find-file-wildcards' is non-nil.  This expands such paths in the
+    'default-directory' properly.
+
+* hyrolo.el (hyrolo-org, hyrolo-org-roam): Fix in interactive call to expand
+    filenames in 'org-directory' and 'org-roam-directory' respectively.
+            (hyrolo-file-list): Instead of leaving this nil by default, set
+    it to a list of the default .rolo file.
+            (hyrolo-mode-map): Since the *HyRolo* match buffer is read-only,
+    rebind RET to be the 'action-key', so a simple press edits the current
+    record in its source file.
+            (hyrolo-find-file): If reading the file triggers an error, simply
+    log it to the *Messages* buffer and ignore that file so does not get in
+    the way of searching others.
+            (hyrolo-to): Fix so when 'hyrolo-name-entry' has been set
+     if the first line of an entry contains slashes, these are treatee
+     as part of a literal string to find the source match, rather than
+     than as a parent/child delimiter.
+
+2025-06-12  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-tags-view): Fix error triggered by 'org-tags-view' call
+    when send non .org file in 'org-agenda-files'.  Fix by filtering out
+    non-org files which can't have tags in them anyway.
+            (hyrolo-refresh-file-list): Ensure 'hyrolo-file-list' is set
+    to default file if nil.
+
+2025-06-08  Bob Weiner  <rsw@gnu.org>
+
+* hsys-consult.el (hsys-consult-apropos): Add and autoload for interactive
+    selection of apropos symbols.
+
+* hui-mini.el (hui:menu-rolo): Remove "HelmFind" as is outdated; use "ConsultFind"
+    instead.
+
+* hpath.el (hpath:auto-completing-read-modes): Add 'consult-org-roam-mode',
+    'icomplete-mode', 'org-roam-mode', and 'vertico-mode'.
+
+* hyrolo.el (hyrolo-consult-fgrep): Add and use in 'hyrolo-grep-input' when
+    'read-function' argument is 'read-string'.
+
+2025-06-07  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-org, hyrolo-org-roam, hyrolo-fgrep, hyrolo-grep, hyrolo-word):
+    Add consult completion support.
+            (hyrolo-grep-input): Add to support interactive grep search
+    input via consult when available.
+
+* hsys-consult.el (hsys-consult-selected-candidate): Rename to
+    'hsys-consult-get-exit-value'.  Add first arg 'exit-value' to capture
+    any desired value from when consult completion is active.
+    For example, with `exit-value' given as 'vertico--groups, this will
+    the list of files matched during a `consult-grep' call when
+    'vertico' completion is in use.  Use '(car vertico--input) to get
+    the input line sent to grep.
+
+2025-06-07  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el
+    (hywiki-tests--published-html-links-to-word-and-section): Do not let test
+    change org-publish-project-alist and update test.
+
+2025-06-06  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el (hywiki-tests--wikiword-yanked-with-extra-words):
+    Failing test for yanked in WikiWord.
+
+2025-06-05  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el (hywiki-tests--hywiki-face-region-at): Get overlay
+    at pos bounding box.
+    (hywiki-tests--word-n-face-at): Use
+    hywiki-tests--hywiki-face-region-at for verifying WikiWord and overlay
+    matches.
+    (hywiki-tests--verify-removal-of-delimiter-updates-face): Add failing
+    test where WikiWord and overlay does not match.
+
+2025-06-02  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-kill): Add consult completion support.
+            (hyrolo-to): Get 'outline-regexp' value from (current-buffer)
+    not (get-buffer hyrolo-display-buffer) to fix bug when display buffer
+    does not exist.
+
+* hsys-consult.el (hsys-consult-selected-candidate): Rewrite to fix byte
+    compilation errors.
+
+2025-06-01  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-grep-file): Fix to handle regexp-quoted asterisks, i.e.
+    "\\*".  This fixes a bug where 'hyrolo-yank' did not match to entries
+    starting with multiple asterisks.
+            (hyrolo-edit): Add consult completion support.
+
+* hsys-consult.el (hsys-consult-selected-candidate): Rewrite to allow non-command
+    functions that take arguments (so can send a prompt) and remove
+    'no-properties-flag'.  Use 'substring-no-properties' to handle that in a
+    separate call.
+                  (hsys-consult-grep-headlines-read-regexp): Add.
+  hyrolo.el (hyrolo-consult-yank-grep): Generalize and rename to
+    'hsys-consult-grep-headlines-with-prompt' in "hsys-consult.el".
+
+* hyrolo.el (hyrolo--cache-major-mode): Initialize hash table if not done
+    already.  Fixes bug when 'hyrolo-grep' is called prior to init.
+            (hyrolo-yank): Fix to get for (fboundp 'consult-grep) rather than
+    (featurep 'consult) so that the consult package can be autoloaded.  Also
+    add error handling if invalid 'name' value is given.
+            (hyrolo-consult-yank-grep): Add (require 'consult) before locally
+    disabling 'consult-preview-key' so do not get this error when consult
+    is loaded lower in the call stack:
+      (error "Defining as dynamic an already lexical var")
+      custom-declare-variable(consult-preview-key)
+
+2025-06-01  Mats Lidell  <matsl@gnu.org>
+
+* test/hy-test-helpers.el (hy-test-helpers:should-last-message): Change
+    helper to work on captured messages by ert-with-message-capture. Add
+    use of ert-with-message-capture where the helper is used.
+
+2025-05-31  Mats Lidell  <matsl@gnu.org>
+
+* hyrolo.el (consult-preview-key): Defvar var from consult.
+
+* hsys-consult.el (consult--grep, consult--grep-make-builder)
+    (consult--ripgrep-make-builder): Declare functions from consult.
+
+* hibtypes.el (mail-address): Fix docstring single quotes.
+
+* hactypes.el (mapc): Require hsys-www.
+    (link-to-compose-mail): Fix docstring typo.
+
+* hsys-org.el (org-link): Add interactive spec for prompting user for an
+    org link.
+
+2025-05-27  Bob Weiner  <rsw@gnu.org>
+
+* hsys-www.el (www-url): Fix bug where "www.google.com" would not actually
+    be sent to the browser for display even though recognized as a url.  Had
+    to add "https://" to the front of any such url.
+
+* hywiki.el (hywiki-org-make-publish-project-alist): Add
+    :html-prefer-user-labels t to make Org use normalized headlines as href
+    IDs.
+
+* hypb.el (hypb:in-string-p): Fix 'texinfo-mode' string not returning a list
+    when 'range-flag' is given.
+  test/hypb-tests.el (hypb--in-string-p): Enable this test since fixed now.
+
+* kotl/kotl-mode.el (kotl-mode:setup-keymap): Remap 'goto-line' and
+    'goto-line-relative' keys to 'kotl-mode:goto-line-relative'.
+                    (kotl-mode:goto-line, kotl-mode:goto-line-relative): Add
+    to goto a relative line number in the Koutline.
+
+* test/hyrolo-tests.el (hyrolo-tests--mail-to): Fix to latest action updates
+    in ibtype 'mail-address' which 'hyrolo-mail-to' relies on.
+
+* test/hywiki-tests.el (hywiki-tests--published-html-links-to-word-and-section):
+    Bug is fixed, so remove expected fail and enable this test.
+
+* hywiki.el (hywiki-word-is-p): Save match data so when returns it represents
+    the match to the whole HyWikiWord referent, if any.  This fixes a bug
+    that created HyWikiWord page files with the section name attached.
+
+* hsmail.el (mail-send-hook): Remove this setting since 'message-send-hook'
+    has replaced it in modern Emacs.
+
+* hpath.el (hpath:display-buffer): When given a buffer name, create the
+    buffer if it doesn't exist.
+
+2025-05-27  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el (hywiki-tests--sections-with-dash-space): Add test
+    for section with # character.
+    (hywiki-tests--action-key-moves-to-word-and-section):
+    (hywiki-tests--at-wikiword-finds-word-and-section): Use commented out
+    test. It is supported now.
+    (hywiki-tests--nonexistent-wikiword-with-section-should-create-wikiword):
+    Add test for a new WikiWord when initially given with a section.
+    (hywiki-tests--sections-with-space-and-delimited-string): Add test of
+    space in #section while delimited string.
+
+2025-05-26  Bob Weiner  <rsw@gnu.org>
+
+* hactypes.el (link-to-compose-mail): Add new actype.  Compose email inside
+    Emacs or in default web browser if 'mail-user-agent' is set to 'browse-url'.
+  hsys-www.el (www-url-compose-mail): Add and call this from above actype.
+  hibtypes.el (mail-address): Call above actype allowing any email address
+    to compose mail in a user's default external web browser.  Add to doc
+    string how to configure mail composition, {C-x m}, to use this
+    external browser.
+
+* hyrolo.el (hyrolo-set-display-buffer): Don't enable 'hyrolo-mode' when
+    within a `hyrolo-yank' command so that the yanked-to-buffer's mode
+    is not changed (since 'hyrolo-display-buffer' is set to this).
+            (hyrolo-add-match): Don't highlight any matches inserted by
+    'hyrolo-yank'.
+            (hyrolo-yank): Add support for fast completion via 'consult-grep'.
+	    (hyrolo-consult-yank-grep): Add to support above function.
+
+2025-05-25  Bob Weiner  <rsw@gnu.org>
+
+* hsys-consult.el (hsys-consult-selected-candidate): Add autoloaded function
+    to return the candidate selected from commands like 'hyrolo-consult-grep'.
+                  (hsys-consult--grep-paths, hsys-consult-grep): Add
+    additional arg 'prompt' to change the first part of the 'consult-grep'
+    prompt.
+                  (hsys-consult-org-roam-grep): Pass in a prompt to
+    'hsys-consult--grep-paths' call.
+  hyrolo.el (hyrolo-consult-grep):
+  hywiki.el (hywiki-consult-grep):
+  hsys-org.el (hsys-org-consult-grep): Optionally pass in a prompt for the
+   'hsys-consult-grep' call.
+
+2025-05-24  Mats Lidell  <matsl@gnu.org>
+
+* test/hypb-tests.el (hypb--in-string-p--max-lines): Add test of max-lines.
+
+* test/hypb-tests.el (hypb--in-string-p): Add basic test of quote handling.
+
+2025-05-23  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-word-with-optional-suffix-regexp): Change #section
+    expression ordinality from "??" to "?" to get longest rather than
+    shortest match.
+            (hywiki-word-with-optional-suffix-exact-regexp): Fix to not
+    allow # within a section.
+            (hywiki-word-at): Fix to allow spaces in #section only if the
+    delimited string is a single HyWikiWord reference.
+
+2025-05-22  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:in-string-p): Doc optional MAX-LINES arg.  Add optional
+    RANGE-FLAG arg that returns (string-matched start-pos end pos) for
+    a match.
+
+* hywiki.el (hywiki-delimited-p): Ensure string check is limited to 2-lines
+    to match limit in the documentation.  Make any non-nil value returned
+    be a list of (string-matched start-pos end-pos).
+
+2025-05-20  Mats Lidell  <matsl@gnu.org>
+
+* test/kotl-mode-tests.el (kotl-mode--add-prior-cell): Add test.
+
+2025-05-19  Bob Weiner  <rsw@gnu.org>
+
+* test/demo-tests.el (fast-demo-elisp-or-env-vars): Fix to move past opening
+    brace so does not trigger hui-select.
+    (demo-smart-mouse-keys-ref-test, demo-man-apropos-test): Make similar fixes.
+  test/hmouse-drv-tests.el (hbut-rfc-test): Make similar fixes.
+
+* hypb.el (hypb:in-string-p): Fix open quote detection heuristics including
+    subtracting quoted delimiters from overall counts.
+
 2025-05-18  Bob Weiner  <rsw@gnu.org>
+
+* hui-mouse.el (hkey-alist): Move hui-select clauses up before (hbut:at-p)
+    call so for example, if on the trailing delimiter surrounding a HyWikiWord,
+    the delimited whole is marked rather than activating the HyWikiWord.
+  man/hyperbole.texi (Smart Key - Magit Mode, Smart Key - Delimited Things):
+    Reorder to comde before (Smart Key - Hyperbole Buttons).
 
 * hypb.el (hypb:in-string-p): Make heuristic to optimize performance; search
     back only until the beginning of the first line prior to point that contains
@@ -76,8 +365,6 @@
 
 * hywiki.el   (hywiki-word-face-at-p):
   hibtypes.el (smerge): Use or instead of setq. Thanks Stefan Monnier for
-
-2025-04-27  Mats Lidell  <matsl@gnu.org>
 
 * man/hyperbole.texi (Implicit Button Types): Add anchor to all ibtypes.
 
@@ -1894,7 +2181,7 @@ value to be [[WikiWord]] not [[file:WikiWord.org][WikiWord]].
              hywiki-maybe-highlight-off-page-name,
              hywiki-maybe-highlight-on-page-name): Add for use in
    'post-self-insert-hook' idle HyWikiWord highlighter (setup from
-   'hywiki-buttonize-character-commands'.
+   'hywiki-buttonize-character-commands').
             (hywiki-maybe-dehighlight-between-page-names,
              hywiki-maybe-dehighlight-off-page-name,
              hywiki-maybe-dehighlight-on-page-name): Add for use in
@@ -17510,6 +17797,6 @@ V5.06 changes ^^^^:
      For earlier ChangeLog entries, see earlier releases of Hyperbole.
 
 
-     Copyright 1991-2021 Free Software Foundation, Inc.
+     Copyright 1991-2025 Free Software Foundation, Inc.
      Copying and distribution of this file, with or without modification, are
      permitted provided the copyright notice and this notice are preserved.

@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell
 ;;
 ;; Orig-Date:    18-May-24 at 23:59:48
-;; Last-Mod:     27-Apr-25 at 10:11:50 by Bob Weiner
+;; Last-Mod:      5-Jun-25 at 00:24:12 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -296,9 +296,8 @@ line 2
           (words '("WikiWord" "WikiWord:L1" "WikiWord:L1:C2"
                    "WikiWord#section" "WikiWord#section:L1" "WikiWord#section:L1:C2"
                    "WikiWord#section-subsection" "WikiWord#section-subsection:L1" "WikiWord#section-subsection:L1:C2"
-                   ;; !! FIXME: Uncomment when implemented.
-                   ;; ("(WikiWord#section with spaces)" . "WikiWord#section with spaces")
-                   ;; ("(WikiWord#section)" . "WikiWord#section")
+                   ("(WikiWord#section with spaces)" . "WikiWord#section with spaces")
+                   ("(WikiWord#section)" . "WikiWord#section")
                    )))
       (unwind-protect
           (with-temp-buffer
@@ -328,9 +327,38 @@ line 2
               (goto-char 4)
               (should (string= "WikiWord#section-with-dash" (hywiki-word-at))))
             (with-temp-buffer
+              (insert "WikiWord#section-with#hash")
+              (goto-char 4)
+              (should-not (hywiki-word-at)))
+            (with-temp-buffer
               (insert "WikiWord#\"section-within-quotes\"")
               (goto-char 4)
-              (should-not (string= "WikiWord#\"section-within-quotes\"" (hywiki-word-at)))))
+              (should-not (hywiki-word-at))))
+        (hy-delete-dir-and-buffer hywiki-directory)))))
+
+(ert-deftest hywiki-tests--sections-with-space-and-delimited-string ()
+  "Verify `hywiki-word-at' with space and delimited string.
+Only allow spaces in #section if the delimited string is a single
+HyWikiWord reference."
+  (hywiki-tests--preserve-hywiki-mode
+    (let ((hywiki-directory (make-temp-file "hywiki" t)))
+      (unwind-protect
+          (progn
+            (hywiki-mode 1)
+            (with-temp-buffer           ; Delimited string allow space
+              (insert "\"WikiWord#section rest\"")
+              (goto-char 4)
+              (should (string= "WikiWord#section rest" (hywiki-word-at))))
+            (with-temp-buffer           ; Not a single WikiWord reference so no space
+              (insert "\"WikiPage WikiWord#section rest\"")
+              (goto-char 4)
+              (should (string= "WikiPage" (hywiki-word-at)))
+              (goto-char 20)
+              (should (string= "WikiWord#section" (hywiki-word-at))))
+            (with-temp-buffer           ; Single WikiWord reference (WikiPage is part of section)
+              (insert "\"WikiWord#section rest WikiPage\"")
+              (goto-char 4)
+              (should (string= "WikiWord#section rest WikiPage" (hywiki-word-at)))))
         (hy-delete-dir-and-buffer hywiki-directory)))))
 
 (ert-deftest hywiki-tests--word-is-p ()
@@ -720,9 +748,8 @@ Both mod-time and checksum must be changed for a test to return true."
                     ("WikiWord#Bsection-subsection" . "** Bsection subsection")
                     ("WikiWord#Bsection-subsection:L2" . "body B")
                     ("WikiWord#Bsection-subsection:L2:C2" . "dy B")
-                    ;; !! FIXME: Uncomment when implemented.
-                    ;; ("(WikiWord#Bsection subsection)" . "** Bsection subsection")
-                    ;; ("(WikiWord#Asection)" . "* Asection")
+                    ("(WikiWord#Bsection subsection)" . "** Bsection subsection")
+                    ("(WikiWord#Asection)" . "* Asection")
                     )))
       (unwind-protect
           (progn
@@ -757,6 +784,7 @@ body B
   "Verify published html links to WikiWord and section."
   :expected-result :failed
   (let* ((hywiki-directory (make-temp-file "hywiki_" t))
+         org-publish-project-alist
          (hywiki-org-publishing-directory (make-temp-file "public_html_" t))
          (wikipage (cdr (hywiki-add-page "WikiPage")))
          (wikipage-html (expand-file-name "WikiPage.html" hywiki-org-publishing-directory))
@@ -777,13 +805,16 @@ First line
 body A
 ** Bsection subsection
 body B
+*** Csection-subsection
+body C
 ")
             (save-buffer))
           (with-current-buffer (find-file-noselect wikipage)
             (insert "\
-* WikiWord
-* WikiWord#Asection
-* WikiWord#Bsection-subsection
+WikiWord
+WikiWord#Asection
+\"WikiWord#Bsection subsection\"
+WikiWord#Csection-subsection
 ")
             (save-buffer))
 
@@ -800,12 +831,14 @@ body B
             ;; (First check we even get the wikipage with sections)
             (should (<= 1 (count-matches (regexp-quote "WikiWord") (point-min) (point-max))))
             (should (= 1 (count-matches (regexp-quote "WikiWord#Asection") (point-min) (point-max))))
-            (should (= 1 (count-matches (regexp-quote "WikiWord#Bsection-subsection") (point-min) (point-max))))
+            (should (= 1 (count-matches (regexp-quote "WikiWord#Bsection subsection") (point-min) (point-max))))
+            (should (= 1 (count-matches (regexp-quote "WikiWord#Csection-subsection") (point-min) (point-max))))
 
             ;; Then verify the href links are generated
             (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html\">WikiWord</a>") (point-min) (point-max))))
-            (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html#Asection\">WikiWord#ASection</a>") (point-min) (point-max))))
-            (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html#Bsection-subsection\">WikiWord#Bsection-subsection</a>") (point-min) (point-max))))))
+            (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html#Asection\">WikiWord#Asection</a>") (point-min) (point-max))))
+            (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html#Bsection-subsection\">WikiWord#Bsection subsection</a>") (point-min) (point-max))))
+            (should (= 1 (count-matches (regexp-quote "<a href=\"WikiWord.html#Csection-subsection\">WikiWord#Csection-subsection</a>") (point-min) (point-max))))))
       (hy-delete-files-and-buffers (list wikipage wikiword wikipage-html wikiword-html
                                          (expand-file-name "index.org" hywiki-directory)
                                          (expand-file-name "index.html" hywiki-org-publishing-directory)))
@@ -1278,11 +1311,23 @@ See gh#rswgnu/hyperbole/669."
         (hy-delete-file-and-buffer wiki-page)
         (hy-delete-dir-and-buffer hywiki-directory)))))
 
+(defun hywiki-tests--hywiki-face-region-at (&optional pos)
+  "Get the start and end of the hywiki--word-face overlay at POS or point.
+Return nil if at no hywiki--word-face overlay."
+  (let ((overlays (overlays-at (or pos (point))))
+        result)
+    (when overlays
+      (dolist (overlay overlays result)
+        (when (equal (overlay-get overlay 'face) 'hywiki--word-face)
+          (cl-assert (not result) "There can only be one overlay with `hywiki--word-face'")
+          (setq result (cons (overlay-start overlay) (overlay-end overlay))))))))
+
 (defun hywiki-tests--word-n-face-at ()
   "Non-nil if at a WikiWord and it has `hywiki--word-face'."
   (cl-destructuring-bind (word beg end) (hywiki-word-at :range)
     (when word
       (when (hy-test-word-face-at-region beg end)
+        (should (equal (hywiki-tests--hywiki-face-region-at beg) (cons beg end)))
         word))))
 
 (defvar hywiki-tests--with-face-test nil
@@ -1530,6 +1575,96 @@ Insert test in the middle of other text."
             (should (looking-at-p "DEMO\\.org\""))
             (should (string= "ibtypes::hywiki-existing-word" (hattr:get (ibut:at-p) 'categ))))
         (hy-delete-file-and-buffer wiki-page)
+        (hy-delete-dir-and-buffer hywiki-directory)))))
+
+(ert-deftest hywiki-tests--nonexistent-wikiword-with-section-should-create-wikiword ()
+  "Verify action-key on a new WikiWord#section creates proper page filename."
+  (hywiki-tests--preserve-hywiki-mode
+    (let* ((hywiki-directory (make-temp-file "hywiki" t))
+           (hywiki-page (expand-file-name "WikiWord.org" hywiki-directory))
+           (hywiki-page-with-section (expand-file-name "WikiWord.org#section" hywiki-directory)))
+      (unwind-protect
+          (with-temp-buffer
+            (hywiki-mode 1)
+            (insert "WikiWord#section")
+            (goto-char 4)
+            (action-key)
+            (should-not (file-exists-p hywiki-page-with-section))
+            (should (file-exists-p hywiki-page)))
+        (hy-delete-files-and-buffers (list hywiki-page hywiki-page-with-section))
+        (hy-delete-dir-and-buffer hywiki-directory)))))
+
+(ert-deftest hywiki-tests--verify-removal-of-delimiter-updates-face ()
+  "Verify removing a delimiter the face is changed along with the WikiWord."
+  :expected-result :failed
+  (hywiki-tests--preserve-hywiki-mode
+    (let* ((hywiki-directory (make-temp-file "hywiki" t))
+           (wikiHi (cdr (hywiki-add-page "Hi")))
+           (hywiki-tests--with-face-test t))
+      (unwind-protect
+          (progn
+            (hywiki-mode 1)
+            (dolist (testcase
+                     '((("\"Hi#a b c\"") (p3 . "Hi#a b c") (p11) (-1) (p3 . "Hi#a") (p10) ("\"") (p3 . "Hi#a b c"))
+                       (("(Hi#s n)" . "Hi#s n") (-1) (p3 . "Hi#s") (p8) (")" . "Hi#s n"))))
+              (with-temp-buffer
+                (hywiki-tests--run-test-case testcase))))
+        (hy-delete-file-and-buffer wikiHi)
+        (hy-delete-dir-and-buffer hywiki-directory)))))
+
+(ert-deftest hywiki-tests--wikiword-yanked-with-extra-words ()
+  "Verify that a WikiWord that is yanked in highlights properly."
+  :expected-result :failed
+  (hywiki-tests--preserve-hywiki-mode
+    (let* ((hywiki-directory (make-temp-file "hywiki" t))
+           (wikiHi (cdr (hywiki-add-page "Hi")))
+           (wikiHo (cdr (hywiki-add-page "Ho")))
+           (hywiki-tests--with-face-test t))
+      (unwind-protect
+          (progn
+            (hywiki-mode 1)
+            ;; Non WikiWords in front of WikiWord.
+            (with-temp-buffer
+              (let ((kill-ring (list "a b Hi#c"))
+                    interprogram-paste-function)
+                (yank))
+              (goto-char 1)
+              (hywiki-tests--verify-hywiki-word nil)
+              (goto-char 6)
+              (hywiki-tests--verify-hywiki-word "Hi#c"))
+            ;; Non WikiWords after WikiWord.
+            (with-temp-buffer
+              (let ((kill-ring (list "Hi#a b c"))
+                    interprogram-paste-function)
+                (yank))
+              (goto-char 2)
+              (hywiki-tests--verify-hywiki-word "Hi#a"))
+            ;; Multiple WikiWords with non WikiWords.
+            (with-temp-buffer
+              (let ((kill-ring (list "a Hi#b c Ho#d e"))
+                    interprogram-paste-function)
+                (yank))
+              (goto-char 4)
+              (hywiki-tests--verify-hywiki-word "Hi#b")
+              (goto-char 11)
+              (hywiki-tests--verify-hywiki-word "Ho#d"))
+            ;; Right part of WikiWord yanked in.
+            (with-temp-buffer
+              (insert "H")
+              (let ((kill-ring (list "i#s"))
+                    interprogram-paste-function)
+                (yank))
+              (goto-char 2)
+              (hywiki-tests--verify-hywiki-word "Hi#s"))
+            ;; Left part of WikiWord yanked in.
+            (with-temp-buffer
+              (insert "i#s")
+              (goto-char 1)
+              (let ((kill-ring (list "H"))
+                    interprogram-paste-function)
+                (yank))
+              (hywiki-tests--verify-hywiki-word "Hi#s")))
+        (hy-delete-files-and-buffers (list wikiHi wikiHo))
         (hy-delete-dir-and-buffer hywiki-directory)))))
 
 (provide 'hywiki-tests)

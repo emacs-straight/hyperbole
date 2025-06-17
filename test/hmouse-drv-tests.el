@@ -3,11 +3,11 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    28-Feb-21 at 22:52:00
-;; Last-Mod:     17-May-25 at 16:07:56 by Mats Lidell
+;; Last-Mod:     10-Jun-25 at 17:44:05 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2021-2022  Free Software Foundation, Inc.
+;; Copyright (C) 2021-2025  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -421,10 +421,11 @@
   (with-temp-buffer
     (insert "\"-${hyperb:dir}/test/hy-test-dependencies.el\"")
     (goto-char 2)
-    (action-key)
-    (should (hattr:ibtype-is-p 'pathname))
-    (hy-test-helpers:should-last-message "Loading")
-    (hy-test-helpers:should-last-message "hy-test-dependencies.el")))
+    (ert-with-message-capture cap
+      (action-key)
+      (should (hattr:ibtype-is-p 'pathname))
+      (hy-test-helpers:should-last-message "Loading" cap)
+      (hy-test-helpers:should-last-message "hy-test-dependencies.el" cap))))
 
 (ert-deftest hbut-pathname-directory-test ()
   "Pathname with directory opens Dired."
@@ -528,7 +529,7 @@
 (ert-deftest hbut-man-apropos-test ()
   (with-temp-buffer
     (insert "rm (1)   - remove")
-    (goto-char 4)
+    (goto-char 2)
     (with-mock
      (mock (man "rm(1)") => t)
      (should (action-key))
