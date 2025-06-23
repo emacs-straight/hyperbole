@@ -260,6 +260,13 @@ See documentation for `kcell:ref-to-id' for valid cell-ref formats.
 
 \(fn REFERENCE)" t nil)
 
+(autoload 'klink:create-link "klink" "\
+Return a klink implicit link string to REFERENCE.
+REFERENCE should be a cell-ref or a string containing \"filename#cell-ref\".
+See documentation for `kcell:ref-to-id' for valid cell-ref formats.
+
+\(fn REFERENCE)" t nil)
+
 (autoload 'klink:at-p "klink" "\
 Return non-nil iff point is within a klink.
 See documentation for the `actypes::link-to-kotl' function for valid klink
