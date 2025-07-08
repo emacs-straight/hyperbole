@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:     22-Jun-25 at 22:36:22 by Bob Weiner
+;; Last-Mod:      7-Jul-25 at 01:01:30 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -571,8 +571,8 @@ deletion commands and those in `hywiki-non-character-commands'."
     (when (or (memq this-command hywiki-non-character-commands)
 	      (and (symbolp this-command)
 		   (string-match-p "^\\(org-\\)?\\(delete-\\|kill-\\)\\|\\(-delete\\|-kill\\)\\(-\\|$\\)" (symbol-name this-command))))
-      ;; Test if at delimiters surrounding a WikiWord and if so,
-      ;; record those for use by post hooks.
+      ;; Test if at delimiters surrounding a single WikiWord reference
+      ;; and if so, record those for use by post hooks.
       (cl-destructuring-bind (start end)
 	  ;; Get delimited region only if before or after delimiters,
 	  ;; else return (nil nil).
@@ -628,7 +628,7 @@ deletion commands and those in `hywiki-non-character-commands'."
 	(hywiki--maybe-rehighlight-at-point)))))
 
 (defun hywiki-buttonize-character-commands ()
-  "Turn any HyWikiWords between point into highlighted Hyperbole buttons.
+  "Turn any HyWikiWords around point into highlighted Hyperbole buttons.
 Triggered by `post-self-insert-hook' after self-inserting one or more
 characters after `post-command-hook' has run."
   (unless (hywiki-non-hook-context-p)
@@ -1511,27 +1511,29 @@ publish process."
 	org-link
 	wikiword-and-section
 	wikiword)
-    (hywiki-map-words (lambda (overlay)
-			(setq wikiword-and-section
-			      (buffer-substring-no-properties
-			       (overlay-start overlay)
-			       (overlay-end overlay)))
-			(goto-char (overlay-start overlay))
-			(delete-region (overlay-start overlay)
-				       (overlay-end overlay))
-			(delete-overlay overlay)
-			(if (setq org-link (hywiki-word-to-org-link wikiword-and-section nil))
-			    (insert org-link)
-			  (message
-			   "(hywiki-convert-words-to-org-links): \"%s\" in \"%s\" produced nil org link output"
-			   wikiword-and-section (buffer-name)))
-			(when make-index
-			  (when (string-match (concat hywiki-org-link-type ":")
-					      wikiword-and-section)
-			    (setq wikiword (substring wikiword-and-section (match-end 0))))
-			  (insert "\n#+INDEX: " wikiword "\n"))))))
+    (hywiki-map-words
+     (lambda (overlay)
+       (setq wikiword-and-section
+	     (buffer-substring-no-properties
+	      (overlay-start overlay)
+	      (overlay-end overlay)))
+       (goto-char (overlay-start overlay))
+       (delete-region (overlay-start overlay)
+		      (overlay-end overlay))
+       (delete-overlay overlay)
+       (if (setq org-link (hywiki-word-to-org-link wikiword-and-section nil))
+	   (insert org-link)
+	 (message
+	  "(hywiki-convert-words-to-org-links): \"%s\" in \"%s\" produced nil org link output"
+	  wikiword-and-section (buffer-name)))
+       (when make-index
+	 (when (string-match (concat hywiki-org-link-type ":")
+			     wikiword-and-section)
+	   (setq wikiword (substring wikiword-and-section (match-end 0))))
+	 (insert "\n#+INDEX: " wikiword "\n"))))))
 
 (defun hywiki-word-to-org-link (link &optional description)
+  "From a HyWikiWord reference LINK with an optional DESCRIPTION to an Org link."
 ;; \"[[file:<hywiki-directory>/WikiWord.org::Multi-Word Section][WikiWord#Multi-Word Section]]\".
   (let ((resolved-link (hywiki-org-link-resolve link :full-data)))
     (when (stringp (car resolved-link))
@@ -1687,25 +1689,31 @@ After successfully finding any kind of referent, run
 
 (defun hywiki-map-words (func)
   "Apply FUNC across highlighted HyWikiWords in the current buffer and return nil.
-FUNC takes 1 argument, the Emacs overlay spanning the start and end buffer
-positions of each HyWikiWord and its optional #section."
+This temporarily expands the buffer so all HyWikiWord references are processed.
+FUNC takes 1 argument, the Emacs overlay for each HyWikiWord reference, including
+its optional #section."
   (save-excursion
     (save-restriction
       (widen)
-      (mapc (lambda (overlay)
-	      (when (eq (overlay-get overlay 'face) hywiki-word-face)
-		(funcall func overlay)))
-	    (overlays-in (point-min) (point-max)))))
+      (mapc func (hproperty:but-get-all-in-region
+		  (point-min) (point-max) 'face hywiki-word-face))))
   nil)
 
 (defun hywiki-at-range-delimiter ()
   "Immediately before or after a balanced delimiter, return the delimited range.
+Include: (), {}, <>, [] and \"\" (double quotes).  Exclude Org links
+and radio targets.
+
+Range is limited to the previous, current and next lines, as HyWikiWord references
+are limited to two lines maximum.
+
 If no such range, return \\='(nil nil).
 This includes the delimiters: (), {}, <>, [] and \"\" (double quotes)."
   (save-excursion
     (save-restriction
-      ;; Limit balanced pair checks to the next two lines for speed
-      (narrow-to-region (line-beginning-position) (line-end-position 2))
+      ;; Limit balanced pair checks to previous through next lines for speed
+      ;; Point must be either on the opening or the closing line.
+      (narrow-to-region (line-beginning-position 0) (line-end-position 2))
       (let ((result (condition-case nil
 			(cond
 			 ;; Handle opening delimiters
@@ -1761,13 +1769,16 @@ This includes the delimiters: (), {}, <>, [] and \"\" (double quotes)."
 Include: (), {}, <>, [] and \"\" (double quotes).  Exclude Org links
 and radio targets.
 
+Range is limited to the previous, current and next lines, as HyWikiWord references
+are limited to two lines maximum.
+
 Ignore return value; it has no meaning."
   (save-excursion
     (save-restriction
       (if (hywiki--buttonized-region-p)
 	  (narrow-to-region hywiki--buttonize-start hywiki--buttonize-end)
-	;; Limit balanced pair checks to the next two lines for speed
-	(narrow-to-region (line-beginning-position) (line-end-position 2)))
+	;; Limit balanced pair checks to two lines around point for speed
+	(narrow-to-region (line-beginning-position 0) (line-end-position 2)))
 
       ;; char-before
       (ignore-errors
@@ -1827,13 +1838,16 @@ Ignore return value; it has no meaning."
 Include: (), {}, <>, [] and \"\" (double quotes).  Exclude Org links
 and radio targets.
 
+Range is limited to the previous, current and next lines, as HyWikiWord
+references are limited to two lines maximum.
+
 Return t if no errors and a pair was found, else nil."
   (save-excursion
     (save-restriction
       (if (hywiki--buttonized-region-p)
 	  (narrow-to-region hywiki--buttonize-start hywiki--buttonize-end)
-	;; Limit balanced pair checks to the next two lines for speed
-	(narrow-to-region (line-beginning-position) (line-end-position 2)))
+	;; Limit balanced pair checks to two lines around point for speed
+	(narrow-to-region (line-beginning-position 0) (line-end-position 2)))
 
       (let ((result t))
 	(condition-case nil
@@ -1989,7 +2003,8 @@ If in a programming mode, must be within a comment.  Use
 
 	  (unless hywiki--highlighting-done-flag
 	    (unless on-page-name
-	      ;; May be a closing delimiter that we have to skip past
+	      ;; May be a non-delimiter but HyWikiWord ending punctuation to
+	      ;; skip past
 	      (skip-chars-backward (hywiki-get-buttonize-characters)))
 	    ;; Skip past HyWikiWord or section
 	    (skip-syntax-backward "^-$()<>._\"\'")
@@ -2052,7 +2067,8 @@ the current page unless they have sections attached."
  		      (hywiki-maybe-highlight-balanced-pairs))
 
 	    (unless on-page-name
-	      ;; May be a HyWikiWord ending character to skip past
+	      ;; May be a non-delimiter but HyWikiWord ending punctuation to
+	      ;; skip past
 	      (skip-chars-backward (hywiki-get-buttonize-characters)
 				   (line-beginning-position)))
 	    ;; Skip past HyWikiWord or section
@@ -2412,6 +2428,16 @@ value returns nil."
 		hywiki-file-suffix)
 	      section))))
 
+(defun hywiki-get-page-files ()
+  "Return the list of existing HyWiki page file names.
+These must end with `hywiki-file-suffix'."
+  (when (stringp hywiki-directory)
+    (make-directory hywiki-directory t)
+    (when (file-readable-p hywiki-directory)
+      (directory-files
+       hywiki-directory nil (concat "^" hywiki-word-regexp
+				    (regexp-quote hywiki-file-suffix) "$")))))
+
 (defun hywiki-get-referent (wikiword)
   "Return the referent of HyWiki WIKIWORD or nil if it does not exist.
 If it is a pathname, expand it relative to `hywiki-directory'."
@@ -2431,16 +2457,6 @@ If it is a pathname, expand it relative to `hywiki-directory'."
       ;; If a referent type that can include a # or :L line
       ;; number suffix, append it to the referent-value.
       (setq referent (hywiki--add-suffix-to-referent suffix referent)))))
-
-(defun hywiki-get-page-files ()
-  "Return the list of existing HyWiki page file names.
-These must end with `hywiki-file-suffix'."
-  (when (stringp hywiki-directory)
-    (make-directory hywiki-directory t)
-    (when (file-readable-p hywiki-directory)
-      (directory-files
-       hywiki-directory nil (concat "^" hywiki-word-regexp
-				    (regexp-quote hywiki-file-suffix) "$")))))
 
 (defun hywiki-get-referent-hasht ()
   "Return hash table of existing HyWiki referents.
@@ -2474,6 +2490,18 @@ regexps of wikiwords, if the hash table is out-of-date."
       ;; References to it may be highlighted in any frame, so need to
       ;; walk across all frames here, rehighlighting HyWikiWords.
       (hywiki-maybe-highlight-wikiwords-in-frame t t))))
+
+(defun hywiki-get-references (&optional start end)
+  "Return a list of all highlighted HyWikiWord references in the current buffer.
+Optional START and END arguments limit the search to references that at
+least partially overlap that region."
+  (hywiki--get-all-references #'hproperty:but-get-all-in-region start end))
+
+(defun hywiki-get-reference-positions (&optional start end)
+  "Return a list of all highlighted HyWikiWord reference (start . end) positions.
+Optional START and END arguments limit the search to references that at
+least partially overlap that region."
+  (hywiki--get-all-references #'hproperty:but-get-all-positions start end))
 
 (defun hywiki-get-wikiword-list ()
   "Return a list of the HyWiki page names."
@@ -3019,10 +3047,11 @@ non-nil or this will return nil."
 			    ;; Handle an Org link [[HyWikiWord]] [[hy:HyWikiWord]]
 			    ;; or [[HyWikiWord#section][Description Text]].
 			    ;; Get the HyWikiWord link reference, ignoring any
-			    ;; description given in the link
+			    ;; description given in the link.
+			    ;;
 			    ;; Don't use next line so don't have to load all of Org
-			    ;; mode just to check for HyWikiWords; however, disables
-			    ;; support for Org mode aliases.
+			    ;; mode just to check for HyWikiWords; however,
+			    ;; ignoring this disables support for Org mode aliases.
 			    ;; (setq wikiword (org-link-expand-abbrev (org-link-unescape (string-trim wikiword))))
 			    (setq wikiword (hywiki-strip-org-link wikiword))
 			    (when (and wikiword end)
@@ -3037,13 +3066,17 @@ non-nil or this will return nil."
 					  end   (match-end 0))))))
 			    (hywiki-word-is-p wikiword))
 
-			   ;; Handle delimited HyWikiWord references with
-			   ;; multiple words in their sections,
-			   ;; e.g. (MyWikiWord WikiWord#one two three)
+			   ;; Handle a delimited HyWikiWord reference with
+			   ;; multiple, possibly whitespace-separated words in
+			   ;; its section, e.g. (MyWikiWord#one two three).
+			   ;; Whitespace between section words is allowed only
+			   ;; if the delimiters are immediately before and
+			   ;; after a single HyWikiWord reference.
 			   ((let ((case-fold-search nil)
 				  (bol (line-beginning-position))
 				  opoint)
-			      ;; May be a HyWikiWord ending character to skip past
+			      ;; May be a non-delimiter but HyWikiWord ending
+			      ;; punctuation to skip past
 			      (skip-chars-backward (hywiki-get-buttonize-characters) bol)
 			      (setq opoint (point))
 			      (when (setq wikiword-start-end (hywiki-delimited-p)) ;; limited to 2 lines
@@ -3110,13 +3143,14 @@ non-nil or this will return nil."
 					  wikiword (string-trim
 						    (buffer-substring-no-properties start end))))))))
 
-			   ;; Handle non-delimited HyWikiWord references
-			   ;; with multiple dash-separated words in their sections,
+			   ;; Handle a non-delimited HyWikiWord reference
+			   ;; with multiple dash-separated words in its section,
 			   ;; e.g. WikiWord#one-two-three.
 			   ((let ((case-fold-search nil)
 				  (bol (line-beginning-position))
 				  opoint)
-			      ;; May be a HyWikiWord ending character to skip past
+			      ;; May be a non-delimiter but HyWikiWord ending
+			      ;; punctuation to skip past
 			      (skip-chars-backward (hywiki-get-buttonize-characters) bol)
 			      (setq opoint (point))
 			      (goto-char opoint)
@@ -3144,9 +3178,10 @@ non-nil or this will return nil."
 				      ;; No following char
 				      wikiword (string-trim (match-string-no-properties 0))))))
 
-			   ;; Handle a non-delimited HyWikiWord with optional
-			   ;; #section:Lnum:Cnum; if it is an Org link, it may
-			   ;; optionally have a hy: link-type prefix.  Ignore
+			   ;; Handle a non-delimited HyWikiWord reference with
+			   ;; optional #section:Lnum:Cnum; if it is an Org
+			   ;; link, it may optionally have a hy: link-type
+			   ;; prefix.  #section may not contain spaces. Ignore
 			   ;; wikiwords preceded by any non-whitespace
 			   ;; character, except any of these: "([\"'`'"
 			   (t (let ((case-fold-search nil))
@@ -3166,11 +3201,10 @@ non-nil or this will return nil."
 					       end   (match-end 0)
 					       ;; No following char
 					       wikiword (string-trim (match-string-no-properties 0)))))))))
-		     ;; If `wikiword' has a #section, ensure there are
-		     ;; no invalid chars
+		     ;; If `wikiword' reference has a #section, ensure there are
+		     ;; no invalid chars.  One set of \n\r characters is allowed.
 		     (if (and (stringp wikiword) (string-match "#" wikiword))
-			 (string-match "#[^][#()<>{}\"\n\r\f]+\\'" wikiword)
-		       t))
+			 (string-match "#[^][#()<>{}\"\f]+\\'" wikiword)		       t))
 		(if range-flag
 		    (progn
 		      (list wikiword start end))
@@ -3184,9 +3218,9 @@ non-nil or this will return nil."
   "Return list of potential (HyWikiWord#section:Lnum:Cnum start end).
 Also highlight HyWikiWord as necessary.
 
-If the HyWikiWord is delimited, point must be within the delimiters.
-The delimiters are excluded from start and end.  If not at a
-HyWikiWord, return \\='(nil nil nil).
+If the HyWikiWord reference is delimited, point must be within the
+delimiters.  The delimiters are excluded from start and end.  If not
+at a HyWikiWord, return \\='(nil nil nil).
 
 This works regardless of whether the HyWikiWord has been highlighted
 or not.
@@ -3219,22 +3253,29 @@ or this will return nil."
   (hywiki-get-singular-wikiword (hywiki-word-strip-suffix (hywiki-word-at))))
 
 (defun hywiki-delimited-p (&optional pos)
-  "Return non-nil if optional POS or point is surrounded by matching delimiters.
-Any non-nil value returned is a list of (string-matched start-pos end-pos).
-The delimited range must be two lines or less.
+  "Return non-nil if optional POS or point is surrounded by delimiters.
+Any non-nil value returned is a list of (hywikiword-ref start-pos end-pos).
+The delimited range must be two lines or less with point on the first line.
+
+Matching delimiters around anything other than a single HyWikiWord reference
+are ignored.
 
 Use `hywiki-word-at', which calls this, to determine whether there is
 a HyWikiWord at point."
   (save-excursion
-    (when (natnump pos)
-      (goto-char pos))
-    (or (hypb:in-string-p 2 t)
-	(let ((range (hargs:delimited "[\[<\(\{]" "[\]\}\)\>]" t t t)))
-	  (and range
-	       ;; Ensure closing delimiter is a match for the opening one
-	       (= (matching-paren (char-before (nth 1 range)))
-		  (char-after (nth 2 range)))
-	       range)))))
+    (save-restriction
+      (when (natnump pos)
+	(goto-char pos))
+      ;; Limit balanced pair checks to current through next lines for speed.
+      ;; Point must be either on the opening line.
+      (narrow-to-region (line-beginning-position) (line-end-position 2))
+      (or (hypb:in-string-p nil t)
+	  (let ((range (hargs:delimited "[\[<\(\{]" "[\]\}\)\>]" t t t)))
+	    (and range
+		 ;; Ensure closing delimiter is a match for the opening one
+		 (= (matching-paren (char-before (nth 1 range)))
+		    (char-after (nth 2 range)))
+		 range))))))
 
 (defun hywiki-word-face-at-p (&optional pos)
   "Non-nil if but at point or optional POS has `hywiki-word-face' property."
@@ -3431,6 +3472,16 @@ or balanced pair delimiters."
 		   (goto-char (min (1+ opoint) end)))
 	  (error (goto-char (min (1+ opoint) end))))))
       result))
+
+(defun hywiki--get-all-references (function &optional start end)
+  "Apply FUNCTION to all highlighted HyWikiWord references in current buffer.
+FUNCTION must take four arguments: (buffer-start-pos buffer-end-pos
+'face hywiki-word-face).  Optional START and END are sent to the function as
+the first two arguments; otherwise, the entire buffer is scanned."
+  (funcall function
+	   (or start (point-min))
+	   (or end (point-max))
+	   'face hywiki-word-face))
 
 (defun hywiki--get-delimited-range-backward ()
   "Return a list of (start end) if not between/after end ]] or >>.
