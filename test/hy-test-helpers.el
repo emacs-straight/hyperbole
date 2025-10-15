@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     17-Aug-25 at 10:12:52 by Bob Weiner
+;; Last-Mod:      5-Oct-25 at 23:56:44 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -25,7 +25,7 @@
 
 (defun hy-test-helpers:consume-input-events ()
   "Use `recursive-edit' to consume the events kbd-key generates."
-  (run-with-timer 0.1 nil (lambda () (exit-recursive-edit)))
+  (run-with-timer 0.5 nil (lambda () (if (> (recursion-depth) 0) (exit-recursive-edit))))
   (recursive-edit))
 
 (defun hy-test-helpers:ensure-link-possible-type (type)
@@ -41,10 +41,11 @@ Disable `vertico-mode' which can get in the way of standard key
 processing."
   (declare (debug t) (indent 1))
   `(if (bound-and-true-p vertico-mode)
-       (unwind-protect
-	   (progn (vertico-mode 0)
-		  (ert-simulate-keys ,keys ,@body))
-	 (vertico-mode 1))
+       (with-no-warnings
+         (unwind-protect
+	     (progn (vertico-mode 0)
+		    (ert-simulate-keys ,keys ,@body))
+	   (vertico-mode 1)))
      (ert-simulate-keys ,keys ,@body)))
 
 (defun hy-test-helpers:should-last-message (msg captured)

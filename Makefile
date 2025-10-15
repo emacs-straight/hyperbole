@@ -3,7 +3,7 @@
 # Author:       Bob Weiner
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
-# Last-Mod:     19-Aug-25 at 10:08:26 by Mats Lidell
+# Last-Mod:     13-Oct-25 at 22:23:24 by Mats Lidell
 #
 # Copyright (C) 1994-2025  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
@@ -659,6 +659,12 @@ docker-update:
 # Example: make docker version=29.4 targets="clean bin run-emacs"
 run-emacs:
 	emacs --eval "(progn (add-to-list 'load-path \"/hyperbole\") (require 'hyperbole) (hyperbole-mode 1))"
+
+# Similar target for starting bash in the container. Useful for
+# manually doing things before starting Emacs but having Hyperbole
+# available in /hyperbole through the docker target.
+run-bash:
+	bash
 
 docker-clean:
 	docker rm elpa-local

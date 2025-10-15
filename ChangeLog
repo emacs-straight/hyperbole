@@ -1,3 +1,153 @@
+2025-10-13  Mats Lidell  <matsl@gnu.org>
+
+* hycontrol.el (hycontrol-frame-zoom, hycontrol-frame-zoom-reset): For
+    Emacs-28 use zoom-frm.el if it is available. Tell user it is required.
+
+* hycontrol-zmfrm.el:
+  Makefile (EL_COMPILE):
+  MANIFEST: Remove hycontrol-zmfrm.el
+
+2025-10-08  Mats Lidell  <matsl@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode):
+  hywiki.el (hywiki-add-org-id): Use with-suppressed-warnings.
+
+* hload-path.el (hyperb:with-suppressed-warnings): Remove Emacs 26
+    compatibilty macro. Not needed.
+
+2025-10-06  Mats Lidell  <matsl@gnu.org>
+
+* test/hy-test-helpers.el (hy-test-helpers:ert-simulate-keys): Silence
+    warnings for not defined vertico-mode.
+
+* test/hmouse-info-tests.el (hmouse-info-build-completions-no-match): Fix
+    unwind-protect with no unwind form.
+    (hy-test-helpers): Require helper functions.
+    (Info-complete-menu-buffer): Define var.
+
+2025-10-05  Bob Weiner  <rsw@gnu.org>
+
+* hsys-www.el (eww-browse-url): Stop overloading this 'eww' function and replace
+    it with 'www-eww-browse-url' which is used only when a url is activated
+    via the Action Key (in the defact 'www-url'.
+              (defact www-url): Utilize 'www-eww-browse-url'.
+
+* hsys-xref.el (hsys-xref-definitions): In Elisp modes, filter out "(feature "
+    entries if more than one def entry since these can shadow defuns if the same
+    name, e.g. `eww'.
+
+* hmouse-tag.el (smart-tags-mode-list): Add this customizable list of major modes
+    to determine where smart tag finding works.  By default, includes text and
+    programming modes.
+                (smart-prog-at-tag-p): Use above list.
+
+2025-10-05  Mats Lidell  <matsl@gnu.org>
+
+* test/demo-tests.el (fast-demo-outline-section-anchor-and-relative-line-number):
+    Run test using different default major-mode's.
+
+2025-10-04  Mats Lidell  <matsl@gnu.org>
+
+* hyrolo.el (custom):
+  hyperbole.el (custom): Drop require of custom due to preload.
+
+* hproperty.el: Use declare-function for hattr:get, ibut:map and ebut:map
+    so require of hbut can be removed to cut dependency cycle.
+    (custom): Drop not required dependencies.
+
+* Makefile (run-bash): Run bash in docker container for use with the
+    docker target.
+
+2025-10-03  Mats Lidell  <matsl@gnu.org>
+
+* test/kotl-mode-tests.el (kotl-mode--add-cell): Add test for nil
+    relative-level, adding plist and no-fill parameter.
+
+2025-09-28  Mats Lidell  <matsl@gnu.org>
+
+* hactypes.el (button-series): Add actypes:button-series that runs
+    specified buttons in sequence.
+    (hactypes:buffer-button-list): Return buttons available in current buffer.
+
+2025-09-28  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-tag.el (smart-prog-at-tag-p): Fix flashing of entire identifier rather
+    than from current point forward by using 'bounds-of-thing-at-point'.
+
+* hmouse-drv.el (hkey-help): If the conditional action call is to 'ignore-errors',
+    change it to the call within the 'ignore-errors' so output is useful.
+
+2025-09-27  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): Move 'fundamental-mode' support near
+    the end of the cond clause.
+
+2025-09-25  Mats Lidell  <matsl@gnu.org>
+
+* hycontrol.el (hycontrol-global-text-scale-adjust): Modification of
+    global-text-scale-adjust for use with hycontrol menu.
+    (hycontrol-frame-zoom, hycontrol-frame-zoom-reset): Use
+    hycontrol-global-text-scale-adjust when Emacs has global-text-scale-adjust.
+
+* hycontrol-zmfrm.el (fontset): Require fontset for defining xldf-regexp-* vars.
+    (fontset-info, query-fontset, x-list-fonts): Declare functions.
+
+2025-09-24  Mats Lidell  <matsl@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): Match all-caps filenames including
+    dash and underline characters. Check for markdown before checking if
+    buffer is derived by text-mode since that masks markdown.
+
+2025-09-21  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:to-markup-anchor): Support 'fundamental-mode' and derived
+    shell modes.
+
+2025-09-20  Mats Lidell  <matsl@gnu.org>
+
+* test/hy-test-helpers.el (hy-test-helpers:consume-input-events): Wait
+    longer before terminating consumption of input events.
+
+* test/hui-mouse-tests.el (hui-mouse-tests--hkey-alist):
+  test/hycontrol-tests.el (hycontrol-tests--framemove-direction-error-message):
+    Use cl-letf to mock functions that requires mocks that can act on
+    multiple calls with with different parameters or different responses
+    or both.
+
+* test/hywiki-tests.el (hywiki-tests--save-referent-command-use-menu)
+    (hywiki-tests--save-referent-global-button-use-menu)
+    (hywiki-tests--save-referent-info-node-use-menu)
+    (hywiki-tests--save-referent-org-roam-node-use-menu): Add a delay before
+    verifying referent.
+
+2025-09-15  Mats Lidell  <matsl@gnu.org>
+
+* hib-debbugs.el (debbugs-gnu-rescan): Declare to silence byte compile
+    warnings.
+
+* test/hywiki-tests.el
+    (hywiki-tests--save-referent-org-roam-node-use-menu): Remove extra RET
+    not needed due to mocking of org read functions.
+
+* test/hy-test-helpers.el (hy-test-helpers:consume-input-events): Only
+    exit an ongoing recursive-edit.
+
+* test/hsys-org-tests.el (hsys-org--org-outside-org-mode-tmp-buffer): Mock
+    org-open-at-point-global to avoid opening the link target.
+
+* hycontrol.el (hycontrol-frames-mode-map, hycontrol-frame-zoom): Use hycontrol-zmfrm.
+
+* Makefile (EL_COMPILE):
+  MANIFEST: Add hycontrol-zmfrm.el
+
+* hycontrol-zmfrm.el (hycontrol-frame-zoom-font-difference)
+    (hycontrol-enlarge-font-tries, hyconytrol-frcmds-enlarged-font-name)
+    (hycontrol-enlarge-font, hycontrol-zoom-frm-unzoom)
+    (hycontrol-zoom-frm-in, hycontrol-zoom-frm-out)
+    (hycontrol-zoom-all-frames-in, hycontrol-zoom-all-frames-out)
+    (hycontrol-zoom-all-frames-unzoom): All frame zoom support based on
+    zoom-frm.el.
+
 2025-09-14  Bob Weiner  <rsw@gnu.org>
 
 * hywiki.el (hywiki-create-page-and-display): Replace with updated
