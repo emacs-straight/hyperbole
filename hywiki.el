@@ -3,11 +3,11 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:     30-Nov-25 at 18:06:52 by Bob Weiner
+;; Last-Mod:      7-Jan-26 at 15:26:05 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
-;; Copyright (C) 2024-2025  Free Software Foundation, Inc.
+;; Copyright (C) 2024-2026  Free Software Foundation, Inc.
 ;; See the "HY-COPY" file for license information.
 ;;
 ;; This file is part of GNU Hyperbole.
@@ -124,7 +124,7 @@
 ;;
 ;; hywiki-referent-prompt-flag      When nil                   When t
 ;;  -------------------------------------------------------------------------------------
-;;  Action Key              hywiki-word-create-and-display 
+;;  Action Key              hywiki-word-create-and-display
 ;;    or HyWiki/Create      Create Page and Display          Create Referent and Display
 ;;  Assist Key              hywiki-word-create-and-display
 ;;    or C-u HyWiki/Create  Create Referent and Display      Create Page and Display
@@ -255,12 +255,12 @@ Each element is of the form: (wikiword . (referent-type . referent-value)).")
 ;;; ************************************************************************
 
 (defcustom hywiki-word-highlight-flag t
-  "The default, non-nil value treats HyWikiWords in HyWiki pages as hyperlinks.
+  "Non-nil means HyWikiWords in HyWiki pages are treated as hyperlinks.
 A nil value disables HyWikiWord hyperlink buttons in both HyWiki
 pages and all other buffers (since it also disables `hywiki-mode').
 
 Outside of HyWiki pages, the global minor mode `hywiki-mode' must be
-manually enabled for auto-HyWikiWord highlighting. Interactively, {C-h
+manually enabled for auto-HyWikiWord highlighting.  Interactively, {\\`C-h'
 h h m a} does this; programmatically, use `(hywiki-mode :all)' to
 enable it.
 
@@ -357,8 +357,9 @@ nil means no full buffer highlighting has occurred.")
     open-line                         ;; C-o
     quoted-insert                     ;; C-q
     )
-  "Commands that insert characters but whose input events do not
-  arrive as characters or that quote another character for input.")
+  "List of non character commands.
+Commands that insert characters but whose input events do not
+arrive as characters or that quote another character for input.")
 
 ;; Define the keymap for hywiki-mode.
 (defvar hywiki-mode-map nil
@@ -479,7 +480,7 @@ For reference, this is set when `window-buffer-change-functions' calls
 `hywiki-maybe-highlight-page-names' which calls `hywiki-in-page-p'.")
 
 (defcustom hywiki-referent-prompt-flag nil
-  "When t, the Action Key and HyWiki/Create always prompt for referent type.
+  "Non-nil means the Action Key and HyWiki/Create always prompt for referent type.
 Nil by default."
   :type 'boolean
   :initialize #'custom-initialize-default
@@ -801,9 +802,9 @@ See the Info documentation at \"(hyperbole)HyWiki\".
   :keymap hywiki-mode-map
   :group 'hyperbole-hywiki
   (progn
-    (when (memq arg '(toggle :toggle))
+    (when (eq arg 'toggle)
       ;; Toggle across all editable buffers
-      (setq arg (if hywiki-mode 1 0)))
+      (setq arg hywiki-mode))
     (cond
      ((or (and (integerp arg) (= arg 1))
 	  (memq arg '(:all t)))
@@ -2714,7 +2715,7 @@ If deleted, update HyWikiWord highlighting across all frames."
 	   ('prefix (company-grab-word))
 	   ('candidates
 	    (let ((prefix (company-grab-word)))
-	      (when prefix 
+	      (when prefix
 		(cl-loop for key being the hash-keys in (hywiki-get-wikiword-list)
 			 when (string-prefix-p prefix key)
 			 collect key))))
@@ -3027,7 +3028,7 @@ since a prior publish.
 Files are saved in:
     (hywiki-org-get-publish-property :publishing-directory)
 Customize this directory with:
-    {M-x customize-variable RET hywiki-org-publishing-directory RET}."
+    {\\`M-x' `customize-variable' RET hywiki-org-publishing-directory RET}."
   (interactive "P")
   ;; Export Org to html with useful link ids.
   ;; Instead of random ids like "orga1b2c3", use heading titles with
@@ -3497,7 +3498,7 @@ Search across `hywiki-directory'."
 (defun hywiki-word-is-p (word)
   "Return non-nil if WORD is a HyWikiWord and optional #section:Lnum:Cnum.
 WORD may not yet have a referent (non-existent).  Use `hywiki-get-referent'
-to determine whether a HyWikiWord referent exists. 
+to determine whether a HyWikiWord referent exists.
 
 Return nil if WORD is a prefixed, typed hy:HyWikiWord, since
 these are handled by the Org mode link handler."

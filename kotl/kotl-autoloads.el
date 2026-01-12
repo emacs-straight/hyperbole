@@ -101,7 +101,7 @@ Return the new kview.
 
 (autoload 'kfile:is-p "kfile" "\
 Iff current buffer contains a koutline, return file format version string.
-If not a koutline, return nil. This works both for unformatted
+If not a koutline, return nil.  This works both for unformatted
 and formatted koutlines.")
 
 (autoload 'kfile:view "kfile" "\
