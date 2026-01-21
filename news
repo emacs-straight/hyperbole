@@ -1,0 +1,82 @@
+*			  What's New in GNU Hyperbole
+				 by Bob Weiner
+
+===========================================================================
+*                                   V9.0.2pre
+===========================================================================
+===========================================================================
+*                                   V9.0.1
+===========================================================================
+
+** ACE WINDOW PACKAGE INTEGRATION - fast window and buffer switching
+
+  *** After installing the ace-window package and loading Hyperbole, execute
+      (hkey-ace-window-setup "\M-o") to enable the following capabilities:
+
+  *** Fast Window Links: The hkey-window-link command quickly creates links
+      to other windows:
+
+         {M-o w <window>} - creates an explicit button linked to point in <window>
+         {C-u M-o w <window>} - creates an unnamed implicit button linked to point
+           in <window>
+         {M-1 M-o w <window>} - creates a named implicit button linked to point
+           in <window>
+
+      See "(hyperbole)Create Link Button".
+
+
+** ACTION AND ASSIST (SMART) KEYS  (See "(hyperbole)Smart Keys").
+
+  *** Angle Bracket and Braces Thing Selection:  In text and fundamental modes,
+      an Action Key press on an angle bracket or a curly brace selects the
+      region between a matching pair.  See "(hyperbole)Smart Key Thing
+      Selection".
+
+  *** Drag Button Referents to Specific Windows: Just as you previously could
+      drag Dired or Buffer Menu items to display in a specific window, you
+      can now do the same with Hyperbole Buttons.  Action or Assist Key drag
+      from a Hyperbole button and release in another window where you want
+      the button's referent (or the result of its action) displayed.  If you
+      release the Smart Key outside of an Emacs window, the referent is
+      displayed in a new frame.  See "(hyperbole)Displaying Items".
+
+      Visual pulsing of the source line and the destination buffer highlights
+      the transfer taking place (hmouse-pulse-flag controls this).
+
+      Dragging a button to a modeline splits the window of the modeline and
+      displays the referent in the leftmost or uppermost of the split windows.
+
+  *** Drag to Create Implicit Link Buttons: An Assist Mouse Key drag across
+      windows (when not starting from a draggable item) creates an implicit
+      link button with an action type determined by the referent at the point
+      of button release.  This parallels the same Action Mouse Key drag which
+      creates explicit link buttons.  See "(hyperbole)creating implicit
+      links".
+
+      Previously this drag would swap buffers in windows.  Now you must drag
+      from open space in a modeline of the depress window to the buffer text
+      in the release window to swap buffers in windows.
+
+      Alternatively, with two windows in a frame, you can create an implicit
+      link button from point to the point of the other buffer with {C-h h i l}.
+
+  *** Hyperbole Symbol Tags: Hyperbole now includes a pre-built TAGS file so
+      that an Action Key press on any Hyperbole symbol jumps to its
+      definition without the need for any additional support.  This also
+      works on Hyperbole type names (which have a hidden prefix) in a help
+      buffer where an Action Key press displays the type definition.
+
+  *** Lisp Load, Autoload and Require Expressions: Action Key press on any
+      named target in such expressions displays the associated library.
+
+  *** Lisp Action Button Help: Action Buttons that utilize regular Lisp
+      functions (rather than Hyperbole Action Types) can now have :help
+      functions run with a press of the Assist Key on such buttons.  See
+      "(hyperbole)Action Buttons".
+
+  *** Smart Dired: Action Key subdirectory selection at point now works on
+      any dired header line, not just the first one.  Use {i} to insert
+      multiple subdirectories in Dired mode.  Smart Key end-of-line behavior
+      is no longer specified in Dired mode but handled globally for
+...
+...
