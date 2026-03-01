@@ -105,12 +105,6 @@ inserted.  Finally a `hywiki-test--point-char' is inserted where point is."
     (should (string= (hywiki-test--insert-chars '((1 . 6) (7 . 12)))
                      "<Hell^o> <World>\n"))))
 
-(defun hywiki-test--insert (string)
-  "Command to insert a STRING at point."
-  (interactive "s: ")
-  (dolist (c (string-to-list string))
-    (hywiki-tests--command-execute #'self-insert-command 1 c)))
-
 (defun hywiki-test--insert-with-point (string)
   "Insert STRING and return new POINT pos given by `hywiki-test--point-char'.
 The point char is not inserted."
@@ -132,7 +126,6 @@ buffer.
 End the insertion of text by turning on hywiki-mode and perform a dummy
 command to get the pre- and post-hooks executed.  This creates the
 highlighting overlays we want to test."
-  (hywiki-mode :all)
   (erase-buffer)
   (goto-char (hywiki-test--insert-with-point description)))
 
@@ -173,7 +166,6 @@ Each test is constructed as three phases:
                   (should (string= stop (hywiki-test--get-buffer-text-with-point-and-highlight)))))
        (unwind-protect
            (progn
-	     (hywiki-mode :all)
              (ert-info ("1" :prefix "Verify point, no highlighting:")
                (pre: "non^wikiword")
                (post: "non^wikiword"))
@@ -186,12 +178,12 @@ Each test is constructed as three phases:
                (post: "^<Hi>"))
              (ert-info ("4" :prefix "Verify highlighting: ")
                (pre: "Hi^Ho")
-               (hywiki-test--insert "\"text\"")
-               (post: "Hi\"text\"^<Ho>"))
+               (hywiki-tests--insert-by-char "text ")
+               (post: "Hitext ^<Ho>"))
              (ert-info ("5" :prefix "Verify highlighting: ")
                (pre: "Hi^Ho")
-               (hywiki-test--insert " \"text\"")
-               (post: "<Hi> \"text\"^<Ho>"))
+               (hywiki-tests--insert-by-char " text ")
+               (post: "<Hi> text ^<Ho>"))
 
              ;; PASS: Wiki<delete-region>Word -> highlight {WikiWord} after delete
              (ert-info ("6" :prefix "Verify highlighting: ")

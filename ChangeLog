@@ -1,3 +1,44 @@
+2026-02-28  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-completion-at-point): Remove 'hywiki-get-singular-wikiword'
+    call because it can be wrong.
+            (hywiki-completion-exit-function): Allow completion function to
+    send any number of arguments (unused right now).
+
+2026-02-27  Bob Weiner  <rsw@gnu.org>
+
+* hpath.el (hpath:outline-section-pattern): Add support for Org '#+TITLE:'
+    lines.  Also, allow leading spaces
+* hywiki.el (hywiki-completion-at-point): Add support for Org '#+TITLE:'
+    lines as section headers.
+            (hywiki-completion-at-point): Remove grep -r arg since don't
+    need to recurse in 'hywiki-directory'.
+
+2026-02-27  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-yki-tests.el (hywiki-test--insert-with-point): Remove. Reuse
+    similar function from hywiki-tests.el instead.
+    (hywiki-test--get-buffer-text-with-point-and-highlight): Change to a
+    more lifelike test that behaves the same in batch as interactively to
+    solve the issue with the failing test for now. Use
+    hywiki-tests--insert-by-char and remove not needed hywiki-mode calls.
+
+2026-02-26  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-word-strip-suffix): Fix to strip any leading or trailing #
+    and whitespace chars.
+    (hywiki-format-grep-to-reference): Don't add double quotes so when used
+    with completions, don't fail because the double quote is not included in
+    the matched prefix.
+    (hywiki-insert-link): Add double-quotes if link contains a space.
+    (hywiki-completion-exit-function): Add.
+    (hywiki-word-add-completion-at-point): Add call to above function in
+    completion exit hooks that support normal completion, company and corfu.
+    (hywiki-maybe-at-wikiword-beginning): Change when non-nil return value to
+    be the preceding char or if at bol, then 0.
+    (hywiki-word-add-completion-at-point, hywiki-completion-at-point):
+    Add support for Corfu with :exit-function.
+
 2026-02-25  Mats Lidell  <matsl@gnu.org>
 
 * .github/workflows/docs.yml: New workflow
@@ -6,7 +47,49 @@
     (doc-clean): Use make foreach for removing doc build artifacts. (Avoid
     bash brace expansion.) Remove README.md.html and README.toc.md.
 
+2026-02-25  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:modify-syntax): Treat # as a symbol constituent to support
+    'company-mode' completion in for 'hbut:syntax-table' and
+    'help-mode-syntax-table'.
+
+2026-02-22  Bob Weiner  <rsw@gnu.org>
+
+* README.md: Add "The Emacs Hyperbole" great article by Mike Hostetler.
+
+* hywiki.el (hywiki-format-reference): Rename to 'hywiki-format-grep-to-reference';
+    remove autoload.
+            (hywiki-format-reference-to-grep): Add.
+	    (hywiki-completion-at-point): Rewrite and simplify.
+	    (hywiki-word-highlight-in-buffers): Add call to
+   'hywiki-word-add-completion-at-point' to ensure has completion hook independent
+   of whether the buffer's major mode changes.
+            (hywiki-word-remove-completion-at-point): Add and call in
+   'hywiki-word-dehighlight-in-buffers'.
+            (hywiki-display-referent): Interactively, call 'hywiki-word-read'
+   rather than 'hwyiki-page-read-reference'.
+            (hywiki-read-page-reference): Rename to 'hywiki-page-read-reference'
+     and return a HyWiki completion alist of pages when completing to pages only.
+            (hywiki-format-reference-to-consult-grep): Add.
+
+2026-02-21  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-consult-page-and-line): Change output from a list to the
+    unparsed string returned as the selection by 'consult-grep'.
+            (hywiki-consult-page-and-line): Rename to
+    'hywiki-consult-page-and-headline)'.
+            (hywiki-format-reference): Change arg 'page-and-line' to be
+    an unparsed string returned from the above function.
+    (hywiki-consult-page-and-headline, hywiki-read-page-reference,
+     hywiki-word-read, hywiki-word-read-new, hywiki-page-read,
+     hywiki-page-read-new): Add 'prompt' and 'initial' input arguments.
+
 2026-02-19  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-insert-link): Add optional prefix arg to link to a
+    an existing wikiword only.
+            (hywiki-insert-reference): Remove and merge capability into
+    above function when called with a prefix arg.
 
 * hui.el (hui:link-possible-types): Fix to include link-to-wikiword only if
     an existing referent is found.
@@ -1344,7 +1427,7 @@
   hyrolo.el (hyrolo-match-regexp)
   hhist.el (*hhist*): Use defvar for const variables that are set later
     than at their definition.
-    
+
 2025-08-10  Bob Weiner  <rsw@gnu.org>
 
 * test/hywiki-tests.el (hywiki-tests--with-face-test): Make default value be

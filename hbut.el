@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     18-Feb-26 at 23:49:33 by Bob Weiner
+;; Last-Mod:     25-Feb-26 at 22:31:30 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1638,6 +1638,9 @@ to include {} only.  For use with implicit button activations."
   ;; Treat angle brackets and braces as opening and closing delimiters
   ;; for ease of matching.
   (mapc (lambda (syntax-table)
+          ;; Treat # as a symbol constituent to support company-mode completion.
+          (modify-syntax-entry ?# "_" syntax-table)
+          ;; Treat angle brackets as opening and closing delimiters for ease of matching.
 	  (modify-syntax-entry ?\< "(>" syntax-table)
 	  (modify-syntax-entry ?\> ")<" syntax-table)
 	  ;; Treat braces as opening and closing delimiters for ease of matching.

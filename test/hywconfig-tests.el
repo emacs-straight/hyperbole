@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     23-Dec-23 at 01:21:53 by Bob Weiner
+;; Last-Mod:     22-Feb-26 at 23:34:03 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -29,7 +29,7 @@
   "Remove names from frame parameters."
   (set-frame-parameter nil 'named-hywconfigs nil))
 
-(ert-deftest hywconfig--inital-ring-is-empty ()
+(ert-deftest hywconfig--initial-ring-is-empty ()
   "Verify an initial ring is empty."
   (hywconfig-tests--remove-ring)
   (should (hywconfig-ring-empty-p)))

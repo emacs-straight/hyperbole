@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     2-Jul-16 at 14:54:14
-;; Last-Mod:     14-Feb-26 at 23:40:17 by Bob Weiner
+;; Last-Mod:     22-Feb-26 at 23:14:50 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -313,6 +313,40 @@ Return t if Org is reloaded, else nil."
 	     ;; unloading, so restore it.
 	     (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 	     t)))))
+
+;;; Derived from `org-get-heading' in "org.el"
+;;;###autoload
+(defun hsys-org-format-heading (heading &optional no-tags no-todo no-priority no-comment)
+  "Return HEADING, without the leading asterisks.
+When NO-TAGS is non-nil, don't include tags.
+When NO-TODO is non-nil, don't include TODO keywords.
+When NO-PRIORITY is non-nil, don't include priority cookie.
+When NO-COMMENT is non-nil, don't include COMMENT string."
+  (when (stringp heading)
+    (let ((case-fold-search nil)
+          (org-complex-heading-regexp
+           "^\\(\\*+\\)\\(?: +\\(DONE\\|TODO\\)\\)?\\(?: +\\(\\[#.\\]\\)\\)?\\(?: +\\(.*?\\)\\)??\\(?:[ 	]+\\(:[[:alnum:]_@#%:]+:\\)\\)?[ 	]*$"))
+      (when (string-match org-complex-heading-regexp heading)
+        ;; When using `org-fold-core--optimise-for-huge-buffers',
+        ;; returned text will be invisible.  Clear it up.
+        (save-match-data
+          (org-fold-core-remove-optimisation (match-beginning 0) (match-end 0)))
+        (let ((todo (and (not no-todo) (match-string 2 heading)))
+	      (priority (and (not no-priority) (match-string 3 heading)))
+	      (headline (pcase (match-string 4 heading)
+			  (`nil "")
+			  ((and (guard no-comment) h)
+			   (replace-regexp-in-string
+			    (eval-when-compile
+			      (format "\\`%s[ \t]+" org-comment-string))
+			    "" h))
+			  (h h)))
+	      (tags (and (not no-tags) (match-string 5))))
+          ;; Restore cleared optimization.
+          (org-fold-core-update-optimisation (match-beginning 0) (match-end 0))
+	  (mapconcat #'identity
+		     (delq nil (list todo priority headline tags))
+        	     " "))))))
 
 (defun hsys-org-get-libraries-to-reload ()
   "Return all org libraries that need to be reloaded to avoid mixed versions."

@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     1-Nov-91 at 00:44:23
-;; Last-Mod:      1-Jan-26 at 18:17:35 by Mats Lidell
+;; Last-Mod:     28-Feb-26 at 00:44:36 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -691,9 +691,10 @@ Contains a %s for replacement of a specific section name.")
 (defconst hpath:markdown-suffix-regexp "\\.[mM][dD]"
   "Regexp that matches to a Markdown file suffix.")
 
-(defconst hpath:outline-section-pattern "^\\*+[ \t]+%s[ \t]*\\([\[<\({[:punct:]]+\\|$\\)"
+(defconst hpath:outline-section-pattern "^\\(\\*+\\|#\\+TITLE:\\)[ \t]+%s[ \t]*\\([\[<\({[:punct:]]+\\|$\\)"
   "Bol-anchored, no leading spaces regexp matching an Emacs outline section header.
-Contains a %s for replacement of a specific section name.")
+Also supports Org '#+TITLE:' lines and headings as sections.  Contains a %s
+for replacement of a specific section name.")
 
 (defvar hpath:prefix-regexp "\\`[-!&][ ]*"
   "Regexp matching command characters which may precede a pathname.
@@ -904,7 +905,7 @@ if (hpath:remote-available-p) returns nil."
 		     (string-match hpath:string-url-regexp3 path))
 		 (if (string-match-p "\\`s?ftp\\'"
 				     (match-string-no-properties hpath:hostname-grpn path))
-		     
+
 		     (concat
 		      "/" user "@"
 		      ;; site
