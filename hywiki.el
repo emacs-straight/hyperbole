@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:     28-Feb-26 at 01:39:39 by Bob Weiner
+;; Last-Mod:      1-Mar-26 at 12:12:41 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -144,6 +144,7 @@
 (require 'hpath)
 (require 'hproperty)
 (require 'hsys-consult)
+(eval-when-compile (require 'consult nil t))
 (require 'hui)        ;; For `hui:actype'
 (require 'hui-mini)   ;; For `hui:menu-act'
 (require 'hypb)       ;; Requires `seq'
@@ -197,9 +198,14 @@ checks it to determine if any buffer modification has occurred or not.")
 Each such key self-inserts before highlighting any prior HyWikiWord
 in `hywiki-mode'.")
 
-(defvar hywiki--word-and-buttonize-character-regexp nil
-  "Regexp matching HyWikiWord#section plus a valid word separating character.
-Group 1 is the entire HyWikiWord#section:Lnum:Cnum expression.")
+(defconst hywiki--delimiter-hasht (hash-make '(("\"" . ?\")
+					       ("\'" . ?\')
+					       ("{"  . ?})
+					       ("["  . ?\])
+					       ("<"  . ?>)
+					       ("("  . ?\)))
+                                             t)
+  "Delimiter htable with (open-delim-string . close-delim-char) key-value pairs.")
 
 (defvar hywiki--directory-checksum ""
   "String checksum for `hywiki-directory' page names.")
@@ -227,6 +233,10 @@ Each element is of the form: (\"wikiword\" . (referent-type . referent-value))."
 (defvar hywiki--referent-hasht nil
   "HyWiki hash table for fast WikiWord referent lookup.")
 
+(defvar hywiki--word-and-buttonize-character-regexp nil
+  "Regexp matching HyWikiWord#section plus a valid word separating character.
+Group 1 is the entire HyWikiWord#section:Lnum:Cnum expression.")
+
 ;; Globally set these values to avoid using 'let' with stack allocations
 ;; within `hywiki-maybe-highlight-reference' frequently.
 (defvar hywiki--any-wikiword-regexp-list nil)
@@ -245,6 +255,8 @@ Each element is of the form: (\"wikiword\" . (referent-type . referent-value))."
 (defvar-local hywiki--buttonize-end (make-marker))   ;; This must always stay a marker
 (defvar-local hywiki--buttonize-start (make-marker)) ;; This must always stay a marker
 (defvar-local hywiki--buttonize-range nil)
+(defvar-local hywiki--char-before nil)
+(defvar-local hywiki--end-pos nil)
 (defvar-local hywiki--end nil)
 (defvar-local hywiki--range nil)
 (defvar-local hywiki--start nil)
@@ -1486,27 +1498,34 @@ exists."
 (defun hywiki-completion-at-point ()
   "Complete a HyWiki reference at point.
 Each candidate is an alist with keys: file, line, text, and display."
+  (setq hywiki--end-pos nil)
   (let* ((ref-start-end (and (hywiki-active-in-current-buffer-p)
 			     (not (hywiki-non-hook-context-p))
 			     (hywiki-word-at t t)))
          (ref (nth 0 ref-start-end))
          (start (nth 1 ref-start-end))
          (end (nth 2 ref-start-end))
-         (partial-page-name ref))
-    (when start
+         (prefix (and start end (buffer-substring-no-properties start end)))
+         (existing-wikiword-prefix (when ref (hywiki-word-strip-suffix ref))))
+    (when prefix
       (let* ((default-directory hywiki-directory)
-             (cmd (format "grep -nEH '^([ \t]*\\*+|#\\+TITLE:) +' ./*%s*%s"
-                          (regexp-quote partial-page-name)
+             (cmd (format "grep -nEH '^([ \t]*\\*+|#\\+TITLE:) +' ./%s*%s"
+                          existing-wikiword-prefix
                           hywiki-file-suffix))
              (output (shell-command-to-string cmd))
              (lines (split-string output "\n" t))
-             (candidate-alist
-              (mapcar #'list
-                      (delq nil
-                            (nconc (hywiki-get-page-list)
-                                   (mapcar #'hywiki-format-grep-to-reference lines))))))
-        (when candidate-alist
-          (list start end candidate-alist
+             (candidates (delq nil
+                               (nconc
+                                ;; Return only candidates that start with 'existing-wikiword-prefix'
+                                (seq-filter (lambda (str)
+                                              (string-prefix-p existing-wikiword-prefix str))
+                                            (hywiki-get-page-list))
+                                (mapcar #'hywiki-format-grep-to-reference lines))))
+             (candidates-alist (when candidates (mapcar #'list candidates))))
+        (when candidates-alist
+          (setq hywiki--char-before (char-before start)
+                hywiki--end-pos end)
+          (list start end candidates-alist
                 :exclusive 'no
                 ;; For company, allow any non-delim chars in prefix
                 ;; :company-prefix-length t
@@ -1643,6 +1662,7 @@ nil, else return \\='(page . \"<page-file-path>\")."
 (defun hywiki-consult-page-and-headline (&optional prompt initial)
   "Return a string of HyWiki file and headline selected by `consult-grep' or nil."
   (interactive)
+  (hsys-consult-require-version)
   (let* ((default-directory (expand-file-name hywiki-directory))
          (dir "./")
          (builder
@@ -2066,7 +2086,8 @@ This includes the delimiters: (), {}, <>, [] and \"\" (double quotes)."
 	  (list nil nil))))))
 
 (defun hywiki-page-read-reference (&optional prompt initial)
-  "With consult package loaded, read a \"file^@line\" string, else a page name."
+  "With consult package loaded, read a \"page^@line\" string, else a page name.
+May return nil if no item is selected."
   (interactive)
   (if (featurep 'consult)
       (hywiki-format-grep-to-reference (hywiki-consult-page-and-headline
@@ -2074,8 +2095,7 @@ This includes the delimiters: (), {}, <>, [] and \"\" (double quotes)."
                                         (hywiki-format-reference-to-consult-grep
                                          initial)))
     ;; Without consult, can only complete to a HyWiki page without a section.
-    ;; Make a completion table of page names.
-    (mapcar #'list (hywiki-get-page-list))))
+    (hywiki-page-read prompt initial)))
 
 ;;;###autoload
 (defun hywiki-insert-link (&optional arg)
@@ -2086,7 +2106,7 @@ Add double quotes if the section contains any whitespace after trimming."
   (let ((ref (if arg (hywiki-word-read) (hywiki-page-read-reference))))
     (when ref
       (when (string-match-p "\\s-" ref)
-	(setq ref (concat "\"" ref ""\")))
+	(setq ref (concat "\"" ref "\"")))
       (insert ref)
       (skip-chars-backward "\"")
       (goto-char (1- (point)))
@@ -2112,7 +2132,7 @@ therein is invalid, trigger an error."
       nil)))
 
 (defun hywiki-format-reference-to-consult-grep (page-and-section)
-  "From PAGE-AND-SECTION ref, return '|^[ \t]*\\*+.*sect|page.*\.org' grep pat.
+  "From PAGE-AND-SECTION ref, return '|^[ \t]*\\*+.*sect|page' grep pat.
 
 Return t if PAGE-AND-SECTION is a valid string, else nil.  If the page name
 therein is invalid, trigger an error."
@@ -2129,32 +2149,8 @@ therein is invalid, trigger an error."
           (format "|[ \t]*\\\\*+.*%s|%s"
                   (regexp-quote line)
                   (regexp-quote page)
-                  ;; (regexp-quote hywiki-file-suffix)
                   ))
       (message "(hwiki-format-reference-to-consult-grep): Parse error on: %s"
-               page-and-section)
-      nil)))
-
-(defun hywiki-format-reference-to-grep (page-and-section)
-  "From PAGE-AND-SECTION ref, return '|^[ \t]*\\*+.*sect|page.*\.org' grep pat.
-
-Return t if PAGE-AND-SECTION is a valid string, else nil.  If the page name
-therein is invalid, trigger an error."
-  (when (and page-and-section (stringp page-and-section))
-    (if (string-match hywiki-word-with-optional-suffix-exact-regexp
-                      page-and-section)
-        (let ((page (match-string 1 page-and-section))
-              (line (match-string 2 page-and-section)))
-          (setq line (if line
-                         ;; Remove the # prefix in line
-                         (substring line 1)
-                       ""))
-          ;; Add '* ' prefix
-          (format "[ \t]*\\\\*+.*%s"
-                  (regexp-quote page)
-                  (regexp-quote hywiki-file-suffix)
-                  (regexp-quote line)))
-      (message "(hwiki-format-reference-to-grep): Parse error on: %s"
                page-and-section)
       nil)))
 
@@ -2716,11 +2712,23 @@ whenever `hywiki-mode' is enabled/disabled."
 					 (skip-syntax-forward "^-\)$\>._\"\'"))
 				       (skip-chars-forward "-_*[:alnum:]")
 				       (unless (zerop (skip-chars-forward "#:"))
-					 (skip-chars-forward (if (save-restriction
-								   (widen)
-								   (hywiki-delimited-p))
-								 "-_*: \t[:alnum:]"
-							       "-_*:[:alnum:]")))
+					 (skip-chars-forward
+                                          (if (save-restriction
+						(widen)
+                                                (and (hywiki-delimited-p)
+                                                     ;; Only if delimiter is
+                                                     ;; the char preceding
+                                                     ;; the start of the
+                                                     ;; WikiWord do we skip
+                                                     ;; over spaces to find
+                                                     ;; the #section.
+                                                     (hash-get
+						      (char-to-string
+                                                       (or (char-before (or hywiki--start 0))
+                                                           0))
+                                                      hywiki--delimiter-hasht)))
+					      "-_*: \t[:alnum:]"
+					    "-_*:[:alnum:]")))
 				       (setq hywiki--end (point))
 				       ;; Don't highlight current-page matches unless they
 				       ;; include a #section.
@@ -2880,7 +2888,7 @@ These must end with `hywiki-file-suffix'."
   "Return a list of all headings found in FILE.
 Strip any leading '*' and space characters from the headings."
   (when (and (stringp page) (file-readable-p page))
-    (let ((grep-command (format "grep -E '^\\*+ ' %s" (shell-quote-argument page))))
+    (let ((grep-command (format "grep -E '^\\*+ ' %s" page)))
       (with-temp-buffer
         (shell-command grep-command (current-buffer))
         (goto-char (point-min))
@@ -3588,7 +3596,7 @@ non-nil or this will return nil."
 					   (hywiki-maybe-at-wikiword-beginning))
 					 (looking-at (concat
 						      hywiki-word-regexp
-						      "\\(#[^][#()<>{}\" \t\n\r\f]+\\)?"
+						      "\\(#[^][#()<>{}\" \t\n\r\f]*\\)?"
 						      hywiki-word-line-and-column-numbers-regexp "?"))
 					 ;; Can't be followed by a # character
 					 (/= (or (char-after (match-end 0)) 0)
@@ -3926,12 +3934,14 @@ occurs with one of these hooks, the problematic hook is removed."
 					 hywiki-to-mode)))
 	((and (eq hywiki-from-mode :all) (eq hywiki-to-mode :pages))
 	 (hywiki-word-dehighlight-buffers
-	  (set:difference (hywiki-get-buffers hywiki-from-mode)
-			  (hywiki-get-buffers hywiki-to-mode))))
+	  (set:difference (hywiki-get-buffers :all)
+			  (hywiki-get-buffers :pages))))
 	((and (eq hywiki-from-mode :pages) (eq hywiki-to-mode :all))
 	 (hywiki-word-highlight-buffers
-	  (set:difference (hywiki-get-buffers hywiki-from-mode)
-			  (hywiki-get-buffers hywiki-to-mode))))
+          ;; Here the larger set must always be given first to compute any
+          ;; difference
+	  (set:difference (hywiki-get-buffers :all)
+                          (hywiki-get-buffers :pages))))
 	(t
 	 (error "(hywiki-word-set-auto-highlighting): Inputs must be nil, :pages or :all, not '%s' and '%s'"
 		hywiki-from-mode hywiki-to-mode))))
@@ -3973,6 +3983,18 @@ occurs with one of these hooks, the problematic hook is removed."
 
 (defun hywiki-completion-exit-function (&rest _)
   "Function called when HyWiki reference completion ends."
+  ;; Find possibly needed closing delimiter and insert it if not already there
+  (let ((end-delim (when (characterp hywiki--char-before)
+                     (hash-get (char-to-string hywiki--char-before)
+                               hywiki--delimiter-hasht))))
+    (when (and hywiki--end-pos
+               (>= (point) hywiki--end-pos))
+      (if (and end-delim
+               (or (>= (point) (point-max))
+                   (not (eq (char-after (point)) end-delim))))
+          (progn (insert end-delim)
+                 (goto-char (- (point) 2)))
+        (when end-delim (goto-char (1- (point)))))))
   (hywiki-maybe-highlight-reference))
 
 (defun hywiki-word-add-completion-at-point ()

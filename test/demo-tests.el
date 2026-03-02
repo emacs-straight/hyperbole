@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     28-Sep-25 at 22:41:32 by Mats Lidell
+;; Last-Mod:     28-Feb-26 at 18:02:56 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -391,6 +391,7 @@
 
 ;; Man apropos
 (ert-deftest demo-man-apropos-test ()
+  (require 'man)
   (with-temp-buffer
     (insert "rm (1)   - remove")
     (goto-char 2)

@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     25-Feb-26 at 22:31:30 by Bob Weiner
+;; Last-Mod:     28-Feb-26 at 16:33:40 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -95,7 +95,7 @@ Use the function, (hbut:max-len), to read the proper value.")
 If you change its value, you will be unable to use buttons created by
 others who use a different value!")
 
-(defvar   ibut:label-separator-regexp "\\s-*[-:=|]*\\s-+"
+(defvar   ibut:label-separator-regexp "[ \t]*[-:=|]*[ \t]+"
   "Regular expression that separates an implicit button name from its button text.")
 
 (defvar   ibut:label-separator " - "

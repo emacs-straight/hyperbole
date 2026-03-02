@@ -1,6 +1,76 @@
+2026-03-01  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-maybe-highlight-references): Fix to include #section
+    spaces only if the delimiter is at the start of the WikiWord ref.
+            (hywiki--end-pos): Add and set in 'hywiki-completion-at-point'
+    to pass to 'hywiki-completion-exit-function'.  This handles when point
+    is moved to before the completion prefix, it is cancelled and the exit
+    function should not insert anything or move point any further.
+            (hywiki-completion-at-point): Fix completion after # suffix by
+    stripping the suffix off the WikiWord ref when used as the page name
+    in the grep 'cmd'.
+            (hywiki-word-at): Make char after # optional so when doing
+    completion and # is followed by a closing delimiter, it does not stop
+    completing because of failure to recognize the WikiWord reference.
+            (hywiki-completion-at-point): Rewrite to limit candidates to those
+    that start with a match to the WikiWord prefix at point; allowing for
+    matches anywhere within the WikiWord made it harder to find the references
+    desired.
+* test/hywiki-tests.el (hywiki-tests--completion-at-point): Fix to newest
+    HyWiki completion policies.
+
 2026-02-28  Bob Weiner  <rsw@gnu.org>
 
-* hywiki.el (hywiki-completion-at-point): Remove 'hywiki-get-singular-wikiword'
+* hyrolo.el (hyrolo-mode): Make the match buffer's 'hyrolo-mode' a special
+    mode.  HyWiki buttons will never be active therein since every name
+    would trigger as a new, potential HyWiki word.
+
+2026-02-28  Mats Lidell  <matsl@gnu.org>
+
+* test/hywiki-tests.el (hywiki-tests--get-page-headings):
+    (hywiki-tests--get-references-at-al):
+    (hywiki-tests--completion-at-point): New tests.
+    (hywiki-tests--remove-keyword-args): Helper to ease comparision of
+    completion candidates.
+
+2026-02-28  Bob Weiner  <rsw@gnu.org>
+
+* test/hmouse-drv-tests.el (hbut-man-apropos-test):
+  test/hibtypes-tests.el (ibtypes::man-apropos-test):
+  test/demo-tests.el (demo-man-apropos-test): (require 'man) to prevent
+    any batch run failure.
+
+* hibtypes.el (man-apropos): Rewrite to simplify and target modern Emacs.
+  hbut.el (ibut:label-separator-regexp): Remove newlines from this regexp
+    to fix bug where when creating a new ibut will insert <[name]> and then
+    could move forward several lines past the end of this match, e.g. a line
+    of dashes, before it inserts the implicit button, making the button fail.
+
+    The above two updates fix Emacs bug#80498 - Hyperbole 9.0.1: Ibut/Create
+    with man-show produces non-actionable button.
+
+* hywiki.el (hywiki--char-before): Add to communicate between
+    'hywiki-completion-at-point' and its :exit-function.
+            (hywiki-delimiter-hasht): Add to lookup matching ending delimiters.
+	    (hywiki-completion-exit-function): Expand to add any needed closing
+    delimiter and to leave point on the last character of the ref so can activate
+    with {M-RET} if desired.
+            (hywiki-word-set-auto-highlighting): Reverse order of 'set:difference'
+    args when going from :pages to :all, as the bigger set, :all, must come
+    first or the difference will always be nil.
+  hsys-consult.el (hsys-consult-require-version): Add to make 'hsys-consult-flag'
+    and this version check callable from other libraries.
+            (hsys-consult-grep, hsys-consult--grep-paths): Call above
+    new function.
+
+* hywiki.el (hywiki-consult-page-and-headline): Call above new function.
+            (hywiki-page-read-reference): Fix to always return a string or nil,
+    not a list.
+            (hywiki-format-reference-to-grep): Remove, unused.
+	    (hywiki-get-page-headings): Remove 'shell-quote-argument' around
+    'page' name.  Not used in other grep calls.
+            (hywiki-insert-link): Fix transposition typo quoting double quote.
+            (hywiki-completion-at-point): Remove 'hywiki-get-singular-wikiword'
     call because it can be wrong.
             (hywiki-completion-exit-function): Allow completion function to
     send any number of arguments (unused right now).
@@ -9,7 +79,7 @@
 
 * hpath.el (hpath:outline-section-pattern): Add support for Org '#+TITLE:'
     lines.  Also, allow leading spaces
-* hywiki.el (hywiki-completion-at-point): Add support for Org '#+TITLE:'
+  hywiki.el (hywiki-completion-at-point): Add support for Org '#+TITLE:'
     lines as section headers.
             (hywiki-completion-at-point): Remove grep -r arg since don't
     need to recurse in 'hywiki-directory'.

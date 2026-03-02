@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     7-Jun-89 at 22:08:29
-;; Last-Mod:     30-Dec-25 at 14:42:32 by Mats Lidell
+;; Last-Mod:     28-Feb-26 at 23:10:24 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -2253,6 +2253,8 @@ Calls the functions given by `hyrolo-mode-hook'.
 \\{hyrolo-mode-map}"
   (interactive)
   (unless (eq major-mode 'hyrolo-mode)
+    ;; The mode controls the data in its buffers and it is non-editable
+    (put 'hyrolo-mode 'mode-class 'special)
     (push (cons (substring hyrolo-hdr-regexp 1) 1) outline-heading-alist)
     (push (cons (if (boundp 'hbut:source-prefix)
 		    hbut:source-prefix

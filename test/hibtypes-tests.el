@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    20-Feb-21 at 23:45:00
-;; Last-Mod:     10-Jun-25 at 17:44:05 by Mats Lidell
+;; Last-Mod:     28-Feb-26 at 18:04:06 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -288,9 +288,10 @@
 
 ;; man-apropos
 (ert-deftest ibtypes::man-apropos-test ()
+  (require 'man)
   (with-temp-buffer
     (insert "rm (1)   - remove")
-    (goto-char 4)
+    (goto-char 2)
     (with-mock
      (mock (man "rm(1)") => t)
      (ibtypes::man-apropos))))
@@ -334,7 +335,7 @@
     (goto-line 2)
     (should-not (eq (hattr:get (hbut:at-p) 'actype) 'hib-link-to-file-line))
     (should-not (ibtypes::ripgrep-msg))))
-  
+
 ;; grep-msg
 
 ;; debugger-source

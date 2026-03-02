@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    19-Sep-91 at 20:45:31
-;; Last-Mod:     19-Feb-26 at 21:16:16 by Bob Weiner
+;; Last-Mod:     28-Feb-26 at 17:23:30 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -835,22 +835,29 @@ Requires the Emacs builtin Tramp library for ftp file retrievals."
 ;;; ========================================================================
 
 (defib man-apropos ()
-  "Make man apropos entries display associated man pages when selected."
+  "Make man apropos entries display associated man pages when selected.
+No longer used within man pages since Emacs adds pushbuttons to man page
+cross-references itself.  But this will fire for such cross-references in
+other buffers."
   (save-excursion
-    (beginning-of-line)
+    ;; Move to the start of the potential man page name; point must be
+    ;; within the name, not the parenthesized section
+    (skip-syntax-backward "w")
     (let ((nm "[^ \t\n\r!@,:;(){}][^ \t\n\r,(){}]*[^ \t\n\r@.,:;(){}]")
+          start
+          end
           topic)
-      (and (looking-at
-            (concat
-             "^\\(\\*[ \t]+[!@]\\)?\\(" nm "[ \t]*,[ \t]*\\)*\\(" nm "\\)[ \t]*"
-             "\\(([-0-9a-zA-z]+)\\)\\(::\\)?[ \t]+-[ \t]+[^ \t\n\r]"))
-           (setq topic (concat (match-string-no-properties 3)
-                               (match-string-no-properties 4)))
-           (ibut:label-set topic (match-beginning 3) (match-end 4))
-	   ;; Use 'man' instead of 'actypes::man-show' in next line so
-	   ;; can follow cross-references within the same window when
-	   ;; Hyperbole is set to display other referents in another window.
-           (hact 'man topic)))))
+      (when (looking-at (concat "\\(" nm "\\)[ \t]*\\(([-0-9a-zA-z]+)\\)"))
+        (setq start (match-beginning 0)
+              end   (match-end 0))
+        (require 'man)
+        (when (and (fboundp 'Man-default-man-entry)
+                   (setq topic (Man-default-man-entry)))
+          (ibut:label-set topic start end)
+	  ;; Use 'man' instead of 'actypes::man-show' in next line so
+	  ;; can follow cross-references within the same window when
+	  ;; Hyperbole is set to display other referents in another window.
+          (hact 'man topic))))))
 
 ;;; ========================================================================
 ;;; Follows links to Hyperbole Koutliner cells.

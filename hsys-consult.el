@@ -2,7 +2,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     4-Jul-24 at 09:57:18
-;; Last-Mod:     19-Feb-26 at 00:52:16 by Bob Weiner
+;; Last-Mod:     28-Feb-26 at 10:15:27 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -109,6 +109,21 @@ Requires use of `vertico' for completions."
    include-all-flag))
 
 ;;;###autoload
+(defun hsys-consult-require-version ()
+  "Require `hsys-consult-flag' set and minimum `consult' version or error.
+Install `consult' package if not yet installed."
+  (unless hsys-consult-flag
+    (error "`%s' command requires `hsys-consult-flag' set to t" this-command))
+  (unless (package-installed-p 'consult)
+    (package-install 'consult))
+  (require 'consult)
+  (let ((consult-version (hsys-consult-get-version)))
+    ;; Multi-file support added after consult version "0.32"
+    (when (not (and consult-version (string-greaterp consult-version "0.32")))
+      (error "(hsys-consult-grep): consult package version is %s; update required"
+	     consult-version))))
+
+;;;###autoload
 (defun hsys-consult-get-version ()
   "Return the string version of the installed consult package or nil."
   (let* ((consult-file (find-library-name "consult"))
@@ -135,17 +150,7 @@ per file to the absolute value of MAX-MATCHES, if given and not 0.  If
 
 With optional PROMPT string, use this as the first part of the grep prompt;
 omit any trailing colon and space in the prompt."
-  (unless hsys-consult-flag
-    (error "`%s' command requires `hsys-consult-flag' set to t" this-command))
-  (unless (package-installed-p 'consult)
-    (package-install 'consult))
-  (require 'consult)
-
-  (let ((consult-version (hsys-consult-get-version)))
-    ;; Multi-file support added after consult version "0.32"
-    (when (not (and consult-version (string-greaterp consult-version "0.32")))
-      (error "(hsys-consult-grep): consult package version is %s; update required"
-	     consult-version)))
+  (hsys-consult-require-version)
   (let* ((consult-grep-args
 	  (if (listp consult-grep-args)
 	      (append consult-grep-args (list grep-includes))
@@ -327,16 +332,7 @@ start of headline text only (lines that start with a '^[*#]+[
 
 With optional PROMPT string, use this as the first part of the
 grep prompt; omit any trailing colon and space in the prompt."
-  (unless hsys-consult-flag
-    (error "`%s' command requires `hsys-consult-flag' set to t" this-command))
-  (unless (package-installed-p 'consult)
-    (package-install 'consult))
-  (require 'consult)
-  (let ((consult-version (hsys-consult-get-version)))
-    ;; Multi-file support added after consult version "0.32"
-    (when (not (and consult-version (string-greaterp consult-version "0.32")))
-      (error "(hsys-consult-grep): consult package version is %s; update required"
-	     consult-version)))
+  (hsys-consult-require-version)
   (when max-matches
     (setq max-matches (prefix-numeric-value max-matches)))
   (when (and (integerp max-matches) (zerop max-matches))

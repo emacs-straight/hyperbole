@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    28-Feb-21 at 22:52:00
-;; Last-Mod:     23-Nov-25 at 12:59:17 by Bob Weiner
+;; Last-Mod:     28-Feb-26 at 18:04:15 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -87,7 +87,7 @@
         (goto-char 4)
         (action-key))
     (ibtype:delete 'ibtypes::defal-func)))
-  
+
 (ert-deftest hbut-defal-fails-on-file-missing ()
   (defal defal-path-missing "${hyperb:dir}/\\1")
   (unwind-protect
@@ -551,6 +551,7 @@
 
 ;; man-apropos
 (ert-deftest hbut-man-apropos-test ()
+  (require 'man)
   (with-temp-buffer
     (insert "rm (1)   - remove")
     (goto-char 2)
