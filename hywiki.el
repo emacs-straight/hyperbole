@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:      1-Mar-26 at 12:12:41 by Bob Weiner
+;; Last-Mod:      1-Mar-26 at 16:35:00 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -198,8 +198,17 @@ checks it to determine if any buffer modification has occurred or not.")
 Each such key self-inserts before highlighting any prior HyWikiWord
 in `hywiki-mode'.")
 
-(defconst hywiki--delimiter-hasht (hash-make '(("\"" . ?\")
-					       ("\'" . ?\')
+(defconst hywiki--close-open-hasht (hash-make '(("\"" . ?\")
+					       ("'" . ?\')
+					       ("}"  . ?{)
+					       ("]"  . ?\[)
+					       (">"  . ?<)
+					       (")"  . ?\())
+                                             t)
+  "Delimiter htable with (close-delim-string . open-delim-char) key-value pairs.")
+
+(defconst hywiki--open-close-hasht (hash-make '(("\"" . ?\")
+					       ("'" . ?\')
 					       ("{"  . ?})
 					       ("["  . ?\])
 					       ("<"  . ?>)
@@ -260,6 +269,8 @@ Group 1 is the entire HyWikiWord#section:Lnum:Cnum expression.")
 (defvar-local hywiki--end nil)
 (defvar-local hywiki--range nil)
 (defvar-local hywiki--start nil)
+(defvar-local hywiki--start-pos nil)
+
 ;;;
 ;;; ************************************************************************
 ;;; Public variables
@@ -1498,7 +1509,8 @@ exists."
 (defun hywiki-completion-at-point ()
   "Complete a HyWiki reference at point.
 Each candidate is an alist with keys: file, line, text, and display."
-  (setq hywiki--end-pos nil)
+  (setq hywiki--start-pos nil
+        hywiki--end-pos nil)
   (let* ((ref-start-end (and (hywiki-active-in-current-buffer-p)
 			     (not (hywiki-non-hook-context-p))
 			     (hywiki-word-at t t)))
@@ -1524,6 +1536,7 @@ Each candidate is an alist with keys: file, line, text, and display."
              (candidates-alist (when candidates (mapcar #'list candidates))))
         (when candidates-alist
           (setq hywiki--char-before (char-before start)
+                hywiki--start-pos start
                 hywiki--end-pos end)
           (list start end candidates-alist
                 :exclusive 'no
@@ -1539,7 +1552,7 @@ Each candidate is an alist with keys: file, line, text, and display."
                 :company-kind (lambda (_) 'keyword)
                 :annotation-function (lambda (_) " [HyWiki]")
                 ;; Corfu uses this
-                :exit-function (lambda (&rest _) (hywiki-completion-exit-function))))))))
+                :exit-function #'hywiki-completion-exit-function))))))
 
 (defun hywiki-create-referent-and-display (wikiword &optional prompt-flag)
   "Display the HyWiki referent for WIKIWORD if not in an ert test; return it.
@@ -2726,7 +2739,7 @@ whenever `hywiki-mode' is enabled/disabled."
 						      (char-to-string
                                                        (or (char-before (or hywiki--start 0))
                                                            0))
-                                                      hywiki--delimiter-hasht)))
+                                                      hywiki--open-close-hasht)))
 					      "-_*: \t[:alnum:]"
 					    "-_*:[:alnum:]")))
 				       (setq hywiki--end (point))
@@ -3986,15 +3999,25 @@ occurs with one of these hooks, the problematic hook is removed."
   ;; Find possibly needed closing delimiter and insert it if not already there
   (let ((end-delim (when (characterp hywiki--char-before)
                      (hash-get (char-to-string hywiki--char-before)
-                               hywiki--delimiter-hasht))))
-    (when (and hywiki--end-pos
-               (>= (point) hywiki--end-pos))
-      (if (and end-delim
-               (or (>= (point) (point-max))
-                   (not (eq (char-after (point)) end-delim))))
-          (progn (insert end-delim)
-                 (goto-char (- (point) 2)))
-        (when end-delim (goto-char (1- (point)))))))
+                               hywiki--open-close-hasht)))
+        (point-at-end (and hywiki--end-pos (>= (point) hywiki--end-pos))))
+    (when point-at-end
+      (cond ((and end-delim (not (eq (char-after (point)) end-delim)))
+             (insert end-delim)
+             (goto-char (- (point) 2)))
+            (end-delim
+             (goto-char (1- (point))))
+            (hywiki--start-pos
+             ;; No opening or closing delim yet.
+             ;; If HyWiki ref has whitespace in it, need to add double
+             ;; quotes at the beginning and the end
+             (when (seq-contains-p (buffer-substring-no-properties hywiki--start-pos (point))
+                                   ?\  #'=)
+               (save-excursion
+                 (insert ?\")
+                 (goto-char hywiki--start-pos)
+                 (insert ?\"))
+               (goto-char (1- (point))))))))
   (hywiki-maybe-highlight-reference))
 
 (defun hywiki-word-add-completion-at-point ()

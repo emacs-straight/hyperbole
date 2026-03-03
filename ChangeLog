@@ -18,6 +18,11 @@
     desired.
 * test/hywiki-tests.el (hywiki-tests--completion-at-point): Fix to newest
     HyWiki completion policies.
+            (hywiki--start-pos): Add and use in 'hywiki-completion-exit-function'.
+	    (hywiki--delimiter-hasht): Rename to 'hywiki--open-close-hasht'.
+    Add 'hywiki--close-open-hasht'.
+            (hywiki-completion-exit-function): When no delimiters, add double quotes
+    around WikiWord ref after completion.
 
 2026-02-28  Bob Weiner  <rsw@gnu.org>
 
