@@ -818,7 +818,15 @@ If multiple Org versions are loaded, use the one first on `load-path'.
 Always ensure Org libraries have been required.
 Return t if Org is reloaded, else nil.")
 (autoload 'hsys-org-format-heading "hsys-org" "\
-Return HEADING, without the leading asterisks.
+Return HEADING, without the leading asterisks or a #+TITLE:.
+When NO-TAGS is non-nil, don't include tags.
+When NO-TODO is non-nil, don't include TODO keywords.
+When NO-PRIORITY is non-nil, don't include priority cookie.
+When NO-COMMENT is non-nil, don't include COMMENT string.
+
+(fn HEADING &optional NO-TAGS NO-TODO NO-PRIORITY NO-COMMENT)")
+(autoload 'hsys-org-format-heading "hsys-org" "\
+Return HEADING, without the leading asterisks or a #+TITLE:.
 When NO-TAGS is non-nil, don't include tags.
 When NO-TODO is non-nil, don't include TODO keywords.
 When NO-PRIORITY is non-nil, don't include priority cookie.
@@ -1000,7 +1008,7 @@ point; see `hui:delimited-selectable-thing'.
 
 (fn REGISTER START END &optional DELETE-FLAG REGION-FLAG INTERACTIVE-FLAG)" t)
 (autoload 'hui:kill-region "hui" "\
-Kill (\"cut\") between point and mark.
+Kill (\"cut\") between highlighted point and mark else thing at point.
 The text is deleted but saved in the kill ring.
 The command \\[yank] can retrieve it from there.
 (If you want to kill and then yank immediately, use \\[copy-region-as-kill].)
@@ -1016,7 +1024,7 @@ Patched to remove the most recent completion.
 
 (fn BEG END &optional REGION INTERACTIVE-FLAG)" t)
 (autoload 'hui:kill-ring-save "hui" "\
-Save the active region as if killed, but don't kill it.
+Save the active region or thing at point as if killed, but don't kill it.
 In Transient Mark mode, deactivate the mark.
 If `interprogram-cut-function' is non-nil, also save the text for a window
 system cut and paste.
