@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:      7-Mar-26 at 22:10:28 by Bob Weiner
+;; Last-Mod:      8-Mar-26 at 23:29:50 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -201,6 +201,9 @@ checks it to determine if any buffer modification has occurred or not.")
 Each such key self-inserts before highlighting any prior HyWikiWord
 in `hywiki-mode'.")
 
+(defvar hywiki--buttonize-characters-cache nil
+  "Single string cache of Org-mode syntax table punctuation/symbol characters.")
+
 (defconst hywiki--close-open-hasht (hash-make '(("\"" . ?\")
 					       ("'" . ?\')
 					       ("}"  . ?{)
@@ -278,6 +281,11 @@ Group 1 is the entire HyWikiWord#section:Lnum:Cnum expression.")
 ;;; ************************************************************************
 ;;; Public variables
 ;;; ************************************************************************
+
+
+;; Clear the cache if any changes to the `global-map' keymap
+(add-variable-watcher 'global-map
+                      #'hywiki--clear-buttonize-characters-cache)
 
 (defcustom hywiki-exclude-major-modes nil
   "List of major modes to exclude from HyWikiWord highlighting and recognition."
@@ -379,6 +387,10 @@ Presently, there are no key bindings; this is for future use.")
   "When t, [[hy:HyWiki Org links]] must start with `hywiki-org-link-type':.
 Otherwise, this prefix is not needed and HyWikiWord Org links
 override standard Org link lookups.  See \"(org)Internal Links\".")
+
+;; Clear the cache if any changes to the `hywiki--org-mode-syntax-table'
+(add-variable-watcher 'hywiki--org-mode-syntax-table
+                      #'hywiki--clear-buttonize-characters-cache)
 
 (defcustom hywiki-org-publishing-broken-links 'mark
   "HyWiki Org publish option that determines how invalid links are handled.
@@ -770,34 +782,40 @@ deletion commands and those in `hywiki-non-character-commands'."
     (setq hywiki--command-executed-flag nil)))
 
 (defun hywiki-get-buttonize-characters ()
-  "Return a string of Org self-insert keys that have punctuation/symbol syntax."
-  (let (key
-	cmd
-	key-cmds
-	result)
-    ;; Org and other text mode self-insert-command bindings are just
-    ;; remaps inherited from global-map.  Create key-cmds list of
-    ;; parsable (key . cmd) combinations where key may be a
-    ;; (start-key . end-key) range of keys.
-    (map-keymap (lambda (key cmd) (setq key-cmds (cons (cons key cmd) key-cmds))) (current-global-map))
-    (dolist (key-cmd key-cmds (concat (seq-difference (nreverse result)
-						      "-_*#:" #'=)))
-      (setq key (car key-cmd)
-	    cmd (cdr key-cmd))
-      (when (eq cmd 'self-insert-command)
-	(cond ((and (characterp key)
-		    (eq (char-syntax key) ?.))
-	       ;; char with punctuation/symbol syntax
-	       (setq result (cons key result)))
-	      ((and (consp key)
-		    (characterp (car key))
-		    (characterp (cdr key))
-		    (<= (cdr key) 256))
-	       ;; ASCII char range, some of which has punctuation/symbol syntax
-	       (with-syntax-table hywiki--org-mode-syntax-table
-		 (dolist (k (number-sequence (car key) (cdr key)))
-		   (when (memq (char-syntax k) '(?. ?_))
-		     (setq result (cons k result)))))))))))
+  "Return a string of Org self-insert keys that have punctuation/symbol syntax.
+These trigger HyWiki reference highlighting.  Cache the string and
+automatically invalidate it when `global-map' or `outline-mode-syntax-table'
+changes."
+  (if (stringp hywiki--buttonize-characters-cache)
+      hywiki--buttonize-characters-cache
+    (let (key
+	  cmd
+	  key-cmds
+	  result)
+      ;; Org and other text mode self-insert-command bindings are just
+      ;; remaps inherited from global-map.  Create key-cmds list of
+      ;; parsable (key . cmd) combinations where key may be a
+      ;; (start-key . end-key) range of keys.
+      (map-keymap (lambda (key cmd) (setq key-cmds (cons (cons key cmd) key-cmds))) (current-global-map))
+      (with-syntax-table hywiki--org-mode-syntax-table
+        (setq hywiki--buttonize-characters-cache
+              (dolist (key-cmd key-cmds (apply #'string (seq-difference (nreverse result)
+						                        "-_*#:" #'=)))
+                (setq key (car key-cmd)
+	              cmd (cdr key-cmd))
+                (when (eq cmd 'self-insert-command)
+	          (cond ((and (characterp key)
+		              (= (char-syntax key) ?.))
+	                 ;; char with punctuation syntax
+	                 (setq result (cons key result)))
+	                ((and (consp key)
+		              (characterp (car key))
+		              (characterp (cdr key))
+		              (<= (cdr key) 256))
+	                 ;; ASCII char range, some of which has punctuation/symbol syntax
+		         (dolist (k (number-sequence (car key) (cdr key)))
+		           (when (memq (char-syntax k) '(?. ?_))
+		             (setq result (cons k result)))))))))))))
 
 (defun hywiki-non-hook-context-p ()
   "Return non-nil when HyWiki command hooks should do nothing.
@@ -1692,6 +1710,7 @@ nil, else return \\='(page . \"<page-file-path>\")."
                                "--with-filename"
                                "--line-number"
                                "--smart-case"
+                               "--search-zip"
                                "-g" "*.org"
                                "-e" headline-regexp
                                dir)))
@@ -2546,6 +2565,18 @@ the current page unless they have sections attached."
    (and (/= (point) (point-max))
 	(/= (if (char-after) (char-syntax (char-after)) 0) ? ))))
 
+(defun hywiki-maybe-highlight-org-element-backward ()
+  "Highlight HyWikiWords with point at a single closing square/angle bracket.
+Dehighlight HyWikiWords when on a double closing square/angle bracket,
+since Org mode highlights those."
+  (hywiki--maybe-de/highlight-org-element-backward #'hywiki-maybe-highlight-sexp))
+
+(defun hywiki-maybe-highlight-org-element-forward ()
+  "Highlight HyWikiWords with point at a single opening square/angle bracket.
+Dehighlight HyWikiWords when on a double opening square/angle bracket,
+since Org mode highlights those."
+  (hywiki--maybe-de/highlight-org-element-forward #'hywiki-maybe-highlight-sexp))
+
 ;;;###autoload
 (defun hywiki-maybe-highlight-reference (&optional on-reference)
   "Highlight any non-Org link HyWikiWord#section at or one char before point.
@@ -2646,18 +2677,6 @@ the current page unless they have sections attached."
 			hywiki--but-start (hproperty:but-start hywiki--buts)
 			hywiki--but-end   (hproperty:but-end hywiki--buts))
 		  (hproperty:but-delete hywiki--buts)))))))))
-
-(defun hywiki-maybe-highlight-org-element-backward ()
-  "Highlight HyWikiWords with point at a single closing square/angle bracket.
-Dehighlight HyWikiWords when on a double closing square/angle bracket,
-since Org mode highlights those."
-  (hywiki--maybe-de/highlight-org-element-backward #'hywiki-maybe-highlight-sexp))
-
-(defun hywiki-maybe-highlight-org-element-forward ()
-  "Highlight HyWikiWords with point at a single opening square/angle bracket.
-Dehighlight HyWikiWords when on a double opening square/angle bracket,
-since Org mode highlights those."
-  (hywiki--maybe-de/highlight-org-element-forward #'hywiki-maybe-highlight-sexp))
 
 (defun hywiki-maybe-highlight-references (&optional region-start region-end skip-lookups-update-flag)
   "Highlight each non-Org link HyWiki page#section in the current buffer/region.
@@ -2796,6 +2815,14 @@ whenever `hywiki-mode' is enabled/disabled."
   (unless (hyperb:stack-frame '(hywiki-maybe-highlight-wikiwords-in-frame))
     (hywiki-maybe-directory-updated))
   nil)
+
+(defun hywiki-maybe-highlight-region (start end)
+  "Rehighlight HyWikiWord references between positions START to END."
+  (hywiki-maybe-highlight-references start end t)
+  (unless (hyperb:stack-frame '(hywiki-maybe-highlight-wikiwords-in-frame))
+    ;; Rebuild lookup tables if any HyWiki page name has changed
+    (hywiki-get-referent-hasht)
+    (hywiki-maybe-directory-updated)))
 
 (defun hywiki-maybe-highlight-sexp (direction-number)
   "Highlight any HyWikiWord within single square/angle bracket.
@@ -4028,6 +4055,9 @@ Completion requires typing at least the two first characters of the
 completion or no completion candidates are returned.
 If using `company-mode', you must use the `company-capf' backend for HyWiki
 completion to work properly."
+  ;; Make `indent-for-tab-command' by default bound to {TAB} complete HyWiki
+  ;; references.
+  (setq tab-always-indent 'complete)
   (add-hook 'completion-at-point-functions #'hywiki-completion-at-point -90 t)
   (cond ((bound-and-true-p corfu-mode)) ;; Uses :exit-function in hywiki-c-a-p
         ((bound-and-true-p company-mode)
@@ -4048,8 +4078,9 @@ completion to work properly."
   (remove-hook 'company-completion-finished-hook  #'hywiki-completion-exit-function)
   (remove-hook 'company-completion-cancelled-hook #'hywiki-completion-exit-function)
   (advice-remove 'completion--insert #'hywiki-completion-exit-function)
-  ;; Restore user's customized setting of this option.
-  (custom-reevaluate-setting 'completion-cycle-threshold))
+  ;; Restore user's customized setting of these options.
+  (custom-reevaluate-setting 'completion-cycle-threshold)
+  (custom-reevaluate-setting 'tab-always-indent))
 
 (defun hywiki-word-highlight-buffers (buffers)
   "Setup HyWikiWord auto-highlighting and highlight in BUFFERS."
@@ -4105,13 +4136,6 @@ completion to work properly."
 ;;; Private functions
 ;;; ************************************************************************
 
-(defun hywiki--buttonized-region-p ()
-  "Return non-nil when hywiki--buttonize-start/end are in the current buffer."
-  (and (marker-position hywiki--buttonize-start)
-       (eq (marker-buffer hywiki--buttonize-start) (current-buffer))
-       (marker-position hywiki--buttonize-end)
-       (eq (marker-buffer hywiki--buttonize-end) (current-buffer))))
-
 (defun hywiki--add-suffix-to-referent (suffix referent)
   "Add SUFFIX to REFERENT's value and return REFERENT.
 SUFFIX includes its type prefix, e.g. #.  Return nil if any input is
@@ -4136,6 +4160,17 @@ invalid.  Appended only if the referent-type supports suffixes."
 			(concat referent-value suffix)))
 		(cons referent-type referent-value))
 	    referent))))))
+
+(defun hywiki--buttonized-region-p ()
+  "Return non-nil when hywiki--buttonize-start/end are in the current buffer."
+  (and (marker-position hywiki--buttonize-start)
+       (eq (marker-buffer hywiki--buttonize-start) (current-buffer))
+       (marker-position hywiki--buttonize-end)
+       (eq (marker-buffer hywiki--buttonize-end) (current-buffer))))
+
+(defun hywiki--clear-buttonize-characters-cache (&rest _)
+  "Invalidate the cached Org-mode syntax string."
+  (setq hywiki--buttonize-characters-cache nil))
 
 (defun hywiki--extend-region (start end)
   "Extend range (START END) to include delimited regions; return the new range.

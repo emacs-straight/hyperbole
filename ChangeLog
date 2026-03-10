@@ -1,4 +1,32 @@
+2026-03-08  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-get-buttonize-characters): Optimize this costly function
+    with a cache.
+    (hywiki--buttonize-characters-cache): Cache to use.
+    (hywiki--clear-buttonize-characters-cache): Clear the cache.
+    (global-map, hywiki--org-mode-syntax-table): Add variable watchers on these
+       and clear the cache when these change.
+    (hywiki-consult-page-and-headline): Add '--search-zip' to decompress .gz and
+      .zip files for searching.
+* hsys-org.el (org-version): Fix to test if version< "9.6" not "6".
+  hywiki.el (hywiki-maybe-highlight-region): Add for rehighlighting in a region
+    after edits are made to a buffer.
+            (hywiki-word-add-completion-at-point): Make 'indent-for-tab-command'
+    by default bound to {TAB} complete HyWiki references by setting
+    'tab-always-complete' to 'complete.
+            (hywiki-word-remove-completion-at-point): Restore user's customized
+    setting of 'tab-always-complete'.
+
 2026-03-07  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (HyWikiWords): Fix key binding for Org None option for
+    the Action Key.
+
+* hsys-org-roam.el (require 'package):
+  hyrolo.el (require 'package):
+  hui-treemacs.el (require 'package):
+  hsys-org.el (require 'package): Ensure this is always the first require
+    to avoid the need to add a (package-activate) call.
 
 * hywiki.el (hywiki-mode-disable): Move global hook disables to this new
     function from 'hywiki-word-dehighlight-buffers'.  Call only when

@@ -2117,7 +2117,7 @@ expected result."
 
 (ert-deftest hywiki-tests--get-buttonize-characters ()
   "Verify `hywiki-get-buttonize-characters'."
-  (should (string= "!&+,./;=?@\\^`|~" (hywiki-get-buttonize-characters))))
+  (should (string= "!&'+,./;=?@\\^`|~" (hywiki-get-buttonize-characters))))
 
 (ert-deftest hywiki-tests--non-hook-context-p ()
   "Verify `hywiki-non-hook-context-p'."
@@ -2213,7 +2213,6 @@ expected result."
 
 (ert-deftest hywiki-tests--completion-at-point ()
   "Verify `hywiki-completion-at-point' returns proper completion candidates."
-  (skip-unless (version<= "9.6" (org-version)))
   (hywiki-tests--preserve-hywiki-mode
     (ert-info ("Nothing to complete")
       (should-not (hywiki-completion-at-point)))
@@ -2245,7 +2244,7 @@ expected result."
                      (hywiki-tests--remove-keyword-args (hywiki-completion-at-point)))))))
 
 (ert-deftest hywiki-tests--verify-hook-functions ()
-  "Verify that the hook functions are set and teared down."
+  "Verify that the hook functions are set and torn down."
   (cl-flet* ((hooks-exists: (info)
                (ert-info ((format "Hywiki-mode %s - %s" hywiki-mode info))
                  (should (memq 'hywiki-word-store-around-point pre-command-hook))
