@@ -817,22 +817,6 @@ optional VIEW-BUFFER-NAME, use that rather than the default,
 If multiple Org versions are loaded, use the one first on `load-path'.
 Always ensure Org libraries have been required.
 Return t if Org is reloaded, else nil.")
-(autoload 'hsys-org-format-heading "hsys-org" "\
-Return HEADING, without the leading asterisks or a #+TITLE:.
-When NO-TAGS is non-nil, don't include tags.
-When NO-TODO is non-nil, don't include TODO keywords.
-When NO-PRIORITY is non-nil, don't include priority cookie.
-When NO-COMMENT is non-nil, don't include COMMENT string.
-
-(fn HEADING &optional NO-TAGS NO-TODO NO-PRIORITY NO-COMMENT)")
-(autoload 'hsys-org-format-heading "hsys-org" "\
-Return HEADING, without the leading asterisks or a #+TITLE:.
-When NO-TAGS is non-nil, don't include tags.
-When NO-TODO is non-nil, don't include TODO keywords.
-When NO-PRIORITY is non-nil, don't include priority cookie.
-When NO-COMMENT is non-nil, don't include COMMENT string.
-
-(fn HEADING &optional NO-TAGS NO-TODO NO-PRIORITY NO-COMMENT)")
 (autoload 'hsys-org-log-and-fix-version "hsys-org" "\
 Log before/after state of Org libraries when fixing a mixed installation.")
 (autoload 'hsys-org-meta-return-shared-p "hsys-org" "\
@@ -2238,6 +2222,24 @@ If in a programming mode, must be within a comment.  Use
 the current page unless they have sections attached.
 
 (fn &optional ON-REFERENCE)" t)
+(autoload 'hywiki-org-format-heading "hywiki" "\
+Return HEADING, without the leading asterisks or a #+TITLE:.
+When NO-TAGS is non-nil, don't include tags.
+When NO-TODO is non-nil, don't include TODO keywords.
+When NO-PRIORITY is non-nil, don't include priority cookie.
+When NO-COMMENT is non-nil, don't include COMMENT string.
+When NO-STATS is non-nil, don't include statistics in square brackets.
+
+(fn HEADING &optional NO-TAGS NO-TODO NO-PRIORITY NO-COMMENT NO-STATS)")
+(autoload 'hywiki-org-format-heading "hywiki" "\
+Return HEADING, without the leading asterisks or a #+TITLE:.
+When NO-TAGS is non-nil, don't include tags.
+When NO-TODO is non-nil, don't include TODO keywords.
+When NO-PRIORITY is non-nil, don't include priority cookie.
+When NO-COMMENT is non-nil, don't include COMMENT string.
+When NO-STATS is non-nil, don't include statistics in square brackets.
+
+(fn HEADING &optional NO-TAGS NO-TODO NO-PRIORITY NO-COMMENT NO-STATS)")
 (autoload 'hywiki-org-link-export "hywiki" "\
 Export a HyWikiWord Org-format `hy:' link to various formats.
 The LINK, DESCRIPTION, FORMAT and INFO are provided by the export
