@@ -1,3 +1,34 @@
+2026-03-21  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:grep-has-pcre-p, hypb:ripgrep-has-pcre-p): Add.
+  hywiki.el (hywiki-consult-backlink): Add and use call
+    above functions.
+            (hywiki-word-grep): Call above function instead of
+    obsolete 'hywiki-word-consult-grep'.
+            (hywiki-word-consult-grep): Remove. Replaced by backlink
+    function.
+  hui-mini.el (hui:menu-hywiki):
+  hui-menu.el (hui-menu-hywiki): Add Backlinks menu item and remove
+   WikiWordConsult / HyWiki-Word-Consult menu items since Backlinks
+   replaces them.
+
+* test/hywiki-tests.el (hywiki-tests--referent-test): Remove these
+    lines for testing the cache every time this is called.  Test
+    that in a single test instead.
+                       (hywiki-tests--referent-cache-test): Add to
+    test saving and reloading a bookmark referent from cache.
+                       (hywiki-tests--save-referent-org-id): Fix to
+    call 'hywiki-add-referent' around 'hywiki-add-org-id' since
+    interactive runs of this test without that wrapper return nil
+    for comparison to the expected (cons 'org-id "generated-org-id".
+
+2026-03-21  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (HYPB_BYTE_COMP_ELN_LOAD_PATH): Add users eln-cache last in
+    native-comp-eln-load-path so that batch-byte+native-compile uses that
+    for storing the en-files.
+    (%.elc): Use HYPB_BYTE_COMP_ELN_LOAD_PATH.
+
 2026-03-18  Mats Lidell  <matsl@gnu.org>
 
 * hactypes.el (link-to-org-id): Fix quote in docstring.

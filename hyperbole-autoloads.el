@@ -2107,6 +2107,13 @@ Use `hywiki-get-referent' to test for and retrieve an existing HyWikiWord
 referent.
 
 (fn WIKIWORD &optional ARG)" t)
+(autoload 'hywiki-consult-backlink "hywiki" "\
+Select a HyWikiWord backlink to REFERENCE with `hywiki-consult-grep'.
+REFERENCE should be a string of \"WikiWord\" and optional \"#suffix\" which
+is ignored.  Unless `grep' or `rg' have Perl-style pcre2 support, matches
+will include filenames that include the WikiWord.
+
+(fn REFERENCE)" t)
 (autoload 'hywiki-consult-grep "hywiki" "\
 Interactively search HyWiki pages with a consult package grep command.
 Search for optional REGEXP up to MAX-MATCHES in PATH-LIST or `hywiki-directory'.
