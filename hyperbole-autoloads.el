@@ -94,7 +94,7 @@ include: status, severity, and package.
 
 ;;; Generated autoloads from hibtypes.el
 
-(register-definition-prefixes "hibtypes" '("Info-node" "action" "annot-bib" "completion" "cscope" "ctags" "debugger-source" "dir-summary" "eli" "etags" "glink" "gnus-push-button" "grep-msg" "hib-" "hlink" "id-cflow" "ilink" "ipython-stack-frame" "mail-address" "man-apropos" "markdown-" "org-" "pat" "python-tb-previous-line" "rfc" "ripgrep-msg" "smerge" "tex"))
+(register-definition-prefixes "hibtypes" '("Info-node" "action" "annot-bib" "completion" "cscope" "ctags" "debugger-source" "dir-summary" "eli" "etags" "glink" "gnus-push-button" "grep-" "hib-" "hlink" "id-cflow" "ilink" "ipython-stack-frame" "mail-address" "man-apropos" "markdown-" "org-" "pat" "python-tb-previous-line" "rfc" "ripgrep-msg" "smerge" "tex"))
 
 
 ;;; Generated autoloads from hinit.el
