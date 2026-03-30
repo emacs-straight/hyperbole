@@ -1514,6 +1514,11 @@ that invisibility values that aren't either t or ELEMENT, that
 text will become visible.
 
 (fn ELEMENT)")
+(autoload 'hypb:advised-p "hypb" "\
+Return t if ADVISED-FUNCTION is advised with ADVICE-FUNCTION.
+Uses the newer \"nadvice\" elisp library, not \"advice\".
+
+(fn ADVISED-FUNCTION ADVICE-FUNCTION)")
 (autoload 'hypb:activate-interaction-log-mode "hypb" "\
 Configure and enable the interaction-log package for use with Hyperbole.
 This displays a clean log of Emacs keys used and commands executed." t)
@@ -1603,6 +1608,8 @@ found and removed, nil otherwise.
 
 (fn PLACE NAME)" nil t)
 (defalias 'hypb:rgrep 'hui-select-rgrep)
+(autoload 'hypb:sqlite-p "hypb" "\
+Return non-nil if Emacs has available SQLite support.")
 (autoload 'hypb:with-marker "hypb" "\
 Set MARKER while executing BODY, then set MARKER to nil.
 Return result of last BODY expression.
@@ -1665,7 +1672,7 @@ The mode's hook is called both when the mode is enabled and when it is
 disabled.
 
 (fn &optional ARG)" t)
-(let ((us (if (fboundp 'macroexp-file-name) (macroexp-file-name) load-file-name))) (when us (add-to-list 'load-path (expand-file-name "kotl" (file-name-directory us))) (require 'kotl-autoloads nil t)))
+(let ((us (macroexp-file-name))) (when us (add-to-list 'load-path (expand-file-name "kotl" (file-name-directory us))) (require 'kotl-autoloads nil t)))
 (register-definition-prefixes "hyperbole" '("hkey-" "hyperb"))
 
 
@@ -1904,7 +1911,7 @@ String/logical HyRolo search over files matching FILE-REGEXP in rest of DIRS.
 Regexp HyRolo search over files matching FILE-REGEXP in rest of DIRS.
 
 (fn FILE-REGEXP &rest DIRS)")
-(register-definition-prefixes "hyrolo" '("hyrolo-" "reveal-"))
+(register-definition-prefixes "hyrolo" '("hyrolo-" "reveal-post-command"))
 
 
 ;;; Generated autoloads from hyrolo-demo.el
