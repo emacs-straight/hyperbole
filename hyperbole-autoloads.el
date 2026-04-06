@@ -667,6 +667,11 @@ off otherwise.
 
 ;;; Generated autoloads from hproperty.el
 
+(autoload 'hproperty:length-p "hproperty" "\
+Return the length of the region from point where PROP has VALUE.
+Return nil if no match at point.
+
+(fn PROP VALUE)")
 (register-definition-prefixes "hproperty" '("hproperty:"))
 
 
