@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    6/30/93
-;; Last-Mod:     29-Mar-26 at 12:53:49 by Bob Weiner
+;; Last-Mod:     12-Apr-26 at 11:24:21 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -3035,6 +3035,7 @@ replicated in the new cell."
   (interactive "*P")
   ;; delete any surrounding whitespace
   (delete-horizontal-space)
+  (delete-region (point) (progn (skip-chars-backward "\n\r\t ") (point)))
   (let ((new-cell-contents (kotl-mode:kill-region
 			    (point) (kcell-view:end-contents) 'string))
 	(start (kcell-view:start))
@@ -3703,6 +3704,7 @@ but always operates upon the current view."
 (put 'outline 'reveal-toggle-invisible 'kotl-mode:reveal-toggle-invisible)
 (defun kotl-mode:isearch-open-invisible (_overlay)
   (kotl-mode:show-tree))
+
 ;; Adapted from outline-reveal-toggle-invisible; called by isearch.
 (defun kotl-mode:reveal-toggle-invisible (o hidep)
   (if (not (derived-mode-p 'kotl-mode))
