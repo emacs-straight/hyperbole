@@ -1613,6 +1613,8 @@ found and removed, nil otherwise.
 
 (fn PLACE NAME)" nil t)
 (defalias 'hypb:rgrep 'hui-select-rgrep)
+(autoload 'hypb:save-buffer-silently "hypb" "\
+Silently save the current buffer whether modified or not.")
 (autoload 'hypb:sqlite-p "hypb" "\
 Return non-nil if Emacs has available SQLite support.")
 (autoload 'hypb:with-marker "hypb" "\
