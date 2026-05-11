@@ -30,8 +30,39 @@
 
 (declare-function hy-test-helpers:consume-input-events "hy-test-helpers")
 
+(ert-deftest hyrolo-tests--add--error-cases ()
+  "Verify `hyrolo-add' error cases."
+  (defvar hyrolo-file)
+  (let ((hyrolo-file (make-temp-file "hypb" nil ".otl")))
+    (unwind-protect
+        (let ((hyrolo-file-list (list hyrolo-file)))
+          (should-error (hyrolo-add ""))
+          (should-error (hyrolo-add 'symbol))
+          (should-error (hyrolo-add "a" ""))
+          (should-error (hyrolo-add "a" 'symbol))
+          (should-error (hyrolo-add "a/b/c"))
+          ;; File not writable
+          (with-mock
+            (mock (file-writable-p hyrolo-file) => nil)
+            (should-error (hyrolo-add "a")))
+          ;; File not readable
+          (with-mock
+            (mock (file-readable-p hyrolo-file) => nil)
+            (should-error (hyrolo-add "a"))))
+      (hy-delete-file-and-buffer hyrolo-file))))
+
+(ert-deftest hyrolo-tests--add-item-to-new-file ()
+  "Verify `hyrolo-add' creates and visits the file buffer if file does not exist."
+  (let ((new-file (expand-file-name (make-temp-name "hypb") "/tmp")))
+    (unwind-protect
+        (progn
+          (should-not (file-exists-p new-file))
+          (hyrolo-add "a" new-file)
+          (should (equal (current-buffer) (get-file-buffer new-file))))
+      (hy-delete-file-and-buffer new-file))))
+
 (ert-deftest hyrolo-tests--add-items-at-multiple-levels ()
-  "`hyrolo-add` can add items at different levels."
+  "`hyrolo-add' can add items at different levels."
   (let ((hyrolo-file (make-temp-file "hypb" nil ".otl")))
     (unwind-protect
         (let ((hyrolo-file-list (list hyrolo-file)))
@@ -47,7 +78,7 @@
       (hy-delete-file-and-buffer hyrolo-file))))
 
 (ert-deftest hyrolo-tests--add-items-interactive ()
-  "`hyrolo-add` can add items when called interactively."
+  "`hyrolo-add' can add items when called interactively."
   (let ((hyrolo-file (make-temp-file "hypb" nil ".otl")))
     (unwind-protect
         (let ((hyrolo-file-list (list hyrolo-file)))
@@ -2007,6 +2038,61 @@ Dependencies on the consult package are mocked."
                 (should-not (hyrolo-kill "not-exist" hyrolo-file))
                 (hy-test-helpers:should-last-message "not found" cap)))))
       (hy-delete-file-and-buffer hyrolo-file))))
+
+(ert-deftest hyrolo-tests--set-date ()
+  "Verify `hyrolo-set-date' sets and updates an items date."
+  (let ((test-time "2024-12-11"))
+    (cl-letf (((symbol-function 'format-time-string)
+               (lambda (_fmt &optional _time _zone) test-time)))
+      (with-temp-buffer
+        (insert "* item\n")
+
+        (ert-info ("Do not insert date if date format is empty or nil")
+          (dolist (v '("" nil))
+            (let ((hyrolo-date-format v))
+              (goto-char (point-min))
+              (hyrolo-set-date)
+              (should (string= "* item\n" (buffer-string))))))
+
+        (ert-info ("Do not insert date in kotl-mode")
+          (let ((major-mode 'kotl-mode))
+            (goto-char (point-min))
+            (hyrolo-set-date)
+            (should (string= "* item\n" (buffer-string)))))
+
+        (ert-info ("Don't set date if date is not present and request is edit-only")
+          (goto-char (point-min))
+          (hyrolo-set-date t)
+          (should (string= "* item\n" (buffer-string))))
+
+        (ert-info ("Set date if not there")
+          (goto-char (point-min))
+          (hyrolo-set-date)
+          (should (string= "* item\n\t2024-12-11\n" (buffer-string))))
+
+        (ert-info ("Update date if item has a date")
+          (setq test-time "2025-01-01")
+          (goto-char (point-min))
+          (hyrolo-set-date)
+          (should (string= "* item\n\t2025-01-01\n" (buffer-string))))
+
+        (ert-info ("Update date if item has a date, keep trailing newlines")
+          (setq test-time "2025-01-02")
+          (goto-char (point-max))
+          (insert "\n\n")
+          (goto-char (point-min))
+          (hyrolo-set-date)
+          (should (string= "* item\n\t2025-01-02\n\n\n" (buffer-string))))
+
+        (ert-info ("Update date if item has a date, keep leading whitespace")
+          (goto-char (point-min))
+          (search-forward "2025-01-02")
+          (beginning-of-line)
+          (insert "\t\t")
+          (setq test-time "2025-01-03")
+          (goto-char (point-min))
+          (hyrolo-set-date)
+          (should (string= "* item\n\t\t\t2025-01-03\n\n\n" (buffer-string))))))))
 
 (provide 'hyrolo-tests)
 

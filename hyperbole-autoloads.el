@@ -1736,7 +1736,7 @@ a parent entry which begins with the parent string.
 
 (fn &optional NAME FILE-OR-BUF)" t)
 (autoload 'hyrolo-fgrep "hyrolo" "\
-Display rolo entries matching STRING or a logical match expression.
+Display HyRolo entries matching STRING or a logical match expression.
 Return count of matches.
 
 To a maximum of optional prefix arg MAX-MATCHES, in file(s) from optional
