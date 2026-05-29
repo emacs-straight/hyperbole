@@ -1,8 +1,45 @@
+2026-05-28  Mats Lidell  <matsl@gnu.org>
+
+* test/hyrolo-tests.el (hyrolo-tests--edit-entry-updates-the-date): Add
+    test verifying the item date is updated on edit.
+
+2026-05-27  Bob Weiner  <rsw@gnu.org>
+
+* hypb.el (hypb:remove-from-in-string-cache): Add and use to remove the
+    current buffer as part of 'kill-buffer-hook'.
+
+* hmouse-tag.el (smart-ancestor-tag-files): Fix to ensure all 'dirs' given
+    are normalized and then 'hpath:expand'ed.  This fixes handling of "."
+    and ".." as dir args.
+  hypb.el (hypb:fgrep-git-log): Walk up directory tree to find if within
+    a git archive for selecting default dir.  If none found, default to
+    'hyperb:dir'.  Default directory to 'hyperb:dir' if current  dir does
+    not contain a ".git" directory.
+
+2026-05-24  Bob Weiner  <rsw@gnu.org>
+
+* hyrolo.el (hyrolo-hdr-to-first-line-p, hyrolo-hdr-move-after-p):
+    Simplify and rewrite for efficiency.  This sped up 'hyrolo-fgrep'
+    with 1000 matches almost 10-fold.
+            (hyrolo-to-previous-entry, hyrolo-to-next-entry): Add to
+    programmatically sequentially move through headers and entries whether
+    visible or not.
+            (hyrolo-to-previous-hdr, hyrolo-to-next-hdr): Add to move between
+    file headers in a HyRolo match buffer.  Bound to '{' and '}' respectively.
+            (hyrolo-to-previous-loc): Change to always move to the start of
+    a loc before moving to another one, to match 'hyrolo-to-previous-loc'.
+            (hyrolo-hdr-at-p): Add to test if point is at the start of a file
+    hdr or not in a HyRolo match buffer.
+            (hyrolo-hdr-in-p): Simplify.
+
 2026-05-23  Bob Weiner  <rsw@gnu.org>
 
 * hyrolo.el (hyrolo-mode): Prevent 'org-element-at-point' warnings in *HyRolo*
     buffer when 'which-func' minor mode is active by nullifying relevant
     variables at the top of this function.
+            (hyrolo-grep-file): Add :hyrolo-hdr property at the start of a
+    file/buf header within the *HyRolo* match buffer.
+            (hyrolo-outline-next-heading): Add.
 
 2026-05-21  Mats Lidell  <matsl@gnu.org>
 
