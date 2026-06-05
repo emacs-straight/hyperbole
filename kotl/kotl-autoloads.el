@@ -243,7 +243,7 @@ See documentation for `kcell:ref-to-id' for valid cell-ref formats.
 Return non-nil iff point is within a klink.
 See documentation for the `actypes::link-to-kotl' function for valid klink
 formats.  Value returned is a list of: link-label, link-start-position, and
-link-end-position, (including delimiters).")
+link-end-position, (positions include delimiters).")
 (register-definition-prefixes "klink" '("klink" "link-to-kotl"))
 
 
