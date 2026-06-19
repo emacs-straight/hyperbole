@@ -1,3 +1,16 @@
+2026-06-18  Bob Weiner  <rsw@gnu.org>
+
+* hui-select.el (hui-select-get-syntax-table): Add and leave syntax-table
+    unchanged when in a programming mode so that <> pair syntax does not
+    interfere with {} region/sexp selection.
+
+* test/hibtypes-tests.el (ibtypes::ilink-test): Add and ensure only one
+    instance of this test.
+
+* hywiki.el (hywiki-include-special-modes): Add to recognize HyWikiWords in
+    particular special major modes, like eww and elfeed ones.
+            (hywiki-potential-buffer-p): Use above setting in this function.
+
 2026-06-16  Bob Weiner  <rsw@gnu.org>
 
 * test/demo-tests.el (fast-demo-display-kotl-starting-from-cell): Fix to
