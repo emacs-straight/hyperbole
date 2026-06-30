@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    30-Jan-21 at 12:00:00
-;; Last-Mod:     25-Jun-26 at 09:59:14 by Bob Weiner
+;; Last-Mod:     29-Jun-26 at 14:23:29 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -32,6 +32,41 @@
 (load "klink")
 
 (declare-function hy-test-helpers:consume-input-events "hy-test-helpers")
+
+(ert-deftest hui--hbut-act--links ()
+  "Verify `hui:hbut-act' finds the ilink but not elink and glink."
+  (with-temp-buffer
+    (set-window-buffer (selected-window) (current-buffer))
+    (insert "\
+<ilink: Command >
+<[Command]> <identity 123)>
+")
+    (goto-char 4)
+    (ert-with-message-capture cap
+      (action-key)
+      (should (string-match-p "123\n" cap)))
+
+    (erase-buffer)
+    (insert "\
+<elink: Command >
+<[Command]> <identity 456)>
+")
+    (goto-char 4)
+    (let ((err (should-error (action-key) :type 'error)))
+      (should
+       (string-match-p (rx "No button " punct "Command" punct " in")
+                       (cadr err))))
+
+    (erase-buffer)
+    (insert "\
+<glink: Command >
+<[Command]> <identity 789)>
+")
+    (goto-char 4)
+    (let ((err (should-error (action-key) :type 'error)))
+      (should
+       (string-match-p "No global button found for label: Command"
+                       (cadr err))))))
 
 (ert-deftest hui-gbut-edit-link-to-file-button ()
   "A global button with action type link-to-file shall be possible to edit."
