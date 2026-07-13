@@ -31,9 +31,15 @@ otherwise, skip to the next section.
       Long video that covers most of Hyperbole;
       Hyperlink timestamps to watch each section
 
+   - [Unscripted Hyperbole Demo at EmacsATX](https://youtu.be/iuwn8GpRj7w)
+      On-the-fly demo of Hyperbole subsystems, showing broad capabilities and
+      how it differs from Org mode.  Watch demo from timestamps: 00:48 to 32:42.
+
    - [Quick Introduction](https://youtu.be/K1MNUctggwI)
 
    - [Top 10 ways Hyperbole amps up Emacs](https://emacsconf.org/2023/talks/hyperamp/)
+
+   - [HyWiki: Zero Markup Hypertext](https://youtu.be/3zG3lRmi3Zg)
 
    - [Introduction to Buttons](https://youtu.be/zoEht66N2PI)
 
@@ -58,6 +64,8 @@ otherwise, skip to the next section.
 ## Articles
 
    - [The Emacs Hyperbole](https://mike.hostetlerhome.com/emacs-hyperbole)
+
+   - [HyWiki: Zero Markup Hypertext](https://www.chiply.dev/post-hyperbole-hywiki)
 
    - [HyWiki: My Favorite Part of Hyperbole](https://kirankp.com/blog/gnu-hyperbole/)
 
@@ -215,6 +223,9 @@ Below are the lines to add:
       (package-refresh-contents)
       (package-install 'hyperbole))
     (hyperbole-mode 1)
+    ;; Allow HyWikiWords in text buffers and programming buffer comments
+    ;; by uncommenting the next line.
+    ;; (hywiki-mode :all)
 
 ----
 

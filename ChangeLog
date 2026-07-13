@@ -1,3 +1,100 @@
+2026-07-11  Mats Lidell  <matsl@gnu.org>
+
+* Makefile (package): Depend on tar-file.
+    (release): Remove targets not needed.
+    (git-pull): Make check robust for current state on the workfolder.
+    (git-tag-release):
+    (ftp): Add confirm check for these potential dangerous targets.
+    ($(pkg_parent)/hyperbole-$(HYPB_VERSION).tar.gz): Add dependency on
+    tar file.
+    ($(pkg_parent)/hyperbole-$(HYPB_VERSION).tar.sig): Remove
+    target. gnupload script handles the sig file.
+    (packageclean): Simplify cleanup by removing whole package build
+    directory.
+    (GNUFTP): Add --dry-run during for now while testing.
+
+* hpath.el (hpath:substitute-var): Try the substitution on the
+    absolute path.
+    (hpath:substitute-var-name): Anchor regexp substitution on first pos.
+
+* test/hpath-tests.el (hpath:substitute-var-test):
+    (hpath:substitute-var-name-test): Unit tests.
+
+2026-07-10  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-word-at-point, hywiki-word-at): Add to doc that point may
+    be immediately after the HyWikiWord reference and it will be found.
+            (hywiki-add-denote, hywiki-create-referent-and-display): Update
+    wikiword insertion logic to never insert within non-whitespace text.
+    Expand doc string and include return value.
+
+* hypb.el (hypb:require-package): Add support for alternative package managers
+    like elpaca that don't show up with a `package-installed-p' check.
+
+* hpath.el (hpath:at-p): Near the top, move (match-string 0 path) call before
+    path is modified, otherwise, with a 1 char path, shrunk to an empty string,
+    match-path will trigger an error; fixes this.
+
+* hyperbole.el (hkey-initialize): Change to bind {M-o} in 'hyperbole-mode-map'
+    only if not previously bound.
+
+* hywiki.el (hywiki-referent-menu): Add Denote support.
+            (hywiki-add-denote, hywiki-display-denote, hywiki-string-to-wikiword)
+             hywiki-denote-file-to-wikiword, hywiki-denote-id-to-wikiword): Add
+    these functions.
+            (hywiki-create-referent-and-display): If point is not on 'wikiword'
+    when called, then insert it.  If buffer is read-only in this case, trigger
+    an error.
+
+2026-07-09  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-delimited-p): Fix so 'wikiword' is always set to a
+    string or nil, not the 't return value from 'hypb:in-string-p'.  Also,
+    limit region narrowing to just where it is needed near the function
+    beginning.
+
+2026-07-07  Bob Weiner  <rsw@gnu.org>
+
+* hsys-youtube.el (hsys-youtube-end-format): YouTube no longer allows end
+    times or the embed protocol in video urls, so update this format to at
+    least jump to the proper start time.  The end time is sent but
+    ignored.
+
+* FAST-DEMO (Hyperbole Videos):
+  README.md: Add "HyWiki: Zero Markup Hypertext" article video links.
+
+* man/hyperbole.texi (Implicit Button Link Types):
+  hbut.el (defil): Clarify that TEXT-REGEXP is a partial match unless surrounded
+    by start \\` and end \\' match string delimiters.
+
+* hui-mouse.el (hkey-alist): Trigger 'hui-select-thing' or
+    'hui-select-mark-delimited-sexp' if (point) >= any hbut end point, not
+    just equal to it, as before.  This was causing a failure to trigger
+    when a HyWikiWord came right before a closing double quote that point
+    was on, so the double quoted string was not selected and the
+    HyWikiWord was activated instead.
+
+2026-07-06  Bob Weiner  <rsw@gnu.org>
+
+* man/hyperbole.texi (HyWiki): Finish HyWiki manual chapter.
+                     (Elpa In-Development Package Installation): Move before
+    Elpa Stable given long full release cycles.
+                     (Installation): Add optional (hywiki-mode :all) config.
+
+* hywiki.el (hywiki--extend-region): Fix so start is always <= end.
+
+            (hywiki-get-existing-page-file): Handle 't' value as 'file-stem-name'
+    from a HyWikiWord spec.
+  hpath.el (hpath:expand): Ensure path value is a string before trying to expand
+    to handle HyWikiWord specs.
+
+2026-07-04  Bob Weiner  <rsw@gnu.org>
+
+* hycontrol.el (hycontrol-frame-zoom-reset): Handle 'frame not zoomed'
+    error by displaying a message instead to preven leaving HyControl mode.
+               (hycontrol--frames-prompt-format, hycontrol--windows-prompt-format):
+    Reformat for easier readability.
+
 2026-06-30  Mats Lidell  <matsl@gnu.org>
 
 * test/hywiki-tests.el (hywiki-display-hywiki-test): Add helper
@@ -6,6 +103,10 @@
     is called and hbut:current attributes are set.
 
 2026-06-30  Bob Weiner  <rsw@gnu.org>
+
+* FAST-DEMO: Add link to EmacsATX unscripted demo of Hyperbole.
+
+* man/hyperbole.texi (HyRolo): Add examples of non-contact management usage.
 
 * hui-mini.el (hui:menu-maybe-highlight-item-keys): Fix that in
     column layout mode, items in the first column on 2nd and succeeding
