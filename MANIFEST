@@ -19,6 +19,8 @@ hyperbole.el         - Loads and initializes GNU Hyperbole
 ChangeLog            - Summary of changes in recent GNU Hyperbole releases
 
 * --- DOCUMENTATION ---
+man/hy-package.el    - Hyperbole package.el installation and configuration instructions
+man/hy-straight.el   - Hyperbole Straight installation and configuration instructions
 man/dir              - GNU Hyperbole Info directory tree entry
 man/hyperbole.html   - The GNU Hyperbole Manual  (web version)
 man/hyperbole.info   - The GNU Hyperbole Manual  (GNU Info version)
@@ -111,7 +113,7 @@ topwin.py            - Python script to find the topmost macOS app window at a s
 * --- EXTERNAL SYSTEM ENCAPSULATIONS ---
 hsys-activities.el   - GNU Hyperbole support functions for Activities
 hsys-consult.el      - Hyperbole interactive consult-grep convenience functions
-hsys-ert.el          - Hyperbole support for jumping to ert 'should' source lines
+hsys-denote.el       - GNU Hyperbole support functions for denote note-taking
 hsys-flymake.el      - Add missing source buffer keymap to flymake linter
 hsys-org.el          - GNU Hyperbole support functions for Org mode
 hsys-org-roam.el     - GNU Hyperbole support functions for Org Roam

@@ -3,7 +3,7 @@
 # Author:       Bob Weiner
 #
 # Orig-Date:    15-Jun-94 at 03:42:38
-# Last-Mod:     11-Jul-26 at 21:49:31 by Mats Lidell
+# Last-Mod:     16-Jul-26 at 23:26:56 by Mats Lidell
 #
 # Copyright (C) 1994-2026  Free Software Foundation, Inc.
 # See the file HY-COPY for license information.
@@ -49,6 +49,9 @@
 #
 #		Generate the website sources and upload them:
 #		    make website - generate web site in folder $(HYPB_WEB_REPO_LOCATION)"
+#
+#               List major build env versions:
+#                   make env
 #
 #               Lint all Hyperbole code files:
 #                   make lint
@@ -215,7 +218,7 @@ EL_COMPILE = hact.el hactypes.el hargs.el hbdata.el hbmap.el hbut.el \
 	     hinit.el hload-path.el hmail.el hmh.el hmoccur.el hmouse-info.el \
 	     hmouse-drv.el hmouse-key.el hmouse-mod.el hmouse-sh.el hmouse-tag.el \
 	     hpath.el hproperty.el hrmail.el hsettings.el hsmail.el hsys-consult.el \
-             hsys-ert.el hsys-flymake.el hsys-activities.el \
+             hsys-denote.el hsys-ert.el hsys-flymake.el hsys-activities.el \
              hsys-org.el hsys-org-roam.el hsys-www.el hsys-xref.el hsys-youtube.el htz.el \
 	     hycontrol.el hui-jmenu.el hui-menu.el hui-mini.el hui-mouse.el hui-select.el \
 	     hui-treemacs.el hui-window.el hui.el hvar.el hversion.el hynote.el hypb.el hyperbole.el \
@@ -241,7 +244,8 @@ HYPERBOLE_FILES = dir info html $(EL_SRC) $(EL_KOTL) \
         INSTALL DEMO DEMO-ROLO.otl FAST-DEMO MANIFEST README.md TAGS _hypb \
         .hypb hyrolo.py smart-clib-sym topwin.py hyperbole-banner.png \
 	.dir-locals.el \
-	$(man_dir)/hkey-help.txt $(man_dir)/hyperbole.texi $(man_dir)/hyperbole.css \
+	$(man_dir)/hkey-help.txt $(man_dir)/hy-package.el $(man_dir)/hy-straight.el \
+        $(man_dir)/hyperbole.texi $(man_dir)/hyperbole.css \
         $(man_dir)/texinfo-7.css
 
 TEST_ERT_FILES = $(wildcard test/*tests.el) $(wildcard test/hy-test-*.el)
@@ -301,8 +305,9 @@ help:
 .PHONY: all
 all: help
 
-.PHONY: echo
-echo:
+.PHONY: echo env
+echo: env
+env:
 	@echo "Emacs: $(shell which ${EMACS})"
 	@echo "Version: $(shell ${EMACS} --version)"
 	@echo "TERM: $(TERM)"
@@ -702,7 +707,7 @@ run-bash:
 
 .PHONY: docker-clean
 docker-clean:
-	docker rm elpa-local
+	docker volume rm elpa-local || true
 
 # Run with coverage. Run tests given by testspec and monitor the
 # coverage for the specified file.

@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell <matsl@gnu.org>
 ;;
 ;; Orig-Date:    28-Feb-21 at 23:26:00
-;; Last-Mod:      5-Jul-26 at 00:10:53 by Mats Lidell
+;; Last-Mod:     16-Jul-26 at 13:43:29 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -291,7 +291,7 @@
           (let ((default-directory hyperb:dir))
             (should (string= (concat "../" (file-name-base other-dir) "/other.el")
                              (hpath:substitute-var (file-relative-name other-el-file default-directory)))))
-          (should (string= "file.el"
+          (should (string= "${hyperb:dir}/file.el"
                            (hpath:substitute-var el-file)))
           (should (string= non-existing-file
                            (hpath:substitute-var non-existing-file))))
@@ -306,7 +306,7 @@
   (should-not (hpath:substitute-var-name 'hyperb:dir "/home/user/folder" "../home/user/folder/file"))
   (should (string= "${hyperb:dir}/file"
                    (hpath:substitute-var-name 'hyperb:dir "/home/user/folder/" "/home/user/folder/file")))
-  (should (string= "file.el"
+  (should (string= "${hyperb:dir}/file.el"
                    (hpath:substitute-var-name 'hyperb:dir "/home/user/folder/" "/home/user/folder/file.el")))
   (should-not (hpath:substitute-var-name 'hyperb:dir "/home/user/folder2/" "/home/user/folder/file.el")))
 
@@ -705,7 +705,7 @@ dir/subdir:
 
 (ert-deftest hpath--to-markup-anchor ()
   "Verify `hpath:to-markup-anchor'."
-  (dolist (v '((text-mode 2) (outline-mode 0)))
+  (dolist (v '((text-mode 0) (outline-mode 0)))
     (with-temp-buffer
       (funcall (car v)) ;; Mode
       (insert "Line 1\n* anchor\n* anchor")

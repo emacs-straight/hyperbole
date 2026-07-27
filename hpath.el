@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     1-Nov-91 at 00:44:23
-;; Last-Mod:     11-Jul-26 at 18:53:47 by Mats Lidell
+;; Last-Mod:     22-Jul-26 at 15:13:47 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -693,15 +693,16 @@ Contains a %s for replacement of a specific anchor id.")
   "Regexp matching a Markdown anchor id definition.
 Contains a %s for replacement of a specific anchor id.")
 
-(defconst hpath:markdown-section-pattern "^[ \t]*\\(#+\\|\\*+\\)[ \t]+%s\\([\[<\({ \t[:punct:]]*\\)$"
-  "Regexp matching a Markdown section header.
-Contains a %s for replacement of a specific section name.")
+(defconst hpath:markdown-section-pattern "^[ \t]*\\(#+\\|\\*+\\)[ \t]*%s\\([\[<\({ \t[:punct:]]*\\)$"
+  "Bol-anchored regexp matching an exact Markdown section.
+Allows for both '#' and '*' section headers.  Contains a %s for replacement
+of a specific section name.")
 
 (defconst hpath:markdown-suffix-regexp "\\.[mM][dD]"
   "Regexp that matches to a Markdown file suffix.")
 
 (defconst hpath:outline-section-pattern "^\\(\\*+\\|#\\+TITLE:\\)[ \t]+%s[ \t]*\\([\[<\({[:punct:]]+\\|$\\)"
-  "Bol-anchored, no leading spaces regexp matching an Emacs outline section header.
+  "Bol-anchored, no leading spaces regexp matching an exact outline section.
 Also supports Org '#+TITLE:' lines and headings as sections.  Contains a %s
 for replacement of a specific section name.")
 
@@ -715,6 +716,11 @@ These are used to indicate how to display or execute the pathname.
 (defvar hpath:remote-regexp
   "\\`/[^/:]+:\\|\\`s?ftp[:.]\\|\\`www\\.\\|\\`https?:"
   "Regexp matching remote pathnames and urls which invoke remote file handlers.")
+
+(defconst hpath:shell-comment-pattern
+  "^[ \t]*#+[ \t]*%s\\([ \t]\\|\\([\[<\({ \t[:punct:]]\\)\\|$\\)"
+  "Bol-anchored regexp matching the first part of a shell comment.
+Contains a %s for replacement of the comment string.")
 
 (defconst hpath:shell-modes '(sh-mode csh-mode shell-script:mode)
   "List of modes for editing shell scripts where # is a comment character.")
@@ -1748,7 +1754,9 @@ but locational suffixes within the file are utilized."
   "Ignore HASH when ANCHOR is non-null and move point to ANCHOR string if found.
 Move point to beginning of buffer if HASH is non-nil and ANCHOR is null.
 With optional INSTANCE-NUM, go to that instance of ANCHOR from the start
-of the buffer."
+of the buffer.
+
+Trigger an error if the instance of the non-null anchor requested is not found."
   (let ((omin (point-min))
 	(omax (point-max)))
     (unwind-protect
@@ -1781,15 +1789,18 @@ of the buffer."
 								      (string-match-p "\\`[A-Z0-9][A-Z0-9_-]*\\'"
                                                                                       (file-name-nondirectory (hypb:buffer-file-name)))))
 							     hpath:outline-section-pattern)
-							    ((or (and (hypb:buffer-file-name)
-								      (string-match-p hpath:markdown-suffix-regexp (hypb:buffer-file-name)))
-								 (apply #'derived-mode-p hpath:shell-modes))
+							    ((and (hypb:buffer-file-name)
+								  (string-match-p hpath:markdown-suffix-regexp (hypb:buffer-file-name)))
 							     hpath:markdown-section-pattern)
+							    ((apply #'derived-mode-p hpath:shell-modes)
+							     hpath:shell-comment-pattern)
 							    ((derived-mode-p 'texinfo-mode)
 							     hpath:texinfo-section-pattern)
-							    ((or prog-mode (null (hypb:buffer-file-name))
-								 (apply #'derived-mode-p '(fundamental-mode text-mode)))
-							     "%s")
+							    (prog-mode
+							     (concat "^\\(" (regexp-quote comment-start) "\\)*" "[ \t]*%s"))
+							    ;; ((or (null (hypb:buffer-file-name))
+                                                            ;;     (apply #'derived-mode-p '(fundamental-mode text-mode)))
+                                                            ;; "^%s")
 							    (t hpath:outline-section-pattern))
 						      (regexp-quote anchor-name)))
 				    (referent-leading-spaces-regexp
@@ -2017,7 +2028,8 @@ form is what is returned for PATH."
 
 (defun hpath:org-normalize-title (title)
   "Return title in normalized form.
-Strip all priority, leading ':' or '-' separators, and stats from TITLE."
+Strip all priority, leading ':' or '-' separators, stats and Org emphasis
+characters from TITLE."
   (when title
     (let ((clean (copy-sequence title)))
       ;; Strip leading priority: [#B] or [#2} followed by ':' or '-' surrounded by any whitespace
@@ -2026,7 +2038,11 @@ Strip all priority, leading ':' or '-' separators, and stats from TITLE."
       ;; Matches: "- Title", ": Title", " - Title"
       (setq clean (string-trim (replace-regexp-in-string "\\`[ \t]*[-:][ \t]+" "" clean)))
        ;; Strip trailing statistics cookies [1/2] or [50%]
-      (setq clean (replace-regexp-in-string "\\(?: +\\[[0-9%+/]+\\]\\)+\\'" "" clean)))))
+      (setq clean (replace-regexp-in-string "\\(?: +\\[[0-9%+/]+\\]\\)+\\'" "" clean))
+      ;; Strip *bold*’, ‘/italic/’, ‘_underlined_’, ‘=verbatim=’ and ‘~code~’
+      ;; Org emphasis characters
+      (setq clean (replace-regexp-in-string "\\`[ \t]*[*/_=~]\\(.+\\)[*/_=~]"
+                                            "\\1" clean)))))
 
 (defun hpath:org-normalize-titles ()
   "Get all buffer Org titles in normalized form.
@@ -2883,8 +2899,8 @@ that returns a replacement string."
   "Replace with VAR-SYMBOL any occurrences of VAR-DIR-VAL in PATH.
 Replacement is done iff VAR-DIR-VAL is an absolute path.
 
-If VAR-SYMBOL is \\='hyperb:dir or \\='load-path, remove the matching PATH
-part rather than replacing it with the variable since it can be
+If VAR-SYMBOL is \\='load-path, remove the matching PATH part
+rather than replacing it with the variable since it can be
 resolved without attaching the variable name.
 
 If PATH is modified, return PATH, otherwise return nil."
@@ -2896,7 +2912,7 @@ If PATH is modified, return PATH, otherwise return nil."
 		     ;; for Elisp file paths and path is to an Elisp
 		     ;; file.  These can be resolved without the
 		     ;; variable being included in the path.
-		     (if (and (memq var-symbol '(hyperb:dir load-path))
+		     (if (and (memq var-symbol '(load-path))
 			      (delq nil (mapcar (lambda (suffix) (string-suffix-p suffix path))
 						(get-load-suffixes))))
 			 ""

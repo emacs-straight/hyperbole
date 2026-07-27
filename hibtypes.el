@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    19-Sep-91 at 20:45:31
-;; Last-Mod:     29-Jun-26 at 22:27:41 by Mats Lidell
+;; Last-Mod:     25-Jul-26 at 22:57:10 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -76,6 +76,7 @@
 (declare-function hywiki-referent-exists-p "hywiki")
 (declare-function hywiki-word-create-and-display "hywiki")
 (declare-function hywiki-word-from-reference "hywiki")
+(declare-function hywiki-non-hook-context-p "hywiki")
 (declare-function markdown-footnote-goto-text "ext:markdown")
 (declare-function markdown-footnote-marker-positions "ext:markdown")
 (declare-function markdown-footnote-return "ext:markdown")
@@ -129,7 +130,8 @@ use.
 
 Existing HyWikiWords are handled by the implicit button type
 `hywiki-existing-word'."
-  (when (hywiki-active-in-current-buffer-p)
+  (when (and (hywiki-active-in-current-buffer-p)
+             (not (hywiki-non-hook-context-p)))
     (let* ((wikiword-start-end (hywiki-highlight-word-get-range))
 	   (wikiword (nth 0 wikiword-start-end))
 	   (start    (nth 1 wikiword-start-end))
@@ -1839,7 +1841,8 @@ for this to activate.
 
 See the implicit button type `hywiki-word' for creation of referents to
 not yet existing HyWikiWords."
-  (when (hywiki-active-in-current-buffer-p)
+  (when (and (hywiki-active-in-current-buffer-p)
+             (not (hywiki-non-hook-context-p)))
     (cl-destructuring-bind (wikiword start end)
 	(hywiki-referent-exists-p :range)
       (when wikiword

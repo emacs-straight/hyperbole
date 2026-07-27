@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:     6-Oct-91 at 03:42:38
-;; Last-Mod:     10-Jul-26 at 17:16:28 by Bob Weiner
+;; Last-Mod:     20-Jul-26 at 01:52:50 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -91,6 +91,11 @@ preceded by a backslash are ignored.  The wrap regexp has group 1 that
 matches the beginning of line or a backslash character.  Group 2 matches the
 delimiter."
   :type 'sexp
+  :group 'hyperbole-commands)
+
+(defcustom hypb:ask-to-install-package-flag t
+  "Non-nil means `hypb:require-package' queries the user before installing it."
+  :type 'boolean
   :group 'hyperbole-commands)
 
 (defvar hypb:mail-address-mode-list
@@ -181,8 +186,7 @@ Uses the newer \"nadvice\" elisp library, not \"advice\"."
 This displays a clean log of Emacs keys used and commands executed."
   (interactive)
   ;; Ensure package is installed
-  (unless (package-installed-p 'interaction-log)
-    (package-install 'interaction-log))
+  (hypb:require-package 'interaction-log)
 
   ;; Ensure interaction-log-mode is disabled to removes its command
   ;; hooks which are replaced below.
@@ -201,8 +205,8 @@ This displays a clean log of Emacs keys used and commands executed."
   (mapc (lambda (cmd-str) (cl-pushnew (format "^%s$" cmd-str) ilog-self-insert-command-regexps))
         '("hyperbole" "hui:menu-enter"))
 
-  ;; Redefine the mode to display commands on post-command-hook rather
-  ;; than pre-command-hook since Hyperbole rewrites some command names
+  ;; Redefine the mode to display commands on `post-command-hook' rather
+  ;; than `pre-command-hook' since Hyperbole rewrites some command names
   ;; and key sequences.
   (define-minor-mode interaction-log-mode
     "Global minor mode logging keys, commands, file loads and messages.
@@ -509,10 +513,12 @@ This will install the Emacs devdocs package if not yet installed."
 		       dname))))
       (concat "@" dname))))
 
-(defun hypb:empty-file-p ()
-  "Return non-nil if the current buffer has an attached file of zero size."
-  (when (and (hypb:buffer-file-name) (file-readable-p (hypb:buffer-file-name)))
-    (= (file-attribute-size (file-attributes buffer-file-name)) 0)))
+(defun hypb:empty-file-p (&optional file)
+  "Return non-nil if the current buffer's file or optional FILE is empty."
+  (unless (stringp file)
+    (setq file (hypb:buffer-file-name)))
+  (when (and file (file-readable-p file))
+    (zerop (file-attribute-size (file-attributes file)))))
 
 (defun hypb:error (&rest args)
   "Signal an error typically to be caught by `hyperbole'.
@@ -1169,23 +1175,46 @@ WINDOW pixelwise."
 	     (string-join unreadable-dirs "\n"))))
   dirs)
 
+(defun hypb:users-package-manager ()
+  "Return the package manager in use.
+Current supported package managers are `straight', `elpaca', and `package'."
+  (cond ((featurep 'straight) 'straight)
+        ((featurep 'elpaca) 'elpaca)
+        (t 'package)))
+
+(defun hypb:package-el-install (package)
+  "Install PACKAGE using the default package manager `package.el'.
+If `hypb:ask-to-install-package-flag' is non-nil query user if package should
+be installed."
+  (when (or (not hypb:ask-to-install-package-flag)
+            (y-or-n-p (format "Install `%s' to enable this feature? " package)))
+    (package-install package)
+    (require package)))
+
+(defun hypb:notify-manual-install-needed (package manager)
+  "Prompt with an error that PACKAGE must be manually installed using MANAGER."
+  (user-error "Package '%s' is required by this command.  Use your package manager '%s' to install it" package manager))
+
+(defun hypb:ensure-dependency (package)
+  "Return non-nil if PACKAGE is installed and ready for use.
+If PACKAGE is not installed and the package.el package manager is in
+use, an install attempt may be made.  When any other package manager is
+in use, an error is triggered prompting to manually install the PACKAGE."
+  (or (require package nil t)
+      (pcase (hypb:users-package-manager)
+        ('package (hypb:package-el-install package))
+        (manager (hypb:notify-manual-install-needed package manager)))))
+
 ;;;###autoload
 (defun hypb:require-package (package)
-  "Prompt user to install, if necessary, and require the Emacs PACKAGE-NAME.
-PACKAGE-NAME may be a symbol or a string."
+  "Prompt user to install, if necessary, and require the Emacs PACKAGE.
+PACKAGE may be a symbol or a string."
   (when (stringp package)
     (setq package (intern package)))
   (unless (symbolp package)
     (error "(hypb:require-package): package must be a symbol or string, not '%s'" package))
-  (unless (or
-           ;; Allow for alternative package managers like elpaca that don't
-           ;; show up with a `package-installed-p' check
-           (require package nil t)
-           (package-installed-p package))
-    (if (y-or-n-p (format "Install package `%s' required by this command?" package))
-	(package-install package)
-      (keyboard-quit)))
-  (require package))
+  (unless (hypb:ensure-dependency package)
+    (error "(hypb:require-package): package '%s' could not be found" package)))
 
 ;; Adapted from cl--do-remf in "cl-extra.el" but uses 'equal' for comparisons.
 ;;;###autoload
