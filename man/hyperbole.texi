@@ -7,7 +7,7 @@
 @c Author:       Bob Weiner
 @c
 @c Orig-Date:     6-Nov-91 at 11:18:03
-@c Last-Mod:     22-Jul-26 at 23:56:16 by Bob Weiner
+@c Last-Mod:     27-Jul-26 at 17:40:26 by Bob Weiner
 
 @c %**start of header (This is for running Texinfo on a region.)
 @setfilename hyperbole.info
@@ -30,10 +30,10 @@
 @set txicodequoteundirected
 @set txicodequotebacktick
 
-@set UPDATED July 22, 2026
+@set UPDATED July 27, 2026
 @set UPDATED-MONTH July 2026
-@set EDITION 9.0.2pre
-@set VERSION 9.0.2pre
+@set EDITION 9.1.0
+@set VERSION 9.1.0
 
 @ifnotinfo
 @macro bkbd {arg}
@@ -170,8 +170,8 @@ WITHOUT ANY WARRANTY, without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</P>
 
 <PRE>
-Edition 9.0.2pre
-Printed July 22, 2026.
+Edition 9.1.0
+Printed July 27, 2026.
 
   Published by the Free Software Foundation, Inc.
   Author:    Bob Weiner
@@ -212,8 +212,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 @sp 2
 
 @example
-Edition 9.0.2pre
-July 22, 2026 @c AUTO-REPLACE-ON-SAVE
+Edition 9.1.0
+July 27, 2026 @c AUTO-REPLACE-ON-SAVE
 
 
   Published by the Free Software Foundation, Inc.
@@ -552,7 +552,7 @@ Smart Keyboard Keys
 @chapter Introduction
 
 This edition of the GNU Hyperbole Manual is for use with any version
-9.0.2pre or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs
+9.1.0 or greater of GNU Hyperbole.  Hyperbole runs atop GNU Emacs
 28 or higher.  It will trigger an error if your Emacs is older.
 
 This chapter summarizes the structure of the rest of the manual,
@@ -3118,10 +3118,10 @@ least four paths within the variable value for this to work.
 @item mail-address
 If on an e-mail address in a specific buffer type, compose mail to that
 address in another window. Applies to any major mode descended from those
-in @code{hypb:mail-address-mode-list}, the HyRolo match buffer, any buffer
+in @code{hypb:include-major-modes}, the HyRolo match buffer, any buffer
 attached to a file included in @code{hyrolo-file-list}, or any buffer with
 @file{mail} or @file{rolo} (case-insensitive) within its name.  If
-@code{hypb:mail-address-mode-list} is set to @samp{nil}, this button type is
+@code{hypb:include-major-modes} is set to @samp{nil}, this button type is
 active in all buffers.
 
 @findex ibtypes org-id
@@ -4868,11 +4868,11 @@ that they work normally.
 @cindex special buffers, HyWikiWords
 @cindex allow HyWikiWords in special buffers
 @cindex HyWikiWords in special buffers
-@vindex hywiki-include-special-modes
+@vindex hypb:include-major-modes
 HyWikiWords are automatically disabled in major modes with the
 @samp{special} property that manipulate specialized data, such as
 Dired Mode, unless the mode is included in the list value of the
-customization variable, @code{hywiki-include-special-modes}.  Many
+customization variable, @code{hypb:include-major-modes}.  Many
 special modes are included there by default such as email and news
 readers.
 
@@ -4880,10 +4880,10 @@ readers.
 @cindex buffer, disable HyWikiWords
 @cindex disallow HyWikiWords in major modes
 @cindex exclude major modes from HyWikiWords
-@vindex hywiki-exclude-major-modes
+@vindex hypb:exclude-major-modes
 You can disable HyWikiWords in specific major modes by adding the mode
 to the list value of the customization variable,
-@code{hywiki-exclude-major-modes}.  Changes to this value affect files
+@code{hypb:exclude-major-modes}.  Changes to this value affect files
 with the associated major modes the next time they are read into
 buffers.
 
@@ -5241,10 +5241,10 @@ This is the default setting.  Highlight HyWikiWord references within
 HyWiki page buffers only.  The @code{hywiki-mode} variable is set to
 @samp{:pages}.  Programatically, use: @code{(hywiki-mode :pages)}.
 
-@vindex hywiki-exclude-major-modes
+@vindex hypb:exclude-major-modes
 @item HyWiki-Pages-Only
 Highlight HyWikiWord references within all editable buffers except
-those with major modes in @code{hywiki-exclude-major-modes}.  The
+those with major modes in @code{hypb:exclude-major-modes}.  The
 @code{hywiki-mode} variable is set to @samp{:all}.  Programatically,
 use: @code{(hywiki-mode :all)}.
 

@@ -2,17 +2,18 @@
 				 by Bob Weiner
 
 ===========================================================================
-*                                   V9.0.2pre
+*                                   V9.1.0
 ===========================================================================
 
-**GNU Hyperbole 9.0.2pre NEWS**
+**GNU Hyperbole 9.1.0 NEWS**
 
 *   **HyWiki**
     *   **Global Minor Mode**: The new `hywiki-mode` is a global minor mode that enables the highlighting and hyperlinking of **HyWikiWords** in any non-special text buffer and within the comments of programming buffers.
     *   **Section Linking**: HyWikiWord links now support internal section jumps using the **`#` character** (e.g., `WikiWord#Section-Name`), allowing direct navigation to specific Org headlines within a wiki page.
     *   **Web Publishing**: Added the `hywiki-publish-to-html` command (bound to `{C-h h h p}`) which utilizes Org mode’s publishing framework to export an entire HyWiki directory to HTML for web use.
     *   **Interactive Search**: Added `hywiki-consult-grep` (bound to `{C-h h h g}`) for interactive, live-narrowing searches across all HyWiki pages using the Consult package.
-    *   **Customizable Highlighting**: Added `hywiki-word-highlight-flag` to toggle auto-highlighting and `hywiki-exclude-major-modes` to define a list of modes where HyWikiWord recognition should be disabled.
+    *   **Customizable Highlighting**: Added `hywiki-word-highlight-flag` and
+   `hypb:include-major-modes' to toggle auto-highlighting and `hypb:exclude-major-modes` to define a list of modes where HyWikiWord recognition should be disabled.
     *   **Link Requirements**: New variable `hywiki-org-link-type-required` allows users to control whether the `hy:` prefix is required for HyWikiWords when used inside Org-style double square brackets outside of the wiki directory.
 
 *   **Smart Keys**
