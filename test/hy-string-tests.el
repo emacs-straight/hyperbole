@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    22-Jul-26 at 23:41:29
-;; Last-Mod:     27-Jul-26 at 16:52:48 by Bob Weiner
+;; Last-Mod:      6-Sep-26 at 11:39:58 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -26,70 +26,92 @@
 (require 'hypb)   ;; For `hypb:in-string-p'
 
 ;; Sample use of next function
-;; (debug-in-string "double-quotes" "str")
-;; (debug-in-string "double-with-single" "' st' 'r' ")
+;; (debug-in-string "double-quotes" "\"str\"")
+;; (debug-in-string "double-quotes" "\"s\"t\"r\"")
+;; (debug-in-string "double-with-single" "\"' st' 'r' \"")
 ;; (debug-in-string "python-triple-multi-line" "\"\"\"\n str\n\"\"\"" 'python-mode)
 
 ;;; ************************************************************************
 ;;; Public functions
 ;;; ************************************************************************
 
+(defun insert-highlighted-string (str buf)
+  (with-current-buffer (get-buffer-create buf)
+    (insert (propertize str 'face '(:background "lightyellow")))))
+
+(defun insert-output-string (str buf)
+  (with-current-buffer (get-buffer-create buf)
+    (insert str)))
+
 (defun debug-in-string (test-name str &optional mode)
   "With TEST-NAME for each char in STR, print results of whether in the string.
-STR, including delimiters, is inserted into a blank buffer for testing.
-With optional major MODE, a function, that mode is enabled prior to testing the string."
-  (interactive sStr to test: \")
+Reports on string test results from both `hypb:in-string-p' and Emacs
+built-in `syntax-ppss'.  If the results match for both of these tests on
+every character of the string, return non-nil, otherwise, nil.
+
+STR, with all delimiters except the outer double quotes, is inserted into a
+blank buffer for testing.  With optional major MODE, a function, that mode
+is enabled prior to testing the string."
+  (interactive "i\nsStr to test: ")
   (with-temp-buffer
     (when mode (funcall mode))
-    (insert "\"" str "\"")
-    (with-help-window (format "*%s Results*" (capitalize test-name))
-      (prin1 str)
-      (when mode
-        (princ " - ")
-        (princ (cond ((symbolp mode) (symbol-name mode))
-                     ((stringp mode) mode))))
-      (terpri)
-      (terpri)
-      (goto-char (point-min))
-      (let ((len (+ (length str) 2))
-            (i 1)
-            hypb-in-str
-            ppss-in-str
-            str-start
-            foll-quote)
-        (while (/= i (point-max))
-          (goto-char i)
-          (setq hypb-in-str (hypb:in-string-p)     ;; Hyperbole in-string test
-                ppss-in-str (nth 3 (syntax-ppss))  ;; Emacs in-string test
-                str-start   (nth 8 (syntax-ppss))  ;; Char that starts this string, if any
-                foll-quote  (nth 5 (syntax-ppss))) ;; t if following a quote char
-          (princ
-           (format "%s Pos %2d, char '%c', in-str hypb=%3S %3S=ppss, str-start=%3S, following-quote=%3S"
-                   (if (or (and hypb-in-str ppss-in-str)
-                           (and (not hypb-in-str) (not ppss-in-str)))
-                       "."
-                     "F")
-                   i (following-char)
-                   hypb-in-str ppss-in-str str-start foll-quote
-                   ;; Hyperbole in-string test
-                   (hypb:in-string-p)
-                   ;; Emacs in-string test; any non-nil value is the
-                   ;; character that will terminate the string, or t if the
-                   ;; string should be terminated by a generic string
-                   ;; delimiter
-                   (nth 3 (syntax-ppss))
-                   ;; Character address of start of comment or string;
-                   ;; nil if not in one
-                   (nth 8 (syntax-ppss))
-                   ;; t if following a quote char
-                   (nth 5 (syntax-ppss))
-                   ;; Sixth arg COMMENTSTOP non-nil means stop after the
-                   ;; start of a comment. If it is the symbol
-                   ;; ‘syntax-table’, stop after the start of a comment or a
-                   ;; string, or after end of a comment or a string.
-                   ))
-          (terpri)
-          (cl-incf i))))))
+    (insert str )
+    (let ((output-buf (format "*%s Results*" (capitalize test-name))))
+      (with-help-window output-buf
+        (insert-output-string str output-buf)
+        (when mode
+          (insert-output-string " - " output-buf)
+          (insert-output-string (cond ((symbolp mode) (symbol-name mode))
+                                      ((stringp mode) mode))
+                                output-buf))
+        (insert-output-string "\n\n" output-buf)
+        (goto-char (point-min))
+        (let ((len (+ (length str) 2))
+              (i 1)
+              (result t)
+              line
+              mismatch-flag
+              hypb-in-str
+              ppss-in-str
+              str-start
+              foll-quote)
+          (while (/= i (point-max))
+            (goto-char i)
+            (setq hypb-in-str (hypb:in-string-p) ;; Hyperbole in-string test
+                  ppss-in-str (nth 3 (syntax-ppss)) ;; Emacs in-string test
+                  str-start   (nth 8 (syntax-ppss)) ;; Char that starts this string, if any
+                  foll-quote  (nth 5 (syntax-ppss)) ;; t if following a quote char
+                  mismatch-flag (xor hypb-in-str ppss-in-str))
+            (setq line (format "%s Pos %2d, char '%c', in-str hypb=%3S %3S=ppss, str-start=%3S, following-quote=%3S"
+                               (if mismatch-flag "F" ".")
+                               i (following-char)
+                               hypb-in-str ppss-in-str str-start foll-quote
+                               ;; Hyperbole in-string test
+                               (hypb:in-string-p)
+                               ;; Emacs in-string test; any non-nil value is the
+                               ;; character that will terminate the string, or t if the
+                               ;; string should be terminated by a generic string
+                               ;; delimiter
+                               (nth 3 (syntax-ppss))
+                               ;; Character address of start of comment or string;
+                               ;; nil if not in one
+                               (nth 8 (syntax-ppss))
+                               ;; t if following a quote char
+                               (nth 5 (syntax-ppss))
+                               ;; Sixth arg COMMENTSTOP non-nil means stop after the
+                               ;; start of a comment. If it is the symbol
+                               ;; ‘syntax-table’, stop after the start of a comment or a
+                               ;; string, or after end of a comment or a string.
+                               ))
+            (funcall (if mismatch-flag
+                         #'insert-highlighted-string
+                       #'insert-output-string)
+                     line
+                     output-buf)
+            (insert-output-string "\n" output-buf)
+            (cl-incf i)
+            (setq result (and result (not mismatch-flag))))
+          result)))))
 
 ;;; !! TODO: Fix test failures
 ;;; Comment out for now

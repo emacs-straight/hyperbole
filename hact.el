@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     14-Jul-26 at 09:16:07 by Bob Weiner
+;; Last-Mod:     10-Sep-26 at 12:43:08 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -255,8 +255,9 @@ given as a string or a symbol."
   (let ((name (if (stringp type)
 		  type
 		(symbol-name type))))
-    (when (string-match "\\`\\(ib\\|ac\\)types::" name)
-      (intern (substring name (match-end 0))))))
+    (cond ((string-match "\\`\\(ib\\|ac\\)types::" name)
+           (intern (substring name (match-end 0))))
+          ((intern-soft name)))))
 
 (defun    htype:delete (type type-category)
   "Delete a Hyperbole TYPE derived from TYPE-CATEGORY (both symbols).

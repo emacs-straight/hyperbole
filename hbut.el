@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    18-Sep-91 at 02:57:09
-;; Last-Mod:     16-Jul-26 at 16:25:00 by Bob Weiner
+;; Last-Mod:     10-Sep-26 at 08:50:44 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1271,7 +1271,12 @@ to KEY-SRC when it is provided."
 	  (set-buffer buffer)
 	(error "(ibut:get): Invalid buffer argument: %s" buffer))
     (if key-src
-	(hattr:set 'hbut:current 'loc key-src)
+        ;; `key-src' may have a variable name in it,
+        ;; e.g. "${hyperb:dir}/hbut.el", so expand it before trying to
+        ;; derive a buffer name from it which would include the variable.
+	(progn (unless (get-buffer key-src)
+                 (setq key-src (hpath:expand key-src)))
+               (hattr:set 'hbut:current 'loc key-src))
       (let ((loc (hattr:get 'hbut:current 'loc)))
 	(when loc
 	  (hbut:key-src-set-buffer loc)))
@@ -1881,8 +1886,8 @@ Use `ibut:at-type-p' to test the type of the implicit button at point."
 
 (defun    ibut:set-name-and-label-key-p (&optional start-delim end-delim)
   "Set ibut name, lbl-key, lbl-start/end attributes in \\='hbut:current.
-Point may be on the implicit button text or its optional preceding
-name.  Return t if on a named or delimited text implicit button;
+Point may be within any delimited implicit button text or its optional
+preceding name.  Return t if on a named or delimited text implicit button;
 return nil otherwise.
 
 Optional START-DELIM and END-DELIM may be given to find the
@@ -1896,87 +1901,94 @@ this will return nil on a non-delimited pathname implicit button.
 
 Any implicit button name must contain at least two characters,
 excluding delimiters, not just one."
-  (let* ((opoint (point-marker))
-	 ;; Next line finds the name only if point is on it, not on the
-	 ;; text of the button.
-	 (name-start-end (ibut:label-p t nil nil t t))
-	 (name       (nth 0 name-start-end))
-	 (name-start (nth 1 name-start-end))
-	 (name-end   (nth 2 name-start-end))
-	 lbl-start-end
-	 lbl-start
-	 lbl-end
-	 lbl-key)
+  (let* ((opoint (point-marker)))
     (unwind-protect
 	(progn
-	  ;; Skip past any optional name and separators
-	  (when name-end
-	    (goto-char name-end)
-	    (setq lbl-start (if (looking-at ibut:label-separator-regexp)
-				(progn
-				  ;; Move past up to 2 possible characters of ibut
-				  ;; delimiters; this prevents recognizing named,
-				  ;; delimited ibuts of a single character since
-				  ;; no one should need that.
-				  (goto-char (min (+ 2 (match-end 0)) (point-max)))
-				  (match-end 0))
-			      (prog1 (point)
-				(goto-char opoint))))
-	    (hattr:set 'hbut:current 'lbl-start lbl-start))
+          ;; Point may be between ibut name and its text; if so, move back into
+          ;; name first
+          (when (looking-at ibut:label-separator-regexp)
+            (re-search-backward (concat (regexp-quote ibut:label-end)
+                                        ibut:label-separator-regexp)
+                                (line-beginning-position) t))
 
-	  (setq lbl-start-end (if (and start-delim end-delim)
-				  (ibut:label-p nil start-delim end-delim t t)
-				(or
-				 ;; <action> buttons can be longer
-				 ;; than two lines, so don't limit
-				 ;; the length.
-				 (ibut:label-p nil "<" ">" t)
-				 (ibut:label-p nil "\"" "\"" t t)
-				 (ibut:label-p nil "{" "}" t t)
-				 (ibut:label-p nil "[" "]" t t))))
-	  (when lbl-start-end
-	    (setq lbl-key (nth 0 lbl-start-end)
-		  lbl-start (nth 1 lbl-start-end)
-		  lbl-end (nth 2 lbl-start-end))
-	    (when (and (stringp lbl-key)
-		       (string-prefix-p (concat hywiki-org-link-type ":") lbl-key t))
-	      ;; Remove any HyWiki org-link-type prefix
-	      (setq lbl-key (substring lbl-key 3)
-		    lbl-start (+ lbl-start (length hywiki-org-link-type) 1))))
-	  (when lbl-start
-	    (hattr:set 'hbut:current   'loc (save-excursion
-					      (hbut:to-key-src 'full)))
-	    (hattr:set 'hbut:current 'categ 'implicit)
-	    (hattr:set 'hbut:current 'lbl-key lbl-key)
-	    (hattr:set 'hbut:current 'lbl-start lbl-start)
-	    (hattr:set 'hbut:current 'lbl-end lbl-end))
+          ;; Next line finds the name only if point is on it, not on the
+          ;; text of the button.
+          (let* ((name-start-end (ibut:label-p t nil nil t t))
+	         (name       (nth 0 name-start-end))
+	         (name-start (nth 1 name-start-end))
+	         (name-end   (nth 2 name-start-end))
+	         lbl-start-end
+	         lbl-start
+	         lbl-end
+	         lbl-key)
+	    ;; Skip past any optional name and separators
+	    (when name-end
+	      (goto-char name-end)
+	      (setq lbl-start (if (looking-at ibut:label-separator-regexp)
+				  (progn
+				    ;; Move past up to 2 possible characters of ibut
+				    ;; delimiters; this prevents recognizing named,
+				    ;; delimited ibuts of a single character since
+				    ;; no one should need that.
+				    (goto-char (min (+ 2 (match-end 0)) (point-max)))
+				    (match-end 0))
+			        (prog1 (point)
+				  (goto-char opoint))))
+	      (hattr:set 'hbut:current 'lbl-start lbl-start))
 
-	  (when (and lbl-start (not name-end))
-	    ;; Point is within ibut text, not its name, so search
-	    ;; backward for any name on the same line.
-	    (goto-char lbl-start)
-	    ;; Skip back past any likely opening delim preceding
-	    ;; button text.
-	    (skip-chars-backward "\"<{[| \t")
-	    ;; Allow for looking back at any name separator space.
-	    (skip-chars-forward " \t")
-	    ;; Look back past any name separator.
-	    (when (looking-back ibut:label-separator-regexp
-				(line-beginning-position) t)
-	      ;; Move to within delimiters of name
-	      (goto-char (max (- (match-beginning 0) 3) (point-min)))
-	      (setq name-start-end (ibut:label-p t nil nil t t)
-		    name           (nth 0 name-start-end)
-		    name-start     (nth 1 name-start-end)
-		    name-end       (nth 2 name-start-end))))
+	    (setq lbl-start-end (if (and start-delim end-delim)
+				    (ibut:label-p nil start-delim end-delim t t)
+				  (or
+				   ;; <action> buttons can be longer
+				   ;; than two lines, so don't limit
+				   ;; the length.
+				   (ibut:label-p nil "<" ">" t)
+				   (ibut:label-p nil "\"" "\"" t t)
+				   (ibut:label-p nil "{" "}" t t)
+				   (ibut:label-p nil "[" "]" t t))))
+	    (when lbl-start-end
+	      (setq lbl-key (nth 0 lbl-start-end)
+		    lbl-start (nth 1 lbl-start-end)
+		    lbl-end (nth 2 lbl-start-end))
+	      (when (and (stringp lbl-key)
+		         (string-prefix-p (concat hywiki-org-link-type ":") lbl-key t))
+	        ;; Remove any HyWiki org-link-type prefix
+	        (setq lbl-key (substring lbl-key 3)
+		      lbl-start (+ lbl-start (length hywiki-org-link-type) 1))))
+	    (when lbl-start
+	      (hattr:set 'hbut:current   'loc (save-excursion
+					        (hbut:to-key-src 'full)))
+	      (hattr:set 'hbut:current 'categ 'implicit)
+	      (hattr:set 'hbut:current 'lbl-key lbl-key)
+	      (hattr:set 'hbut:current 'lbl-start lbl-start)
+	      (hattr:set 'hbut:current 'lbl-end lbl-end))
 
-	  (when (and lbl-start name)
-	    (hattr:set 'hbut:current 'name name))
-	  (when (and lbl-start name-start name-end)
-	    (hattr:set 'hbut:current 'name-start name-start)
-	    (hattr:set 'hbut:current 'name-end name-end))
-	  (when lbl-start
-	    t))
+	    (when (and lbl-start (not name-end))
+	      ;; Point is within ibut text, not its name, so search
+	      ;; backward for any name on the same line.
+	      (goto-char lbl-start)
+	      ;; Skip back past any likely opening delim preceding
+	      ;; button text.
+	      (skip-chars-backward "\"<{[| \t")
+	      ;; Allow for looking back at any name separator space.
+	      (skip-chars-forward " \t")
+	      ;; Look back past any name separator.
+	      (when (looking-back ibut:label-separator-regexp
+				  (line-beginning-position) t)
+	        ;; Move to within delimiters of name
+	        (goto-char (max (- (match-beginning 0) 3) (point-min)))
+	        (setq name-start-end (ibut:label-p t nil nil t t)
+		      name           (nth 0 name-start-end)
+		      name-start     (nth 1 name-start-end)
+		      name-end       (nth 2 name-start-end))))
+
+	    (when (and lbl-start name)
+	      (hattr:set 'hbut:current 'name name))
+	    (when (and lbl-start name-start name-end)
+	      (hattr:set 'hbut:current 'name-start name-start)
+	      (hattr:set 'hbut:current 'name-end name-end))
+	    (when lbl-start
+	      t)))
       (goto-char opoint)
       (set-marker opoint nil))))
 

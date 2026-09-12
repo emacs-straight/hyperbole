@@ -1,6 +1,44 @@
+2026-09-11  Bob Weiner  <rsw@gnu.org>
+
+* hywiki.el (hywiki-word-highlight-post-self-insert): Replace call to
+   'hywiki--maybe-dehighlight-at-point' with
+   'hywiki-maybe-dehighlight-between-references' to fix insertion of
+   letters in front of a WikiWord not dehighlighting it.
+
+2026-09-10  Bob Weiner  <rsw@gnu.org>
+
+* hmouse-drv.el (hkey-help-hbut): Add.
+                (hkey-help): Replace call 'hbut:report' with (or but-def-symbol
+    (htype:def-symbol actype)) for better compatibility with 'hkey-alist' items.
+    Also, remove (unless assist-function-flag...) call that was blocking display
+    of overal Assist Key behavior.  These changes also fix that {C-u C-h A} on
+    an Org link was displaying a blank help buffer.
+
+  hui-mouse.el (smart-org): Call 'hkey-help-hbut' when on an Org link
+    instead of calling 'hkey-help'.  This now displays Org link
+    attributes like a regular Hyperbole button's attributes.
+  hact.el (htype:def-symbol): If given an fboundp function symbol, return
+    that rather than nil.
+
+2026-09-09  Bob Weiner  <rsw@gnu.org>
+
+* hbut.el (hbut:funcall): Expand 'key-src' when is a path to resolve
+    any variable name.  This fixes a bug where a buffer name with
+    the variable, like `${hyperb:dir)/hbut.el' is created.
+          (ibut:set-name-and-label-key-p): Clarify doc that returns
+    t when on implicit button text only if such text is delimited.
+    Also, fix so recognizes an ibut if point is on a separator between
+    the ibut name and its text; see doc for 'ibut:label-separator-regexp'.
+
 2026-09-09  Mats Lidell  <matsl@gnu.org>
 
 * man/.dir-locals.el: Set before-save-hook to a list.
+
+2026-09-07  Bob Weiner  <rsw@gnu.org>
+
+* test/hy-string-tests.el (insert-output-string, insert-highlighted-string): Add.
+                          (debug-in-string): Improve calling above functions and
+    and highlight any mismatches.
 
 2026-08-30  Bob Weiner  <rsw@gnu.org>
 

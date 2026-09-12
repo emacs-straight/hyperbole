@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    04-Feb-89
-;; Last-Mod:     16-Jul-26 at 11:09:40 by Bob Weiner
+;; Last-Mod:     10-Sep-26 at 13:59:46 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1976,16 +1976,17 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 		    (hact 'org-internal-target-link)
 		    t)
 		   ((setq start-end (hsys-org-link-at-p))
+		    (hsys-org-set-ibut-label start-end)
                     (cond ((setq link-start-end (hsys-denote-link-at-p
                                                  (car start-end)
                                                  (cdr start-end)))
                            (hact 'link-to-denote (car link-start-end)))
-		          ((not assist-flag)
-			   (hsys-org-set-ibut-label start-end)
+                          (assist-flag
+                           (hact 'hkey-help-hbut t))
+		          (t
 		           (hact 'org-link-open-from-string
 		                 (buffer-substring-no-properties
-		                  (car start-end) (cdr start-end))))
-		          (t (hact 'hkey-help)))
+		                  (car start-end) (cdr start-end)))))
 		    t)
 		   ((hbut:at-p)
 		    ;; Fall through until Hyperbole button context and
@@ -2022,16 +2023,17 @@ handled by the separate implicit button type, `org-link-outside-org-mode'."
 		    (hact 'org-radio-target-link)
 		    t)
 		   ((setq start-end (hsys-org-link-at-p))
+		    (hsys-org-set-ibut-label start-end)
                     (cond ((setq link-start-end (hsys-denote-link-at-p
                                                  (car start-end)
                                                  (cdr start-end)))
                            (hact 'link-to-denote (car link-start-end)))
-		          ((not assist-flag)
-			   (hsys-org-set-ibut-label start-end)
+                          (assist-flag
+                           (hact 'hkey-help-hbut t))
+		          (t
 		           (hact 'org-link-open-from-string
 		                 (buffer-substring-no-properties
-		                  (car start-end) (cdr start-end))))
-		          (t (hact 'hkey-help)))
+		                  (car start-end) (cdr start-end)))))
 		    t)
  		   ((hbut:at-p)
 		    ;; Fall through until Hyperbole button context and

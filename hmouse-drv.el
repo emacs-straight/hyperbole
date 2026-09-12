@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    04-Feb-90
-;; Last-Mod:     30-Aug-26 at 11:12:09 by Bob Weiner
+;; Last-Mod:     10-Sep-26 at 15:23:19 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1187,7 +1187,7 @@ documentation is found."
 			       (if mouse-flag "Mouse " "")))
 
 		    ;; Print Hyperbole button attributes
-		    (when (memq cmd-sym '(hui:hbut-act hui:hbut-help))
+		    (when (memq cmd-sym '(hui:hbut-act hui:hbut-help smart-org))
 		      (let* ((lbl-key (hattr:get 'hbut:current 'lbl-key))
 			     (categ (hattr:get 'hbut:current 'categ))
 			     (attributes (nthcdr 2 (hattr:list 'hbut:current)))
@@ -1225,7 +1225,7 @@ documentation is found."
                         (when lbl-key
                           (unwind-protect
                               ;; Need to save and restore 'hbut:current here
-                              ;; since hywiki-get-definition overwrites it
+                              ;; since `hywiki-get-definition' overwrites it
                               (progn (hattr:copy 'hbut:current 'saved-but)
                                      (setq def (hywiki-get-definition
 			                        (ibut:key-to-label lbl-key)))
@@ -1245,20 +1245,6 @@ documentation is found."
 			  (princ (format "%s\n"
 					 (replace-regexp-in-string "^" "  " (documentation categ)
 								   nil t))))
-			(when assisting
-			  (let* ((ibtype-name (htype:names 'ibtypes categ))
-				 (custom-help-func (when (stringp ibtype-name)
-						     (intern-soft
-						      (concat ibtype-name ":help"))))
-				 (type-help-func (or (and custom-help-func
-							  (fboundp custom-help-func)
-							  custom-help-func)
-						     'hbut:report)))
-			    (princ (format "\n%s ASSIST KEY SPECIFICS:\n%s\n"
-					   type-help-func
-					   (replace-regexp-in-string
-					    "^" "  " (documentation type-help-func)
-					    nil t)))))
 
 			;; Display possibly custom actype :help documentation for
 			;; an Action button
@@ -1280,6 +1266,22 @@ documentation is found."
 					    "^" "  " (documentation type-help-func)
 					    nil t)))))
 
+			(when assisting
+			  (let* ((ibtype-name (htype:names 'ibtypes categ))
+				 (custom-help-func (when (stringp ibtype-name)
+						     (intern-soft
+						      (concat ibtype-name ":help"))))
+				 (type-help-func (or (and custom-help-func
+							  (fboundp custom-help-func)
+							  custom-help-func)
+                                                     (or but-def-symbol
+					                 (htype:def-symbol actype)))))
+			    (princ (format "\n%s ASSIST KEY SPECIFICS:\n%s\n"
+					   type-help-func
+					   (replace-regexp-in-string
+					    "^" "  " (documentation type-help-func)
+					    nil t)))))
+
 			(terpri)))
 
 		    ;; Print Emacs push-button attributes
@@ -1294,11 +1296,12 @@ documentation is found."
 			  (unless (markerp button)
 			    (princ (format "\n%s ACTION SPECIFICS:\n%s\n"
 					   (plist-get attributes 'action)
-					   (replace-regexp-in-string "^" "  " (actype:doc button t)
-								     nil t))))
+					   (replace-regexp-in-string
+                                            "^" "  " (actype:doc button t)
+					    nil t))))
 			  (terpri))))
 
-                    (unless assist-function-flag
+                    (progn
 		      (princ (format "A %s of the %s %sKey"
 				     (if mouse-flag
 				         (if mouse-drag-flag "DRAG" "CLICK")
@@ -1331,6 +1334,132 @@ documentation is found."
 	    (message "No %s Key command for current context."
 		     (if assisting "Assist" "Action"))))
     doc))
+
+(defun hkey-help-hbut (&optional assisting)
+  "Display hbut help for Action or Assist Keys (if ASSISTING prefix arg is non-nil)."
+  (interactive)
+  (let* ((actype (or (actype:elisp-symbol
+                      (hattr:get 'hbut:current 'actype))
+		     (hattr:get 'hbut:current 'actype)))
+	 (mouse-flag (when (mouse-event-p last-command-event)
+		       (or action-key-depress-position assist-key-depress-position)))
+	 (mouse-drag-flag (hmouse-drag-p))
+	 (temp-buffer-show-hook
+	  (lambda (buf)
+	    (set-buffer buf)
+	    (help-mode)
+	    (let ((owind (selected-window)))
+	      (if (br-in-browser)
+		  (save-excursion
+		    (br-to-view-window)
+		    (select-window (previous-window))
+		    (display-buffer buf 'other-win))
+		(display-buffer buf 'other-win))
+	      (select-window
+	       (if (bound-and-true-p help-window-select)
+		   (get-buffer-window buf)
+		 owind)))))
+	 (temp-buffer-show-function temp-buffer-show-hook))
+    (with-output-to-temp-buffer
+	(hypb:help-buf-name
+	 (format "%s %sKey"
+		 (if assisting "Assist" "Action")
+		 (if mouse-flag "Mouse " "")))
+
+      ;; Print Hyperbole button attributes
+      (let* ((lbl-key (hattr:get 'hbut:current 'lbl-key))
+	     (categ (hattr:get 'hbut:current 'categ))
+	     (attributes (nthcdr 2 (hattr:list 'hbut:current)))
+	     (but-def-symbol (htype:def-symbol
+			      (if (eq categ 'explicit) actype categ)))
+             (wikiword-referent
+              (when (eq (htype:def-symbol actype) 'link-to-wikiword)
+                (hywiki-get-referent
+                 (hattr:get 'hbut:current 'lbl-key)))))
+
+        (when wikiword-referent
+          (hattr:set 'hbut:current 'referent-type
+                     (car wikiword-referent))
+          (hattr:set 'hbut:current 'referent-value
+                     (cdr wikiword-referent)))
+
+	(princ (format "%s %s SPECIFICS:\n"
+		       (or but-def-symbol
+			   (htype:def-symbol actype))
+		       (cond ((eq categ 'explicit)
+			      "EXPLICIT BUTTON")
+			     (categ
+			      "IMPLICIT BUTTON")
+			     (t "ACTION TYPE"))))
+
+	;; (when (and assisting
+	;;            (not (eq categ (ibtype:elisp-symbol 'action)))
+	;; 	   (or (plist-member attributes 'actype)
+	;; 	       (plist-member attributes 'action)))
+	;;   (setq attributes (copy-sequence attributes))
+	;;   (hypb:remove-from-plist attributes 'actype)
+	;;   (hypb:remove-from-plist attributes 'action))
+	(hattr:report attributes)
+
+        (when lbl-key
+          (unwind-protect
+              ;; Need to save and restore 'hbut:current here
+              ;; since `hywiki-get-definition' overwrites it
+              (progn (hattr:copy 'hbut:current 'saved-but)
+                     (setq def (hywiki-get-definition
+			        (ibut:key-to-label lbl-key)))
+                     (when (stringp def)
+                       (terpri)
+                       (princ def)))
+            (hattr:copy 'saved-but 'hbut:current)))
+
+	(unless (or assisting
+		    (eq categ 'explicit)
+		    (null categ)
+		    (not (fboundp categ))
+		    (null (documentation categ)))
+	  ;; Include implicit button's ibtype doc
+	  (princ (format "\n%s ACTION KEY SPECIFICS:\n"
+			 (htype:names 'ibtypes categ)))
+	  (princ (format "%s\n"
+			 (replace-regexp-in-string "^" "  " (documentation categ)
+						   nil t))))
+
+	;; Display possibly custom actype :help documentation for
+	;; an Action button
+	(when (or (not assisting)
+		  (eq (htype:def-symbol categ) 'action))
+	  (let* ((actype-name (or (htype:names 'actypes actype)
+				  (symbol-name actype)))
+		 (custom-help-func (when (stringp actype-name)
+				     (intern-soft
+				      (concat actype-name ":help"))))
+		 (type-help-func (or (and custom-help-func
+					  (fboundp custom-help-func)
+					  custom-help-func)
+				     actype)))
+	    (princ (format "\n%s ACTYPE SPECIFICS:\n%s\n"
+			   (or (htype:names 'actypes type-help-func)
+			       (symbol-name type-help-func))
+			   (replace-regexp-in-string
+			    "^" "  " (documentation type-help-func)
+			    nil t)))))
+
+	(when assisting
+	  (let* ((ibtype-name (htype:names 'ibtypes categ))
+		 (custom-help-func (when (stringp ibtype-name)
+				     (intern-soft
+				      (concat ibtype-name ":help"))))
+		 (type-help-func (or (and custom-help-func
+					  (fboundp custom-help-func)
+					  custom-help-func)
+				     (or but-def-symbol
+					 (htype:def-symbol actype)))))
+	    (princ (format "\n%s ASSIST KEY SPECIFICS:\n%s\n"
+			   type-help-func
+			   (replace-regexp-in-string
+			    "^" "  " (documentation type-help-func)
+			    nil t)))))))))
 
 (defun hkey-assist-help ()
   "Display doc associated with Assist Key command in current context.

@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    21-Apr-24 at 22:41:13
-;; Last-Mod:     30-Aug-26 at 23:17:45 by Bob Weiner
+;; Last-Mod:     11-Sep-26 at 10:58:58 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -700,7 +700,7 @@ more characters while the command is still executing.  The
     ;; Dehighlight any previously highlighted WikiWord at point
     ;; before we move to the start of any current WikiWord and
     ;; rehighlight that.
-    (hywiki--maybe-dehighlight-at-point))
+    (hywiki-maybe-dehighlight-between-references))
 
   (save-excursion
     (cond ((marker-position hywiki--buttonize-start)
