@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    04-Feb-90
-;; Last-Mod:     10-Sep-26 at 15:23:19 by Bob Weiner
+;; Last-Mod:     12-Sep-26 at 16:43:46 by Mats Lidell
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -1158,11 +1158,6 @@ documentation is found."
 		(let* ((actype (or (actype:elisp-symbol
                                     (hattr:get 'hbut:current 'actype))
 				   (hattr:get 'hbut:current 'actype)))
-		       (actype-doc-flag (and (symbolp actype)
-					     (fboundp actype)
-				             (documentation actype)))
-                       (assist-function-flag (and assisting
-						  actype-doc-flag))
                        (condition (car hkey-form))
 		       (temp-buffer-show-hook
 			(lambda (buf)
@@ -1336,14 +1331,14 @@ documentation is found."
     doc))
 
 (defun hkey-help-hbut (&optional assisting)
-  "Display hbut help for Action or Assist Keys (if ASSISTING prefix arg is non-nil)."
+  "Display hbut help for Action or Assist Keys.
+If ASSISTING prefix arg is non-nil, show help for assist key."
   (interactive)
   (let* ((actype (or (actype:elisp-symbol
                       (hattr:get 'hbut:current 'actype))
 		     (hattr:get 'hbut:current 'actype)))
 	 (mouse-flag (when (mouse-event-p last-command-event)
 		       (or action-key-depress-position assist-key-depress-position)))
-	 (mouse-drag-flag (hmouse-drag-p))
 	 (temp-buffer-show-hook
 	  (lambda (buf)
 	    (set-buffer buf)
@@ -1406,11 +1401,11 @@ documentation is found."
               ;; Need to save and restore 'hbut:current here
               ;; since `hywiki-get-definition' overwrites it
               (progn (hattr:copy 'hbut:current 'saved-but)
-                     (setq def (hywiki-get-definition
-			        (ibut:key-to-label lbl-key)))
-                     (when (stringp def)
-                       (terpri)
-                       (princ def)))
+                     (let ((def (hywiki-get-definition
+			         (ibut:key-to-label lbl-key))))
+                       (when (stringp def)
+                         (terpri)
+                         (princ def))))
             (hattr:copy 'saved-but 'hbut:current)))
 
 	(unless (or assisting
