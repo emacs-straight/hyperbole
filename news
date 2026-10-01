@@ -2,6 +2,10 @@
 				 by Bob Weiner
 
 ===========================================================================
+*                                   V9.2.0
+===========================================================================
+
+===========================================================================
 *                                   V9.1.0
 ===========================================================================
 
@@ -32,8 +36,5 @@
     *   **Navigation Performance**: All movement commands within HyRolo match buffers (e.g., Next, Previous, Up) have been optimized to use **text properties** rather than overlays, ensuring instantaneous navigation even in buffers containing thousands of search results.
     *   **Interactive Filtering**: Added `hyrolo-consult-grep` and `hyrolo-helm-org-rifle` to the Rolo menu, permitting interactive full-text search and narrowing over the `hyrolo-file-list`.
     *   **Org Roam Integration**: HyRolo now includes convenience commands for searching **Org Roam nodes** via the Consult package, accessible through `hsys-org-roam-consult-grep`.
-
-*   **Miscellaneous**
-    *   **Emacs Version Requirements**: While Hyperbole remains compatible with GNU Emacs 27.1, this release is optimized for and recommended for use with **GNU Emacs 28 or above**.
 ...
 ...

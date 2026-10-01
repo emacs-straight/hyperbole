@@ -311,7 +311,7 @@ With optional BACKWARD-FLAG, move backward if possible to get to valid position.
 
 ;;; Generated autoloads from kotl-orgtbl.el
 
-(register-definition-prefixes "kotl-orgtbl" '("kotl-mode" "orgtbl-tab"))
+(register-definition-prefixes "kotl-orgtbl" '("kotl-mode" "org"))
 
 
 ;;; Generated autoloads from kproperty.el
