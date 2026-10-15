@@ -295,6 +295,8 @@ Collapse tree rooted at optional CELL-REF (defaults to cell at point).
 With optional SHOW-FLAG, expand the tree instead.
 
 (fn &optional CELL-REF SHOW-FLAG)" t)
+(autoload 'kotl-mode:show-or-hide-tree "kotl-mode" "\
+Show all of the tree at point when collapsed, else collapse it to one line.")
 (autoload 'kotl-mode:show-tree "kotl-mode" "\
 Display fully expanded tree rooted at CELL-REF.
 

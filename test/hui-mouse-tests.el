@@ -3,7 +3,7 @@
 ;; Author:       Mats Lidell
 ;;
 ;; Orig-Date:    15-Mar-25 at 22:39:37
-;; Last-Mod:     29-Sep-26 at 17:08:46 by Bob Weiner
+;; Last-Mod:     14-Oct-26 at 11:41:04 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -20,6 +20,7 @@
 
 (require 'ert)
 (require 'el-mock)
+(require 'hy-test-helpers)
 
 (ert-deftest hui-mouse-tests--hkey-alist ()
   "Verify that given predicate values result in the proper action."
@@ -75,8 +76,7 @@
   ;; Handle Emacs push buttons in buffers
   (mocklet (((button-at (point)) => t))
     (should (equal (hkey-actions)
-                   (cons '(smart-push-button nil (mouse-event-p last-command-event))
-	                 '(smart-push-button-help nil (mouse-event-p last-command-event))))))
+                   (cons '(smart-push-button) '(smart-push-button-help)))))
 
   ;; Vertico
   (defvar vertico-mode)
@@ -205,8 +205,7 @@
   ;; Ert
   (let ((major-mode 'ert-results-mode))
     (mocklet (((ert-results-filter-status-p) => t))
-      (cl-letf (((symbol-function 'featurep)
-                 (lambda (symbol &optional _) (equal symbol 'ert-results))))
+      (hy-test-mocked-feature 'ert-results
         (should (equal (hkey-actions)
                        (cons '(smart-ert-results hkey-value)
                              '(smart-ert-results-assist hkey-value)))))))
