@@ -1,40 +1,98 @@
+# -*- mode: org; org-open-link-functions: (hbut:activate-at-p); org-cycle-global-at-bob: t; hsys-org-enable-smart-keys: t -*-
+
 *			  What's New in GNU Hyperbole
 				 by Bob Weiner
 
 ===========================================================================
-*                                   V9.3.0
+*                                   V9.3.1
 ===========================================================================
 
-===========================================================================
-*                                   V9.1.0
-===========================================================================
+** ACTION TYPES  (See [[(hyperbole)Action Types]]).
 
-**GNU Hyperbole 9.1.0 NEWS**
+  *** [[button-series]]: Improve documentation and variable naming in this
+      actype that activates a series of local or global Hyperbole buttons
+      by name.
 
-*   **HyWiki**
-    *   **Global Minor Mode**: The new `hywiki-mode` is a global minor mode that enables the highlighting and hyperlinking of **HyWikiWords** in any non-special text buffer and within the comments of programming buffers.
-    *   **Section Linking**: HyWikiWord links now support internal section jumps using the **`#` character** (e.g., `WikiWord#Section-Name`), allowing direct navigation to specific Org headlines within a wiki page.
-    *   **Web Publishing**: Added the `hywiki-publish-to-html` command (bound to `{C-h h h p}`) which utilizes Org mode’s publishing framework to export an entire HyWiki directory to HTML for web use.
-    *   **Interactive Search**: Added `hywiki-consult-grep` (bound to `{C-h h h g}`) for interactive, live-narrowing searches across all HyWiki pages using the Consult package.
-    *   **Customizable Highlighting**: Added `hywiki-word-highlight-flag` and
-   `hypb:include-major-modes' to toggle auto-highlighting and `hypb:exclude-major-modes` to define a list of modes where HyWikiWord recognition should be disabled.
-    *   **Link Requirements**: New variable `hywiki-org-link-type-required` allows users to control whether the `hy:` prefix is required for HyWikiWords when used inside Org-style double square brackets outside of the wiki directory.
 
-*   **Smart Keys**
-    *   **Granular Org Integration**: The custom option `hsys-org-enable-smart-keys` now supports a new value, **`'buttons`**, which limits Hyperbole’s `M-RET` override to only apply when point is on a Hyperbole button, leaving other contexts to native Org mode behavior.
-    *   **Org Table Toggle**: In the Koutliner, pressing the Action Key on a `|` character now toggles **`orgtbl-mode`** for cell-based table editing.
-    *   **Modern Completion Support**: Smart Key argument selection is now fully integrated with the **Vertico and Consult** completion frameworks, allowing for modern interactive selection of buffers, files, and identifiers.
-    *   **Python Tracebacks**: The Action Key now recognizes and jumps to source lines referenced in **Python pdb, traceback, or pytype errors** within any buffer.
+** DOCUMENTATION
 
-*   **Implicit Button Types**
-    *   **Social Media References**: Added the `social-reference` type which automatically recognizes and links hashtags and usernames for platforms including **X (Twitter), Facebook, and Instagram**.
-    *   **Social Default Service**: New variable `hibtypes-social-default-service` sets the default platform (initially "x") used when a hashtag or username is referenced without a specific service prefix.
-    *   **Python Navigation**: Added `python-tb-previous-line` to handle instances where Python tracebacks place the source reference one line above the error description.
-    *   **YouTube Interaction**: Added new action types `yt-play`, `yt-info`, and `yt-search` for specialized interaction with **YouTube videos** and metadata.
+  *** [[FAST-DEMO]]: Add a link to [[README.md#Articles]].
+      [[FAST-DEMO]] and [[README.md]] add two recent article and video links:
+        [[https://youtu.be/5Oo_KqVcLFM][HyRolo: Records are Trees, Not Lines]]
+        [[https://youtu.be/o2KMvSCXwlU][Implicit Buttons: Build Your Hyperverse]]
 
-*   **HyRolo**
-    *   **Navigation Performance**: All movement commands within HyRolo match buffers (e.g., Next, Previous, Up) have been optimized to use **text properties** rather than overlays, ensuring instantaneous navigation even in buffers containing thousands of search results.
-    *   **Interactive Filtering**: Added `hyrolo-consult-grep` and `hyrolo-helm-org-rifle` to the Rolo menu, permitting interactive full-text search and narrowing over the `hyrolo-file-list`.
-    *   **Org Roam Integration**: HyRolo now includes convenience commands for searching **Org Roam nodes** via the Consult package, accessible through `hsys-org-roam-consult-grep`.
+  *** [[(hyperbole)Keyboard Drags]]: Reprioritize single line region
+      and link to Koutline kcell as the first two highest priority types
+      in the table.
+
+  *** [[(hyperbole)Cell Attributes]] and [[kotl/EXAMPLE.kotl]]: Add {C-c ; h}
+      into the key binding table.  Also, change C-0 to M-0 and C--1 to
+      M--1 since control digits don't typically work on a terminal.
+
+  *** [[(hyperbole)Promoting and Demoting]] and [[kotl/EXAMPLE.kotl]]:
+      Move {C-c C-]} [[kotl-mode:toggle-tab-flag]] to {C-c [}.
+
+  *** [[(hyperbole)View Specs]] and [[kotl/EXAMPLE.kotl]]:
+      Move {C-c ; b} [[kotl-mode:toggle-blank-lines]] to {C-c ]}.
+
+  *** [[(hyperbole)Relocating and Copying]]:
+      Move {C-c C-c} [[kotl-mode:copy-before]] to {C-c ; b} to match with
+      {C-c ; c} [[kotl-mode:copy-after) binding]].
+
+  *** [[(hyperbole)Implicit Button Link Types]]: In (defil search-git-log),
+      change to use curly braces instead of square brackets so it can be
+      embedded within Org links.
+
+  *** [[man/use-package]]: Add a commented out  [[hyrolo-file-list]] setting that
+      shows all of the note taking systems that can be quickly full-text
+      searched with HyRolo with no indexing.
+
+  *** [[man/use-package]]: Add [[hywiki-word-create-exclude-action-key-modes]]
+      description of the use and setting of this custom option.
+
+  *** [[man/use-package]]: Add optional [[org-open-link-function]] setting that
+      enables highlighting Hyperbole buttons as Org links when wrapped
+      in double square brackets.
+
+
+** HYROLO  (See [[(hyperbole)HyRolo]]).
+
+  *** Optimize [[hyrolo-grep]] by filtering files to search with ripgrep/grep
+      to only those with at least one match.
+
+
+** IMPLICIT BUTTONS  (See [[(hyperbole)Implicit Buttons]]).
+
+  *** [[kbd-key]]: Add support for Org/MediaWiki links around
+      curly brace-delimited key series, e.g.. [[{C-h h d d}]].
+
+  *** [[Info-node]]: Allow for Org link square bracket delimiters so can
+      match within an [[org-open-link-functions]] call.
+
+  *** `search-git-log': Change to use curly braces instead of square
+      brackets so it can be embedded within Org links.
+
+
+** KOUTLINER  (See [[(hyperbole)Koutliner]]).
+
+  *** INCOMPATIBLE CHANGE: Move {C-c C-]} [[kotl-mode:toggle-tab-flag]] to
+      {C-c [} for toggling the mode of the {TAB} key, as is
+      easier-to-type and is a 'left' opening brace like left 'TAB' key.
+
+  *** INCOMPATIBLE CHANGE: Move {C-c ; b} [[kotl-mode:toggle-blank-lines]]
+      to {C-c ]}.
+      Move {C-c C-c} [[kotl-mode:copy-before]] to {C-c ; b} to match with
+      {C-c ; c} [[kotl-mode:copy-after) binding]].  {C-c C-c} no longer
+      worked because Org-compatibility overrode its binding.
+
+
+** PROGRAMMING INTERFACE CHANGES  (See [[(hyperbole)Embedding Hyperbole]]).
+
+  *** Replace `hpath:find-koutline-reference' with action type,
+      [[link-to-file]].  This enable automatically updating Klink
+      relative ids from their permanent idstamps, when activated.
+
+  *** [[hpath:shorten]]: Fix to return path unchanged if it matches
+      `relative-to' (defaults to `default-directory') rather
 ...
 ...

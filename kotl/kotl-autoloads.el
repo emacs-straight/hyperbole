@@ -301,7 +301,7 @@ Show all of the tree at point when collapsed, else collapse it to one line.")
 Display fully expanded tree rooted at CELL-REF.
 
 (fn &optional CELL-REF)" t)
-(autoload 'kotl-mode:is-p "kotl-mode" "\
+(autoload 'kotl-mode:is "kotl-mode" "\
 Signal an error if current buffer is not a Hyperbole outline, else return t.")
 (autoload 'kotl-mode:to-valid-position "kotl-mode" "\
 Move point to the nearest editable position within the current koutline view.
