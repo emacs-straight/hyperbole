@@ -275,6 +275,26 @@ argument, archive any existing file, and replace it with the latest
 Hyperbole EXAMPLE.
 
 (fn &optional EXAMPLE REPLACE-FLAG)" t)
+(autoload 'kotl-mode:toggle-tab-flag "kotl-mode" "\
+Toggle the value of `kotl-mode:tab-flag' and explain its current usage.
+This now toggles TAB/S-TAB between the Org-compatible cycling commands and
+the traditional Koutliner demote/promote commands." t)
+(autoload 'kotl-mode:copy-after "kotl-mode" "\
+Copy tree rooted at FROM-CELL-REF to follow tree rooted at TO-CELL-REF.
+If prefix arg CHILD-P is non-nil, make FROM-CELL-REF the first child of
+TO-CELL-REF, otherwise make it the sibling following TO-CELL-REF.
+
+Leave point at the start of the root cell of the new tree.
+
+(fn FROM-CELL-REF TO-CELL-REF CHILD-P)" t)
+(autoload 'kotl-mode:copy-before "kotl-mode" "\
+Copy tree rooted at FROM-CELL-REF to precede tree rooted at TO-CELL-REF.
+If prefix arg PARENT-P is non-nil, make FROM-CELL-REF the first child of
+TO-CELL-REF's parent, otherwise make it the preceding sibling of TO-CELL-REF.
+
+Leave point at the start of the root cell of the new tree.
+
+(fn FROM-CELL-REF TO-CELL-REF PARENT-P)" t)
 (autoload 'kotl-mode:overview "kotl-mode" "\
 Show the first line of each cell.
 With optional prefix ARG, toggle display of blank lines between cells.
@@ -308,6 +328,7 @@ Move point to the nearest editable position within the current koutline view.
 With optional BACKWARD-FLAG, move backward if possible to get to valid position.
 
 (fn &optional BACKWARD-FLAG)")
+(autoload 'kotl-mode:setup-keymap "kotl-mode")
 (register-definition-prefixes "kotl-mode" '("delete-selection-pre-hook" "kotl-" "yank-"))
 
 
@@ -332,6 +353,8 @@ Return t if the character after point is invisible/hidden, else nil.
 
 ;;; Generated autoloads from kvspec.el
 
+(autoload 'kvspec:toggle-blank-lines "kvspec" "\
+Toggle blank lines between cells on or off." t)
 (register-definition-prefixes "kvspec" '("kvspec:"))
 
 ;;; End of scraped data
