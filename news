@@ -1,0 +1,108 @@
+* What's New in GNU Hyperbole by Bob Weiner
+
+`========================================================================='
+
+
+1 V9.3.2
+════════
+
+  `========================================================================='
+
+
+1.1 DOCUMENTATION
+─────────────────
+
+  *** : HY-NEWS has been renamed to HY-NEWS.org.
+
+  When an Org link with an embedded button is activated with {C-c C-o}
+  and Hyperbole has not yet been loaded but is installed, it will
+  autoload Hyperbole to run the action for the button.
+
+  *** : Add missing entries from the current HyWiki menu.
+
+
+  `========================================================================='
+
+
+2 V9.3.1
+════════
+
+  `========================================================================='
+
+
+2.1 ACTION TYPES  (See ).
+─────────────────────────
+
+  *** : Improve documentation and variable naming in this actype that
+      activates a series of local or global Hyperbole buttons by name.
+
+
+2.2 DOCUMENTATION
+─────────────────
+
+  *** : Add a link to .  and add two recent article and video links:
+      [HyRolo: Records are Trees, Not Lines] [Implicit Buttons: Build
+      Your Hyperverse]
+
+  *** : Reprioritize single line region and link to Koutline kcell as
+      the first two highest priority types in the table.
+
+  *** and : Add {C-c ; h} into the key binding table.  Also, change C-0
+      to M-0 and C–1 to M–1 since control digits don't typically work on
+      a terminal.
+
+  *** and : Move {C-c C-]} to {C-c [}.
+
+  *** and : Move {C-c ; b} to {C-c ]}.
+
+  *** : Move {C-c C-c} to {C-c ; b} to match with {C-c ; c} binding.
+
+  *** : In (defil search-git-log), change to use curly braces instead of
+      square brackets so it can be embedded within Org links.
+
+  *** : Add a commented out setting that shows all of the note taking
+      systems that can be quickly full-text searched with HyRolo with no
+      indexing.
+
+  *** : Add description of the use and setting of this custom option.
+
+  *** : Add optional setting that enables highlighting Hyperbole buttons
+      as Org links when wrapped in double square brackets.
+
+
+[HyRolo: Records are Trees, Not Lines] <https://youtu.be/5Oo_KqVcLFM>
+
+[Implicit Buttons: Build Your Hyperverse] <https://youtu.be/o2KMvSCXwlU>
+
+
+2.3 HYROLO  (See ).
+───────────────────
+
+  *** Optimize by filtering files to search with ripgrep/grep to only
+      those with at least one match.
+
+
+2.4 IMPLICIT BUTTONS  (See ).
+─────────────────────────────
+
+  *** : Add support for Org/MediaWiki links around curly brace-delimited
+      key series, e.g.. .
+
+  *** : Allow for Org link square bracket delimiters so can match within
+      an call.
+
+  *** `search-git-log': Change to use curly braces instead of square
+      brackets so it can be embedded within Org links.
+
+
+2.5 KOUTLINER  (See ).
+──────────────────────
+
+  *** INCOMPATIBLE CHANGE: Move {C-c C-]} to {C-c [} for toggling the
+      mode of the {TAB} key, as is easier-to-type and is a 'left'
+      opening brace like left 'TAB' key.
+
+    *** INCOMPATIBLE CHANGE: Move {C-c ; b} to {C-c ]}.  Move {C-c C-c}
+        to {C-c ; b} to match with {C-c ; c} binding.  {C-c C-c} no
+        longer worked because Org-compatibility overrode its binding.  …
+        …
