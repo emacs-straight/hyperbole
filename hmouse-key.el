@@ -3,7 +3,7 @@
 ;; Author:       Bob Weiner
 ;;
 ;; Orig-Date:    30-May-94 at 00:11:57
-;; Last-Mod:     20-Jan-24 at 20:16:44 by Mats Lidell
+;; Last-Mod:     20-Nov-26 at 13:06:39 by Bob Weiner
 ;;
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -124,7 +124,7 @@ Assist Key = shift-right mouse key."
   (interactive)
   (require 'hyperbole)
   (hmouse-unshifted-setup))
-  
+
 (defun hmouse-toggle-bindings ()
   "Toggle between Smart Mouse Key settings and their prior bindings.
 Under InfoDock, the first invocation of this command will make the middle
@@ -153,15 +153,19 @@ mouse key the Paste Key instead of the Action Key."
 Use after any programmatic change is made."
   (interactive)
   (let ((load-prefer-newer t)
-	(ftrs '(hui-mouse hui-window hibtypes hactypes)))
-    (load "hui-mini")
-    (hkey-initialize)
-    (makunbound 'hkey-alist)
-    (makunbound 'hmouse-alist)
+	(ftrs '(hversion hui-menu hui-mouse hui-window hyrolo-menu hibtypes hactypes)))
+    (mapc #'makunbound '(hyperb:version hui-menu-about hkey-alist hmouse-alist
+                         infodock-hyrolo-menu hyrolo-menu-common-body
+                         id-popup-hyrolo-menu hui:menu-mode-map
+                         hui:menu-hywiki hui:menu-rolo
+                         hui-menu-org-meta-return-options hui-menu-options
+                         hui-menu-hywiki))
     (mapc (lambda (feature)
 	    (setq features (delq feature features)))
 	  ftrs)
     (mapc #'require ftrs)
+    (load "hui-mini")
+    (hkey-initialize)
     (message "Hyperbole Smart Keys and menus have been updated")))
 
 (provide 'hmouse-key)

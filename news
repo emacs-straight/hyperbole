@@ -1,15 +1,33 @@
 * What's New in GNU Hyperbole by Bob Weiner
 
-`========================================================================='
+`======================================================================'
 
 
 1 V9.3.2
 ════════
 
-  `========================================================================='
+  `======================================================================'
 
 
-1.1 DOCUMENTATION
+1.1 BUTTONS  (See ).
+────────────────────
+
+  *** Hyperbole buttons can now be wrapped in double square bracket org
+      link delimiters when in Org mode with the addition of a single
+      line to your Hyperbole use-package configuration:
+
+  (push #'hyperbole-activate-button org-open-link-functions)
+
+  Then you get all the Hyperbole button capabilities with the
+  highlighting and the activation of Org links via {C-c C-o}.  Of
+  course, the Action Key will activate these buttons as well.
+
+  Since Emacs Lisp sybmols are Hyperbole buttons, you can make links to
+  both function and variable definitons just by wrapping their names in
+  Org delimiters.  For example, or .
+
+
+1.2 DOCUMENTATION
 ─────────────────
 
   *** : HY-NEWS has been renamed to HY-NEWS.org.
@@ -21,13 +39,18 @@
   *** : Add missing entries from the current HyWiki menu.
 
 
-  `========================================================================='
+1.3 PROGRAMMING INTERFACE CHANGES  (See ).
+──────────────────────────────────────────
+
+  *** Add for use in .  Used in "README.md".
+
+  `======================================================================'
 
 
 2 V9.3.1
 ════════
 
-  `========================================================================='
+  `======================================================================'
 
 
 2.1 ACTION TYPES  (See ).
@@ -85,24 +108,4 @@
 2.4 IMPLICIT BUTTONS  (See ).
 ─────────────────────────────
 
-  *** : Add support for Org/MediaWiki links around curly brace-delimited
-      key series, e.g.. .
-
-  *** : Allow for Org link square bracket delimiters so can match within
-      an call.
-
-  *** `search-git-log': Change to use curly braces instead of square
-      brackets so it can be embedded within Org links.
-
-
-2.5 KOUTLINER  (See ).
-──────────────────────
-
-  *** INCOMPATIBLE CHANGE: Move {C-c C-]} to {C-c [} for toggling the
-      mode of the {TAB} key, as is easier-to-type and is a 'left'
-      opening brace like left 'TAB' key.
-
-    *** INCOMPATIBLE CHANGE: Move {C-c ; b} to {C-c ]}.  Move {C-c C-c}
-        to {C-c ; b} to match with {C-c ; c} binding.  {C-c C-c} no
-        longer worked because Org-compatibility overrode its binding.  …
-        …
+  …  …
