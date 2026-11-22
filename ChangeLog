@@ -1,3 +1,13 @@
+2026-11-21  Mats Lidell  <matsl@gnu.org>
+
+* kotl/kotl-mode.el (kotl-mode:delete-char): Refactor out a
+    cl-flet. It is not needed and causes issues with coverage
+    instrumentation.
+
+2026-11-20  Mats Lidell  <matsl@gnu.org>
+
+* test/hsys-denote-tests.el: Do not byte compile. Uses el-mock.
+
 2026-11-20  Bob Weiner  <rsw@gnu.org>
 
 * hmouse-key.el (hmouse-update-smart-keys): Update HyRolo and
