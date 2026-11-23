@@ -1,4 +1,14 @@
+2026-11-22  Mats Lidell  <matsl@gnu.org>
+
+* test/hyperbole-tests.el (hyperbole-keymap-mo-tests): Test for M-o
+    binding.
+    (hyperbole-key-bindings): Add mock of key-binding to deal with
+    possible binding of M-o.
+
 2026-11-21  Mats Lidell  <matsl@gnu.org>
+
+* hsys-org.el (hywiki--org-heading-regexp): Defvar.
+    (org-fold-core-remove-optimisation): Declare function.
 
 * kotl/kotl-mode.el (kotl-mode:delete-char): Refactor out a
     cl-flet. It is not needed and causes issues with coverage
